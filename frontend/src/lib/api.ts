@@ -1,0 +1,8 @@
+export type PlayerStat = { id:string; name:string; teamId?:string; points:number; opponentPoints:number; rounds:number; ppr:number; dpr:number; roundsWon:number; roundsLost:number; roundsTied:number; roundWinPct:number; roundLossPct:number; roundTiePct:number; fourBaggers:number; fourBaggerPct:number; bagsInPct:number }
+export type RoundRow = { round:number; netPoints:number; scoringTeamId:string|null; players:{playerId:string; teamId:string; name:string; grossPoints:number; teamScoreAfter:number}[] }
+export type Game = { gameId:number; statusId:number; status?:string; currentRound?:number|string; score:{top:number|null;bottom:number|null}; players:PlayerStat[]; rounds:RoundRow[] }
+export type Match = { eventId:string; matchId:string; courtId:string; roundDescription:string; bracketSide:string; statusId:number; status:string; currentRound?:number|string; teams:{top:{id:string;name:string};bottom:{id:string;name:string}}; score:{top:number|null;bottom:number|null}; games:Game[]; activeGame?:Game }
+export type EventResponse = { event:{id:string; name:string; courts:string[]; lastUpdated:number}; matches:Match[] }
+const API_BASE = import.meta.env.VITE_API_BASE || ''
+export async function fetchEvent(eventId:string, stats=false): Promise<EventResponse>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/matches?stats=${stats?'1':'0'}`); if(!r.ok) throw new Error(await r.text()); return r.json() }
+export async function fetchMatch(eventId:string, matchId:string): Promise<Match>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/matches/${matchId}`); if(!r.ok) throw new Error(await r.text()); return r.json() }

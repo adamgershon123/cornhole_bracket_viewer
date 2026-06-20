@@ -1,0 +1,6991 @@
+{
+  "status": "OK",
+  "message": "Successfully Get Bracket Data",
+  "eventInfo": {
+    "leagueYear": 2026,
+    "leagueyear": 2026,
+    "eventYear": 2026,
+    "leagueSessionID": 1,
+    "leaguesessionid": 1,
+    "leagueID": 248182,
+    "leagueid": 248182,
+    "eventID": 248182,
+    "leaguename": "ACL Fort Worth Signature Open - Open Women's Doubles",
+    "leagueName": "ACL Fort Worth Signature Open - Open Women's Doubles",
+    "eventName": "ACL Fort Worth Signature Open - Open Women's Doubles",
+    "leagueTypeCOBS": "Y",
+    "tourID": -1,
+    "leagueDay": "Fri",
+    "leagueTime": "6:00 PM",
+    "starttime": "6:00 PM",
+    "startdate": "2026-06-06",
+    "leaguestartdate": "2026-06-06",
+    "leagueStartDate": "2026-06-06",
+    "courtTotal": 1,
+    "courtTotalType": "R",
+    "courtTotalDetails": "13,13",
+    "eventtype": "L",
+    "eventType": "L",
+    "eventsubtype": "O",
+    "eventSubType": "O",
+    "eventGenderType": "B",
+    "eventBaggerLevel": "-1",
+    "eventPlayerType": "E",
+    "leagueStatus": "C",
+    "leagueESPNFlag": "N",
+    "sendCourtSMS": "Y",
+    "sendScoreSMS": "Y",
+    "teamTourney": "N",
+    "leagueBlindDraw": 0,
+    "blindDraw": 0,
+    "matchtype": "D",
+    "matchType": "D",
+    "brackettype": "D",
+    "bracketType": "D",
+    "winnerBracketType": 0,
+    "loserBracketType": 0,
+    "preRegistrationOpen": "Y",
+    "eventFee": 0,
+    "leagueNotes": null,
+    "leaguePreRegistrationOpen": "Y",
+    "espnFlag": "N",
+    "fantasyExternalID": -1,
+    "fantasyExternalEventInfo": null,
+    "eventCharityFlag": "N",
+    "eventCharityAmountRaised": 0,
+    "eventGroupID": 1,
+    "eventGroupSubID": "L",
+    "eventGroupCollegeName": "undefined",
+    "eventGroupCollegeType": "",
+    "liveRoundStats": "0",
+    "eventScoringType": "ANY",
+    "roundLimit": -1,
+    "roundLimitBracket": -1,
+    "playerPoolSize": 0,
+    "redZoneActiveFlag": 0,
+    "autoAssignCourt": "Y",
+    "reservedCourtID": "-1",
+    "deviceDisplayMode": "ROUND",
+    "entryFeePerPersonGoldPlatinum": 0,
+    "additionalMoneyForPayouts": 0,
+    "addDirectorNonMemberFeeToPayout": "0",
+    "entryFeesCollectedOnline": 0,
+    "entryFeesCollectedCash": 0,
+    "payoutPercentage": 0,
+    "totalAmountPaidOut": 1200,
+    "totalPrizePool": 0,
+    "ACLFeesCollected": 0,
+    "directorPerPlayerFee": 1.1,
+    "directorRevenue": null,
+    "eventPaid": "Y",
+    "eventPaidTimeStamp": "2026-06-08 14:11:55",
+    "totalEntryFeesCollected": 0,
+    "matchPlayFormat": "B",
+    "matchPlaySinglesSpots": 0,
+    "matchPlayDoublesSpots": 0,
+    "totalMatchPlaySpots": 0,
+    "matchPlayBracketFormat": "D",
+    "aclLite": 0,
+    "indoor": 1,
+    "holdMySpotStatus": 0,
+    "holdMySpotMaxTeamCount": null,
+    "holdMySpotPaymentOptions": null,
+    "useABGrouping": 0,
+    "leagueLocationID": 7795,
+    "leagueLocationName": "Will Rogers Memorial Center",
+    "locationName": "Will Rogers Memorial Center",
+    "leagueAddress": "3401 W Lancaster Ave",
+    "locationAddress": "3401 W Lancaster Ave",
+    "locationCity": "Fort Worth",
+    "locationState": "TX",
+    "locationZip": "76107",
+    "leaguePhone": "",
+    "leagueWebsite": "",
+    "leagueEmailAddress": "",
+    "leagueImage": "",
+    "leagueMiscDetails": "",
+    "locationLng": -97.3636416,
+    "locationLat": 32.7432041,
+    "countryCode": "US",
+    "fldPlayerID": 261372,
+    "eventAdminID": 261372,
+    "adminID": 261372,
+    "playerFirstName": "ACL Open",
+    "playerLastName": "Events",
+    "playerEmail": "aclevents@iplaycornhole.com",
+    "adminFirstName": "ACL Open",
+    "adminLastName": "Events",
+    "adminEmail": "aclevents@iplaycornhole.com",
+    "eventBucketID": 11,
+    "bucketID": 11,
+    "eventGroupDesc": "ACL",
+    "teamCount": 32,
+    "eventListType": "bracket",
+    "superEventID": 90,
+    "superEventName": "ACL FORT WORTH SIGNATURE OPEN June 5-7, 2026",
+    "superEventStatus": "A"
+  },
+  "bracketDetails": [
+    {
+      "roundid": "12",
+      "rounddesc": "Champion",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": "63",
+      "bracketpos": "M63T",
+      "courtid": -1,
+      "bracketteamid": "",
+      "bracketteamname": "",
+      "scores": null
+    },
+    {
+      "roundid": null,
+      "rounddesc": "FINAL",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 62,
+      "bracketpos": "M62T",
+      "courtid": 13,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 62,
+          "scoreaway": 4,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 62,
+          "gameID": 1,
+          "scoreHome": 15,
+          "scoreAway": 26,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 22:15:39",
+          "matchEndTime": "2026-06-06 22:15:39"
+        },
+        {
+          "leagueID": 248182,
+          "matchID": 62,
+          "gameID": 2,
+          "scoreHome": 23,
+          "scoreAway": 4,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 22:31:53",
+          "matchEndTime": "2026-06-06 22:31:53"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "FINAL",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 62,
+      "bracketpos": "M62B",
+      "courtid": 13,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 62,
+          "scoreaway": 4,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 62,
+          "gameID": 1,
+          "scoreHome": 15,
+          "scoreAway": 26,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 22:15:39",
+          "matchEndTime": "2026-06-06 22:15:39"
+        },
+        {
+          "leagueID": 248182,
+          "matchID": 62,
+          "gameID": 2,
+          "scoreHome": 23,
+          "scoreAway": 4,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 22:31:53",
+          "matchEndTime": "2026-06-06 22:31:53"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 8",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 61,
+      "bracketpos": "M61T",
+      "courtid": 13,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 61,
+          "scoreaway": 4,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 61,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 4,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:57:20",
+          "matchEndTime": "2026-06-06 21:57:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 8",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 61,
+      "bracketpos": "M61B",
+      "courtid": 13,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 61,
+          "scoreaway": 4,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 61,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 4,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:57:20",
+          "matchEndTime": "2026-06-06 21:57:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 7",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 60,
+      "bracketpos": "M60T",
+      "courtid": 13,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 60,
+          "scoreaway": 19,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 60,
+          "gameID": 1,
+          "scoreHome": 23,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:39:41",
+          "matchEndTime": "2026-06-06 21:39:41"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 7",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 60,
+      "bracketpos": "M60B",
+      "courtid": 13,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 60,
+          "scoreaway": 19,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 60,
+          "gameID": 1,
+          "scoreHome": 23,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:39:41",
+          "matchEndTime": "2026-06-06 21:39:41"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 59,
+      "bracketpos": "M59T",
+      "courtid": 15,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 59,
+          "scoreaway": 22,
+          "scorehome": 17,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 59,
+          "gameID": 1,
+          "scoreHome": 17,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:51:20",
+          "matchEndTime": "2026-06-06 20:51:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 59,
+      "bracketpos": "M59B",
+      "courtid": 15,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 59,
+          "scoreaway": 22,
+          "scorehome": 17,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 59,
+          "gameID": 1,
+          "scoreHome": 17,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:51:20",
+          "matchEndTime": "2026-06-06 20:51:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 6",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 58,
+      "bracketpos": "M58T",
+      "courtid": 14,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 58,
+          "scoreaway": 15,
+          "scorehome": 25,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 58,
+          "gameID": 1,
+          "scoreHome": 25,
+          "scoreAway": 15,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:51:17",
+          "matchEndTime": "2026-06-06 20:51:17"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 6",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 58,
+      "bracketpos": "M58B",
+      "courtid": 14,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 58,
+          "scoreaway": 15,
+          "scorehome": 25,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 58,
+          "gameID": 1,
+          "scoreHome": 25,
+          "scoreAway": 15,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:51:17",
+          "matchEndTime": "2026-06-06 20:51:17"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 6",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 57,
+      "bracketpos": "M57T",
+      "courtid": 13,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 57,
+          "scoreaway": 20,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 57,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 20,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:08:10",
+          "matchEndTime": "2026-06-06 21:08:10"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 6",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 57,
+      "bracketpos": "M57B",
+      "courtid": 13,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 57,
+          "scoreaway": 20,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 57,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 20,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 21:08:10",
+          "matchEndTime": "2026-06-06 21:08:10"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 56,
+      "bracketpos": "M56T",
+      "courtid": 14,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 56,
+          "scoreaway": 21,
+          "scorehome": 13,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 56,
+          "gameID": 1,
+          "scoreHome": 13,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:24:12",
+          "matchEndTime": "2026-06-06 20:24:12"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 56,
+      "bracketpos": "M56B",
+      "courtid": 14,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 56,
+          "scoreaway": 21,
+          "scorehome": 13,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 56,
+          "gameID": 1,
+          "scoreHome": 13,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:24:12",
+          "matchEndTime": "2026-06-06 20:24:12"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 55,
+      "bracketpos": "M55T",
+      "courtid": 13,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 55,
+          "scoreaway": 10,
+          "scorehome": 25,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 55,
+          "gameID": 1,
+          "scoreHome": 25,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:35:19",
+          "matchEndTime": "2026-06-06 20:35:19"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 5",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 55,
+      "bracketpos": "M55B",
+      "courtid": 13,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 55,
+          "scoreaway": 10,
+          "scorehome": 25,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 55,
+          "gameID": 1,
+          "scoreHome": 25,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:35:19",
+          "matchEndTime": "2026-06-06 20:35:19"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 54,
+      "bracketpos": "M54T",
+      "courtid": 26,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 54,
+          "scoreaway": 21,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 54,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:58:30",
+          "matchEndTime": "2026-06-06 19:58:30"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 54,
+      "bracketpos": "M54B",
+      "courtid": 26,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 54,
+          "scoreaway": 21,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 54,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:58:30",
+          "matchEndTime": "2026-06-06 19:58:30"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 53,
+      "bracketpos": "M53T",
+      "courtid": 25,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 53,
+          "scoreaway": 24,
+          "scorehome": 13,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 53,
+          "gameID": 1,
+          "scoreHome": 13,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:06:33",
+          "matchEndTime": "2026-06-06 20:06:33"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 53,
+      "bracketpos": "M53B",
+      "courtid": 25,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 53,
+          "scoreaway": 24,
+          "scorehome": 13,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 53,
+          "gameID": 1,
+          "scoreHome": 13,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:06:33",
+          "matchEndTime": "2026-06-06 20:06:33"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 52,
+      "bracketpos": "M52T",
+      "courtid": 24,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 52,
+          "scoreaway": 25,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 147723,
+          "firstname": "Jaime",
+          "lastname": "Guffey",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 151694,
+          "firstname": "Desirrae",
+          "lastname": "McCoy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8734-151694.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 52,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 25,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:59:07",
+          "matchEndTime": "2026-06-06 19:59:07"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 52,
+      "bracketpos": "M52B",
+      "courtid": 24,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 52,
+          "scoreaway": 25,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 52,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 25,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:59:07",
+          "matchEndTime": "2026-06-06 19:59:07"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 51,
+      "bracketpos": "M51T",
+      "courtid": 22,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 51,
+          "scoreaway": 27,
+          "scorehome": 5,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 114003,
+          "firstname": "Brittany",
+          "lastname": "Ethridge",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DA7A572A-498F-4EAD-A1AE-CAD3CD55F45F-114003.jpeg "
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 159517,
+          "firstname": "Candace",
+          "lastname": "DiGuilio",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3645-159517.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 51,
+          "gameID": 1,
+          "scoreHome": 5,
+          "scoreAway": 27,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:05:18",
+          "matchEndTime": "2026-06-06 20:05:18"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 51,
+      "bracketpos": "M51B",
+      "courtid": 22,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 51,
+          "scoreaway": 27,
+          "scorehome": 5,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 51,
+          "gameID": 1,
+          "scoreHome": 5,
+          "scoreAway": 27,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:05:18",
+          "matchEndTime": "2026-06-06 20:05:18"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 50,
+      "bracketpos": "M50T",
+      "courtid": 13,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 50,
+          "scoreaway": 22,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 10757,
+          "firstname": "Kamryn",
+          "lastname": "Belvin",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049479161Kamryn Belvin.jpg"
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 118285,
+          "firstname": "Elizabeth",
+          "lastname": "Tennyson",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_7555-118285.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 50,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:21:05",
+          "matchEndTime": "2026-06-06 20:21:05"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 50,
+      "bracketpos": "M50B",
+      "courtid": 13,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 50,
+          "scoreaway": 22,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 50,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:21:05",
+          "matchEndTime": "2026-06-06 20:21:05"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 49,
+      "bracketpos": "M49T",
+      "courtid": 21,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 49,
+          "scoreaway": 9,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 49,
+          "gameID": 1,
+          "scoreHome": 23,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:42:51",
+          "matchEndTime": "2026-06-06 19:42:51"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 49,
+      "bracketpos": "M49B",
+      "courtid": 21,
+      "bracketteamid": 10,
+      "bracketteamname": "Team 10",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 49,
+          "scoreaway": 9,
+          "scorehome": 23,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 135982,
+          "firstname": "Lisa",
+          "lastname": "Trissell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3382-135982.jpeg "
+        },
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 200848,
+          "firstname": "Madison",
+          "lastname": "Collins",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 49,
+          "gameID": 1,
+          "scoreHome": 23,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:42:51",
+          "matchEndTime": "2026-06-06 19:42:51"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 48,
+      "bracketpos": "M48T",
+      "courtid": 23,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 48,
+          "scoreaway": 16,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 48,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 16,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:20:31",
+          "matchEndTime": "2026-06-06 19:20:31"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 48,
+      "bracketpos": "M48B",
+      "courtid": 23,
+      "bracketteamid": 12,
+      "bracketteamname": "Team 12",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 48,
+          "scoreaway": 16,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 5309,
+          "firstname": "Rosie",
+          "lastname": "Streker",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613050352067Rosie Streker.JPG"
+        },
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 31754,
+          "firstname": "Debra",
+          "lastname": "Odum",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/ACL Pro Pic-31754.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 48,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 16,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:20:31",
+          "matchEndTime": "2026-06-06 19:20:31"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 47,
+      "bracketpos": "M47T",
+      "courtid": 21,
+      "bracketteamid": 17,
+      "bracketteamname": "Team 17",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 47,
+          "scoreaway": 22,
+          "scorehome": 4,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 162648,
+          "firstname": "Zoey",
+          "lastname": "Kallio",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 171643,
+          "firstname": "RaqueL",
+          "lastname": "Padilla",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8716-171643.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 47,
+          "gameID": 1,
+          "scoreHome": 4,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:05:29",
+          "matchEndTime": "2026-06-06 19:05:29"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 47,
+      "bracketpos": "M47B",
+      "courtid": 21,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 47,
+          "scoreaway": 22,
+          "scorehome": 4,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 47,
+          "gameID": 1,
+          "scoreHome": 4,
+          "scoreAway": 22,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:05:29",
+          "matchEndTime": "2026-06-06 19:05:29"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 46,
+      "bracketpos": "M46T",
+      "courtid": 23,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 46,
+          "scoreaway": 23,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 13876,
+          "firstname": "Lori",
+          "lastname": "Dool-Griswold",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/dool (53)-13876.jpeg "
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 55544,
+          "firstname": "Miranda",
+          "lastname": "Coy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/superhole-iv-1217-55544.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 46,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 23,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:03:35",
+          "matchEndTime": "2026-06-06 20:03:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 46,
+      "bracketpos": "M46B",
+      "courtid": 23,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 46,
+          "scoreaway": 23,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 46,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 23,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 20:03:35",
+          "matchEndTime": "2026-06-06 20:03:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 45,
+      "bracketpos": "M45T",
+      "courtid": 24,
+      "bracketteamid": 18,
+      "bracketteamname": "Team 18",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 45,
+          "scoreaway": 27,
+          "scorehome": 20,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 36063,
+          "firstname": "Isabella",
+          "lastname": "Surprenant",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7FE6CC59-FCFD-43A3-B727-AC7476660857-36063.jpeg "
+        },
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 149629,
+          "firstname": "Caitlyn",
+          "lastname": "Allshouse",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3999-149629.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 45,
+          "gameID": 1,
+          "scoreHome": 20,
+          "scoreAway": 27,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:08:45",
+          "matchEndTime": "2026-06-06 19:08:45"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 45,
+      "bracketpos": "M45B",
+      "courtid": 24,
+      "bracketteamid": 10,
+      "bracketteamname": "Team 10",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 45,
+          "scoreaway": 27,
+          "scorehome": 20,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 135982,
+          "firstname": "Lisa",
+          "lastname": "Trissell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3382-135982.jpeg "
+        },
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 200848,
+          "firstname": "Madison",
+          "lastname": "Collins",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 45,
+          "gameID": 1,
+          "scoreHome": 20,
+          "scoreAway": 27,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:08:45",
+          "matchEndTime": "2026-06-06 19:08:45"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 44,
+      "bracketpos": "M44T",
+      "courtid": 26,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 44,
+          "scoreaway": 12,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 44,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 12,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:40:07",
+          "matchEndTime": "2026-06-06 19:40:07"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 44,
+      "bracketpos": "M44B",
+      "courtid": 26,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 44,
+          "scoreaway": 12,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 147723,
+          "firstname": "Jaime",
+          "lastname": "Guffey",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 151694,
+          "firstname": "Desirrae",
+          "lastname": "McCoy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8734-151694.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 44,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 12,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:40:07",
+          "matchEndTime": "2026-06-06 19:40:07"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 43,
+      "bracketpos": "M43T",
+      "courtid": 24,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 43,
+          "scoreaway": 9,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 43,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:36:42",
+          "matchEndTime": "2026-06-06 19:36:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 43,
+      "bracketpos": "M43B",
+      "courtid": 24,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 43,
+          "scoreaway": 9,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 114003,
+          "firstname": "Brittany",
+          "lastname": "Ethridge",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DA7A572A-498F-4EAD-A1AE-CAD3CD55F45F-114003.jpeg "
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 159517,
+          "firstname": "Candace",
+          "lastname": "DiGuilio",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3645-159517.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 43,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:36:42",
+          "matchEndTime": "2026-06-06 19:36:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 42,
+      "bracketpos": "M42T",
+      "courtid": 22,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 42,
+          "scoreaway": 18,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 42,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 18,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:35:25",
+          "matchEndTime": "2026-06-06 19:35:25"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 42,
+      "bracketpos": "M42B",
+      "courtid": 22,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 42,
+          "scoreaway": 18,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 10757,
+          "firstname": "Kamryn",
+          "lastname": "Belvin",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049479161Kamryn Belvin.jpg"
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 118285,
+          "firstname": "Elizabeth",
+          "lastname": "Tennyson",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_7555-118285.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 42,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 18,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:35:25",
+          "matchEndTime": "2026-06-06 19:35:25"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 41,
+      "bracketpos": "M41T",
+      "courtid": 21,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 41,
+          "scoreaway": 8,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 41,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 8,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:30:09",
+          "matchEndTime": "2026-06-06 19:30:09"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 41,
+      "bracketpos": "M41B",
+      "courtid": 21,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 41,
+          "scoreaway": 8,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 41,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 8,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:30:09",
+          "matchEndTime": "2026-06-06 19:30:09"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 40,
+      "bracketpos": "M40T",
+      "courtid": 23,
+      "bracketteamid": 12,
+      "bracketteamname": "Team 12",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 40,
+          "scoreaway": 9,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 5309,
+          "firstname": "Rosie",
+          "lastname": "Streker",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613050352067Rosie Streker.JPG"
+        },
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 31754,
+          "firstname": "Debra",
+          "lastname": "Odum",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/ACL Pro Pic-31754.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 40,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:56:14",
+          "matchEndTime": "2026-06-06 18:56:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 40,
+      "bracketpos": "M40B",
+      "courtid": 23,
+      "bracketteamid": 22,
+      "bracketteamname": "Team 22",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 40,
+          "scoreaway": 9,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 169595,
+          "firstname": "Katie",
+          "lastname": "McCollum",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 171649,
+          "firstname": "Alyssa",
+          "lastname": "Harris",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DSC03939_Original-171649.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 40,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 9,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:56:14",
+          "matchEndTime": "2026-06-06 18:56:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 39,
+      "bracketpos": "M39T",
+      "courtid": 22,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 39,
+          "scoreaway": 1,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 39,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 1,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:46:14",
+          "matchEndTime": "2026-06-06 18:46:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 39,
+      "bracketpos": "M39B",
+      "courtid": 22,
+      "bracketteamid": 14,
+      "bracketteamname": "Team 14",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 39,
+          "scoreaway": 1,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 139200,
+          "firstname": "Paula",
+          "lastname": "Avila",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_20211102_223112_114-139200.jpg "
+        },
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 237723,
+          "firstname": "Jessica",
+          "lastname": "Lopez",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 39,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 1,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:46:14",
+          "matchEndTime": "2026-06-06 18:46:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 38,
+      "bracketpos": "M38T",
+      "courtid": -1,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 38,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 38,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:21:31",
+          "matchEndTime": "2026-06-06 18:21:31"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 38,
+      "bracketpos": "M38B",
+      "courtid": -1,
+      "bracketteamid": 23,
+      "bracketteamname": "Team 23",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 38,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9872,
+          "firstname": "Bye",
+          "lastname": "User 128",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9873,
+          "firstname": "Bye",
+          "lastname": "User 127",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 38,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:21:31",
+          "matchEndTime": "2026-06-06 18:21:31"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 37,
+      "bracketpos": "M37T",
+      "courtid": 21,
+      "bracketteamid": 17,
+      "bracketteamname": "Team 17",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 37,
+          "scoreaway": 5,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 162648,
+          "firstname": "Zoey",
+          "lastname": "Kallio",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 171643,
+          "firstname": "RaqueL",
+          "lastname": "Padilla",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8716-171643.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 37,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 5,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:52:34",
+          "matchEndTime": "2026-06-06 18:52:34"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 37,
+      "bracketpos": "M37B",
+      "courtid": 21,
+      "bracketteamid": 15,
+      "bracketteamname": "Team 15",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 37,
+          "scoreaway": 5,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 115864,
+          "firstname": "Marissa",
+          "lastname": "Roth",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 169230,
+          "firstname": "Lex",
+          "lastname": "Oldham",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/B013704E-B325-4562-9EE0-861C20646F7E-169230.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 37,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 5,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:52:34",
+          "matchEndTime": "2026-06-06 18:52:34"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 36,
+      "bracketpos": "M36T",
+      "courtid": 22,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 36,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 36,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:57:18",
+          "matchEndTime": "2026-06-06 18:57:18"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 36,
+      "bracketpos": "M36B",
+      "courtid": 22,
+      "bracketteamid": 21,
+      "bracketteamname": "Team 21",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 36,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169546,
+          "firstname": "Christine",
+          "lastname": "Trischetti",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169867,
+          "firstname": "Robyn",
+          "lastname": "Kennedy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7E97E229-3F99-403C-8BE0-3CE6D5D58DE8-169867.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 36,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:57:18",
+          "matchEndTime": "2026-06-06 18:57:18"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 35,
+      "bracketpos": "M35T",
+      "courtid": 25,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 35,
+          "scoreaway": 8,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 13876,
+          "firstname": "Lori",
+          "lastname": "Dool-Griswold",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/dool (53)-13876.jpeg "
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 55544,
+          "firstname": "Miranda",
+          "lastname": "Coy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/superhole-iv-1217-55544.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 35,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 8,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:26:53",
+          "matchEndTime": "2026-06-06 19:26:53"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 35,
+      "bracketpos": "M35B",
+      "courtid": 25,
+      "bracketteamid": 13,
+      "bracketteamname": "Team 13",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 35,
+          "scoreaway": 8,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 169604,
+          "firstname": "Morgan",
+          "lastname": "Blonde",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2423-169604.jpeg "
+        },
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 184463,
+          "firstname": "Hannah",
+          "lastname": "Haskins",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_6010-184463.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 35,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 8,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:26:53",
+          "matchEndTime": "2026-06-06 19:26:53"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 34,
+      "bracketpos": "M34T",
+      "courtid": -1,
+      "bracketteamid": 10,
+      "bracketteamname": "Team 10",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 34,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 135982,
+          "firstname": "Lisa",
+          "lastname": "Trissell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3382-135982.jpeg "
+        },
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 200848,
+          "firstname": "Madison",
+          "lastname": "Collins",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 34,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 34,
+      "bracketpos": "M34B",
+      "courtid": -1,
+      "bracketteamid": 24,
+      "bracketteamname": "Team 24",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 34,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9874,
+          "firstname": "Bye",
+          "lastname": "User 126",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9875,
+          "firstname": "Bye",
+          "lastname": "User 125",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 34,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 33,
+      "bracketpos": "M33T",
+      "courtid": 24,
+      "bracketteamid": 18,
+      "bracketteamname": "Team 18",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 33,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 36063,
+          "firstname": "Isabella",
+          "lastname": "Surprenant",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7FE6CC59-FCFD-43A3-B727-AC7476660857-36063.jpeg "
+        },
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 149629,
+          "firstname": "Caitlyn",
+          "lastname": "Allshouse",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3999-149629.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 33,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:43:20",
+          "matchEndTime": "2026-06-06 18:43:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 33,
+      "bracketpos": "M33B",
+      "courtid": 24,
+      "bracketteamid": 16,
+      "bracketteamname": "Team 16",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 33,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 26695,
+          "firstname": "Jackie",
+          "lastname": "Sayasone",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049133335Jackie Sayasone.JPG"
+        },
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 55717,
+          "firstname": "Trina",
+          "lastname": "Cayford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0925-55717.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 33,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:43:20",
+          "matchEndTime": "2026-06-06 18:43:20"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 32,
+      "bracketpos": "M32T",
+      "courtid": 26,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 32,
+          "scoreaway": 19,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 147723,
+          "firstname": "Jaime",
+          "lastname": "Guffey",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 151694,
+          "firstname": "Desirrae",
+          "lastname": "McCoy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8734-151694.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 32,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:49:43",
+          "matchEndTime": "2026-06-06 18:49:43"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 32,
+      "bracketpos": "M32B",
+      "courtid": 26,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 32,
+          "scoreaway": 19,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 32,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:49:43",
+          "matchEndTime": "2026-06-06 18:49:43"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 31,
+      "bracketpos": "M31T",
+      "courtid": 25,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 31,
+          "scoreaway": 21,
+          "scorehome": 20,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 13876,
+          "firstname": "Lori",
+          "lastname": "Dool-Griswold",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/dool (53)-13876.jpeg "
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 55544,
+          "firstname": "Miranda",
+          "lastname": "Coy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/superhole-iv-1217-55544.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 31,
+          "gameID": 1,
+          "scoreHome": 20,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:16:15",
+          "matchEndTime": "2026-06-06 19:16:15"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 31,
+      "bracketpos": "M31B",
+      "courtid": 25,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 31,
+          "scoreaway": 21,
+          "scorehome": 20,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 31,
+          "gameID": 1,
+          "scoreHome": 20,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 19:16:15",
+          "matchEndTime": "2026-06-06 19:16:15"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 30,
+      "bracketpos": "M30T",
+      "courtid": 28,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 30,
+          "scoreaway": 3,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 114003,
+          "firstname": "Brittany",
+          "lastname": "Ethridge",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DA7A572A-498F-4EAD-A1AE-CAD3CD55F45F-114003.jpeg "
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 159517,
+          "firstname": "Candace",
+          "lastname": "DiGuilio",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3645-159517.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 30,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 3,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:21",
+          "matchEndTime": "2026-06-06 18:14:21"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 30,
+      "bracketpos": "M30B",
+      "courtid": 28,
+      "bracketteamid": 10,
+      "bracketteamname": "Team 10",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 30,
+          "scoreaway": 3,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 135982,
+          "firstname": "Lisa",
+          "lastname": "Trissell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3382-135982.jpeg "
+        },
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 200848,
+          "firstname": "Madison",
+          "lastname": "Collins",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 30,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 3,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:21",
+          "matchEndTime": "2026-06-06 18:14:21"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 29,
+      "bracketpos": "M29T",
+      "courtid": 24,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 29,
+          "scoreaway": 10,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 29,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:35:45",
+          "matchEndTime": "2026-06-06 18:35:45"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 29,
+      "bracketpos": "M29B",
+      "courtid": 24,
+      "bracketteamid": 18,
+      "bracketteamname": "Team 18",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 29,
+          "scoreaway": 10,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 36063,
+          "firstname": "Isabella",
+          "lastname": "Surprenant",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7FE6CC59-FCFD-43A3-B727-AC7476660857-36063.jpeg "
+        },
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 149629,
+          "firstname": "Caitlyn",
+          "lastname": "Allshouse",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3999-149629.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 29,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:35:45",
+          "matchEndTime": "2026-06-06 18:35:45"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 28,
+      "bracketpos": "M28T",
+      "courtid": 23,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 28,
+          "scoreaway": 11,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 10757,
+          "firstname": "Kamryn",
+          "lastname": "Belvin",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049479161Kamryn Belvin.jpg"
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 118285,
+          "firstname": "Elizabeth",
+          "lastname": "Tennyson",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_7555-118285.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 28,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 11,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:31:30",
+          "matchEndTime": "2026-06-06 18:31:30"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 28,
+      "bracketpos": "M28B",
+      "courtid": 23,
+      "bracketteamid": 12,
+      "bracketteamname": "Team 12",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 28,
+          "scoreaway": 11,
+          "scorehome": 22,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 5309,
+          "firstname": "Rosie",
+          "lastname": "Streker",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613050352067Rosie Streker.JPG"
+        },
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 31754,
+          "firstname": "Debra",
+          "lastname": "Odum",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/ACL Pro Pic-31754.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 28,
+          "gameID": 1,
+          "scoreHome": 22,
+          "scoreAway": 11,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:31:30",
+          "matchEndTime": "2026-06-06 18:31:30"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 27,
+      "bracketpos": "M27T",
+      "courtid": 22,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 27,
+          "scoreaway": 24,
+          "scorehome": 4,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 27,
+          "gameID": 1,
+          "scoreHome": 4,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:27:46",
+          "matchEndTime": "2026-06-06 18:27:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 27,
+      "bracketpos": "M27B",
+      "courtid": 22,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 27,
+          "scoreaway": 24,
+          "scorehome": 4,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 27,
+          "gameID": 1,
+          "scoreHome": 4,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:27:46",
+          "matchEndTime": "2026-06-06 18:27:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 26,
+      "bracketpos": "M26T",
+      "courtid": 27,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 26,
+          "scoreaway": 13,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 26,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 13,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:20:23",
+          "matchEndTime": "2026-06-06 18:20:23"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 26,
+      "bracketpos": "M26B",
+      "courtid": 27,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 26,
+          "scoreaway": 13,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 26,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 13,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:20:23",
+          "matchEndTime": "2026-06-06 18:20:23"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 25,
+      "bracketpos": "M25T",
+      "courtid": 21,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 25,
+          "scoreaway": 7,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 25,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 7,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:41:47",
+          "matchEndTime": "2026-06-06 18:41:47"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 25,
+      "bracketpos": "M25B",
+      "courtid": 21,
+      "bracketteamid": 17,
+      "bracketteamname": "Team 17",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 25,
+          "scoreaway": 7,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 162648,
+          "firstname": "Zoey",
+          "lastname": "Kallio",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 171643,
+          "firstname": "RaqueL",
+          "lastname": "Padilla",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8716-171643.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 25,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 7,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:41:47",
+          "matchEndTime": "2026-06-06 18:41:47"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 24,
+      "bracketpos": "M24T",
+      "courtid": -1,
+      "bracketteamid": 27,
+      "bracketteamname": "Team 27",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 24,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 27,
+          "teamname": "Team 27",
+          "playerid": 9880,
+          "firstname": "Bye",
+          "lastname": "User 120",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 27,
+          "teamname": "Team 27",
+          "playerid": 9881,
+          "firstname": "Bye",
+          "lastname": "User 119",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 24,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:25:34",
+          "matchEndTime": "2026-06-06 18:25:34"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 24,
+      "bracketpos": "M24B",
+      "courtid": -1,
+      "bracketteamid": 22,
+      "bracketteamname": "Team 22",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 24,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 169595,
+          "firstname": "Katie",
+          "lastname": "McCollum",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 171649,
+          "firstname": "Alyssa",
+          "lastname": "Harris",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DSC03939_Original-171649.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 24,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:25:34",
+          "matchEndTime": "2026-06-06 18:25:34"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 23,
+      "bracketpos": "M23T",
+      "courtid": -1,
+      "bracketteamid": 30,
+      "bracketteamname": "Team 30",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 23,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 30,
+          "teamname": "Team 30",
+          "playerid": 9886,
+          "firstname": "Bye",
+          "lastname": "User 114",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 30,
+          "teamname": "Team 30",
+          "playerid": 9887,
+          "firstname": "Bye",
+          "lastname": "User 113",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 23,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:18:49",
+          "matchEndTime": "2026-06-06 18:18:49"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 23,
+      "bracketpos": "M23B",
+      "courtid": -1,
+      "bracketteamid": 14,
+      "bracketteamname": "Team 14",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 23,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 139200,
+          "firstname": "Paula",
+          "lastname": "Avila",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_20211102_223112_114-139200.jpg "
+        },
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 237723,
+          "firstname": "Jessica",
+          "lastname": "Lopez",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 23,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:18:49",
+          "matchEndTime": "2026-06-06 18:18:49"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 22,
+      "bracketpos": "M22T",
+      "courtid": -1,
+      "bracketteamid": 26,
+      "bracketteamname": "Team 26",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 22,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 26,
+          "teamname": "Team 26",
+          "playerid": 9878,
+          "firstname": "Bye",
+          "lastname": "User 122",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 26,
+          "teamname": "Team 26",
+          "playerid": 9879,
+          "firstname": "Bye",
+          "lastname": "User 121",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 22,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:42",
+          "matchEndTime": "2026-06-06 17:52:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 22,
+      "bracketpos": "M22B",
+      "courtid": -1,
+      "bracketteamid": 23,
+      "bracketteamname": "Team 23",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 22,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9872,
+          "firstname": "Bye",
+          "lastname": "User 128",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9873,
+          "firstname": "Bye",
+          "lastname": "User 127",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 22,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:42",
+          "matchEndTime": "2026-06-06 17:52:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 21,
+      "bracketpos": "M21T",
+      "courtid": -1,
+      "bracketteamid": 31,
+      "bracketteamname": "Team 31",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 21,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 31,
+          "teamname": "Team 31",
+          "playerid": 9888,
+          "firstname": "Bye",
+          "lastname": "User 112",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 31,
+          "teamname": "Team 31",
+          "playerid": 9889,
+          "firstname": "Bye",
+          "lastname": "User 111",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 21,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 21,
+      "bracketpos": "M21B",
+      "courtid": -1,
+      "bracketteamid": 15,
+      "bracketteamname": "Team 15",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 21,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 115864,
+          "firstname": "Marissa",
+          "lastname": "Roth",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 169230,
+          "firstname": "Lex",
+          "lastname": "Oldham",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/B013704E-B325-4562-9EE0-861C20646F7E-169230.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 21,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 20,
+      "bracketpos": "M20T",
+      "courtid": -1,
+      "bracketteamid": 28,
+      "bracketteamname": "Team 28",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 20,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 28,
+          "teamname": "Team 28",
+          "playerid": 9882,
+          "firstname": "Bye",
+          "lastname": "User 118",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 28,
+          "teamname": "Team 28",
+          "playerid": 9883,
+          "firstname": "Bye",
+          "lastname": "User 117",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 20,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:15:58",
+          "matchEndTime": "2026-06-06 18:15:58"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 20,
+      "bracketpos": "M20B",
+      "courtid": -1,
+      "bracketteamid": 21,
+      "bracketteamname": "Team 21",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 20,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169546,
+          "firstname": "Christine",
+          "lastname": "Trischetti",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169867,
+          "firstname": "Robyn",
+          "lastname": "Kennedy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7E97E229-3F99-403C-8BE0-3CE6D5D58DE8-169867.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 20,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:15:58",
+          "matchEndTime": "2026-06-06 18:15:58"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 19,
+      "bracketpos": "M19T",
+      "courtid": -1,
+      "bracketteamid": 29,
+      "bracketteamname": "Team 29",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 19,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 29,
+          "teamname": "Team 29",
+          "playerid": 9884,
+          "firstname": "Bye",
+          "lastname": "User 116",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 29,
+          "teamname": "Team 29",
+          "playerid": 9885,
+          "firstname": "Bye",
+          "lastname": "User 115",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 19,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 19,
+      "bracketpos": "M19B",
+      "courtid": -1,
+      "bracketteamid": 13,
+      "bracketteamname": "Team 13",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 19,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 169604,
+          "firstname": "Morgan",
+          "lastname": "Blonde",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2423-169604.jpeg "
+        },
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 184463,
+          "firstname": "Hannah",
+          "lastname": "Haskins",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_6010-184463.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 19,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:38",
+          "matchEndTime": "2026-06-06 18:14:38"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 18,
+      "bracketpos": "M18T",
+      "courtid": -1,
+      "bracketteamid": 25,
+      "bracketteamname": "Team 25",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 18,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 25,
+          "teamname": "Team 25",
+          "playerid": 9876,
+          "firstname": "Bye",
+          "lastname": "User 124",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 25,
+          "teamname": "Team 25",
+          "playerid": 9877,
+          "firstname": "Bye",
+          "lastname": "User 123",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 18,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:42",
+          "matchEndTime": "2026-06-06 17:52:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 18,
+      "bracketpos": "M18B",
+      "courtid": -1,
+      "bracketteamid": 24,
+      "bracketteamname": "Team 24",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 18,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9874,
+          "firstname": "Bye",
+          "lastname": "User 126",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9875,
+          "firstname": "Bye",
+          "lastname": "User 125",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 18,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:42",
+          "matchEndTime": "2026-06-06 17:52:42"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 17,
+      "bracketpos": "M17T",
+      "courtid": -1,
+      "bracketteamid": 32,
+      "bracketteamname": "Team 32",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 17,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 32,
+          "teamname": "Team 32",
+          "playerid": 9890,
+          "firstname": "Bye",
+          "lastname": "User 110",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 32,
+          "teamname": "Team 32",
+          "playerid": 9891,
+          "firstname": "Bye",
+          "lastname": "User 109",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 17,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:26:14",
+          "matchEndTime": "2026-06-06 18:26:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 17,
+      "bracketpos": "M17B",
+      "courtid": -1,
+      "bracketteamid": 16,
+      "bracketteamname": "Team 16",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 17,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 26695,
+          "firstname": "Jackie",
+          "lastname": "Sayasone",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049133335Jackie Sayasone.JPG"
+        },
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 55717,
+          "firstname": "Trina",
+          "lastname": "Cayford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0925-55717.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 17,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:26:14",
+          "matchEndTime": "2026-06-06 18:26:14"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 16,
+      "bracketpos": "M16T",
+      "courtid": 26,
+      "bracketteamid": 11,
+      "bracketteamname": "Team 11",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 16,
+          "scoreaway": 19,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 29142,
+          "firstname": "Mailyn",
+          "lastname": "Dela Cruz Gigante",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049935338Maya Cupp.JPG"
+        },
+        {
+          "teamid": 11,
+          "teamname": "Team 11",
+          "playerid": 150007,
+          "firstname": "Keyara",
+          "lastname": "Peterson",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 16,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:24:25",
+          "matchEndTime": "2026-06-06 18:24:25"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 16,
+      "bracketpos": "M16B",
+      "courtid": 26,
+      "bracketteamid": 22,
+      "bracketteamname": "Team 22",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 16,
+          "scoreaway": 19,
+          "scorehome": 24,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 169595,
+          "firstname": "Katie",
+          "lastname": "McCollum",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 22,
+          "teamname": "Team 22",
+          "playerid": 171649,
+          "firstname": "Alyssa",
+          "lastname": "Harris",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DSC03939_Original-171649.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 16,
+          "gameID": 1,
+          "scoreHome": 24,
+          "scoreAway": 19,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:24:25",
+          "matchEndTime": "2026-06-06 18:24:25"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 15,
+      "bracketpos": "M15T",
+      "courtid": -1,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 15,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 147723,
+          "firstname": "Jaime",
+          "lastname": "Guffey",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 151694,
+          "firstname": "Desirrae",
+          "lastname": "McCoy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8734-151694.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 15,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:01",
+          "matchEndTime": "2026-06-06 17:52:01"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 15,
+      "bracketpos": "M15B",
+      "courtid": -1,
+      "bracketteamid": 27,
+      "bracketteamname": "Team 27",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 15,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 27,
+          "teamname": "Team 27",
+          "playerid": 9880,
+          "firstname": "Bye",
+          "lastname": "User 120",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 27,
+          "teamname": "Team 27",
+          "playerid": 9881,
+          "firstname": "Bye",
+          "lastname": "User 119",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 15,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:01",
+          "matchEndTime": "2026-06-06 17:52:01"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 14,
+      "bracketpos": "M14T",
+      "courtid": 25,
+      "bracketteamid": 14,
+      "bracketteamname": "Team 14",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 14,
+          "scoreaway": 21,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 139200,
+          "firstname": "Paula",
+          "lastname": "Avila",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_20211102_223112_114-139200.jpg "
+        },
+        {
+          "teamid": 14,
+          "teamname": "Team 14",
+          "playerid": 237723,
+          "firstname": "Jessica",
+          "lastname": "Lopez",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 14,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:17:32",
+          "matchEndTime": "2026-06-06 18:17:32"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 14,
+      "bracketpos": "M14B",
+      "courtid": 25,
+      "bracketteamid": 19,
+      "bracketteamname": "Team 19",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 14,
+          "scoreaway": 21,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 138343,
+          "firstname": "Dia",
+          "lastname": "Lee",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 19,
+          "teamname": "Team 19",
+          "playerid": 161535,
+          "firstname": "Linda",
+          "lastname": "Ford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2092-161535.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 14,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:17:32",
+          "matchEndTime": "2026-06-06 18:17:32"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 13,
+      "bracketpos": "M13T",
+      "courtid": -1,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 13,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 13876,
+          "firstname": "Lori",
+          "lastname": "Dool-Griswold",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/dool (53)-13876.jpeg "
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 55544,
+          "firstname": "Miranda",
+          "lastname": "Coy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/superhole-iv-1217-55544.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 13,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 13,
+      "bracketpos": "M13B",
+      "courtid": -1,
+      "bracketteamid": 30,
+      "bracketteamname": "Team 30",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 13,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 30,
+          "teamname": "Team 30",
+          "playerid": 9886,
+          "firstname": "Bye",
+          "lastname": "User 114",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 30,
+          "teamname": "Team 30",
+          "playerid": 9887,
+          "firstname": "Bye",
+          "lastname": "User 113",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 13,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 12,
+      "bracketpos": "M12T",
+      "courtid": -1,
+      "bracketteamid": 10,
+      "bracketteamname": "Team 10",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 12,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 135982,
+          "firstname": "Lisa",
+          "lastname": "Trissell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3382-135982.jpeg "
+        },
+        {
+          "teamid": 10,
+          "teamname": "Team 10",
+          "playerid": 200848,
+          "firstname": "Madison",
+          "lastname": "Collins",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 12,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 12,
+      "bracketpos": "M12B",
+      "courtid": -1,
+      "bracketteamid": 23,
+      "bracketteamname": "Team 23",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 12,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9872,
+          "firstname": "Bye",
+          "lastname": "User 128",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 23,
+          "teamname": "Team 23",
+          "playerid": 9873,
+          "firstname": "Bye",
+          "lastname": "User 127",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 12,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 11,
+      "bracketpos": "M11T",
+      "courtid": -1,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 11,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 114003,
+          "firstname": "Brittany",
+          "lastname": "Ethridge",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DA7A572A-498F-4EAD-A1AE-CAD3CD55F45F-114003.jpeg "
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 159517,
+          "firstname": "Candace",
+          "lastname": "DiGuilio",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3645-159517.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 11,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 11,
+      "bracketpos": "M11B",
+      "courtid": -1,
+      "bracketteamid": 26,
+      "bracketteamname": "Team 26",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 11,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 26,
+          "teamname": "Team 26",
+          "playerid": 9878,
+          "firstname": "Bye",
+          "lastname": "User 122",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 26,
+          "teamname": "Team 26",
+          "playerid": 9879,
+          "firstname": "Bye",
+          "lastname": "User 121",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 11,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 10,
+      "bracketpos": "M10T",
+      "courtid": 24,
+      "bracketteamid": 15,
+      "bracketteamname": "Team 15",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 10,
+          "scoreaway": 28,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 115864,
+          "firstname": "Marissa",
+          "lastname": "Roth",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 15,
+          "teamname": "Team 15",
+          "playerid": 169230,
+          "firstname": "Lex",
+          "lastname": "Oldham",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/B013704E-B325-4562-9EE0-861C20646F7E-169230.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 10,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 28,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:13:00",
+          "matchEndTime": "2026-06-06 18:13:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 10,
+      "bracketpos": "M10B",
+      "courtid": 24,
+      "bracketteamid": 18,
+      "bracketteamname": "Team 18",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 10,
+          "scoreaway": 28,
+          "scorehome": 2,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 36063,
+          "firstname": "Isabella",
+          "lastname": "Surprenant",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7FE6CC59-FCFD-43A3-B727-AC7476660857-36063.jpeg "
+        },
+        {
+          "teamid": 18,
+          "teamname": "Team 18",
+          "playerid": 149629,
+          "firstname": "Caitlyn",
+          "lastname": "Allshouse",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_3999-149629.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 10,
+          "gameID": 1,
+          "scoreHome": 2,
+          "scoreAway": 28,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:13:00",
+          "matchEndTime": "2026-06-06 18:13:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 9,
+      "bracketpos": "M9T",
+      "courtid": -1,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 9,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 22851,
+          "firstname": "Kara",
+          "lastname": "MacKay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Kara Mackay-12-22851.jpeg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 39635,
+          "firstname": "Diane",
+          "lastname": "Fox",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Amy Oscar-11-39635.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 9,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 9,
+      "bracketpos": "M9B",
+      "courtid": -1,
+      "bracketteamid": 31,
+      "bracketteamname": "Team 31",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 9,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 31,
+          "teamname": "Team 31",
+          "playerid": 9888,
+          "firstname": "Bye",
+          "lastname": "User 112",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 31,
+          "teamname": "Team 31",
+          "playerid": 9889,
+          "firstname": "Bye",
+          "lastname": "User 111",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 9,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 8,
+      "bracketpos": "M8T",
+      "courtid": 23,
+      "bracketteamid": 12,
+      "bracketteamname": "Team 12",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 8,
+          "scoreaway": 6,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 5309,
+          "firstname": "Rosie",
+          "lastname": "Streker",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613050352067Rosie Streker.JPG"
+        },
+        {
+          "teamid": 12,
+          "teamname": "Team 12",
+          "playerid": 31754,
+          "firstname": "Debra",
+          "lastname": "Odum",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/ACL Pro Pic-31754.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 8,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 6,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:55",
+          "matchEndTime": "2026-06-06 18:14:55"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 8,
+      "bracketpos": "M8B",
+      "courtid": 23,
+      "bracketteamid": 21,
+      "bracketteamname": "Team 21",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 8,
+          "scoreaway": 6,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169546,
+          "firstname": "Christine",
+          "lastname": "Trischetti",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 21,
+          "teamname": "Team 21",
+          "playerid": 169867,
+          "firstname": "Robyn",
+          "lastname": "Kennedy",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/7E97E229-3F99-403C-8BE0-3CE6D5D58DE8-169867.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 8,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 6,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:14:55",
+          "matchEndTime": "2026-06-06 18:14:55"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 7,
+      "bracketpos": "M7T",
+      "courtid": -1,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 7,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 10757,
+          "firstname": "Kamryn",
+          "lastname": "Belvin",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049479161Kamryn Belvin.jpg"
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 118285,
+          "firstname": "Elizabeth",
+          "lastname": "Tennyson",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_7555-118285.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 7,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 7,
+      "bracketpos": "M7B",
+      "courtid": -1,
+      "bracketteamid": 28,
+      "bracketteamname": "Team 28",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 7,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 28,
+          "teamname": "Team 28",
+          "playerid": 9882,
+          "firstname": "Bye",
+          "lastname": "User 118",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 28,
+          "teamname": "Team 28",
+          "playerid": 9883,
+          "firstname": "Bye",
+          "lastname": "User 117",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 7,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 6,
+      "bracketpos": "M6T",
+      "courtid": 22,
+      "bracketteamid": 13,
+      "bracketteamname": "Team 13",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 6,
+          "scoreaway": 24,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 169604,
+          "firstname": "Morgan",
+          "lastname": "Blonde",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2423-169604.jpeg "
+        },
+        {
+          "teamid": 13,
+          "teamname": "Team 13",
+          "playerid": 184463,
+          "firstname": "Hannah",
+          "lastname": "Haskins",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_6010-184463.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 6,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:13:35",
+          "matchEndTime": "2026-06-06 18:13:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 6,
+      "bracketpos": "M6B",
+      "courtid": 22,
+      "bracketteamid": 20,
+      "bracketteamname": "Team 20",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 6,
+          "scoreaway": 24,
+          "scorehome": 6,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 196139,
+          "firstname": "Abby",
+          "lastname": "Fincher",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0161-196139.jpeg "
+        },
+        {
+          "teamid": 20,
+          "teamname": "Team 20",
+          "playerid": 202465,
+          "firstname": "Mary",
+          "lastname": "Thao",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_4170-202465.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 6,
+          "gameID": 1,
+          "scoreHome": 6,
+          "scoreAway": 24,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:13:35",
+          "matchEndTime": "2026-06-06 18:13:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 5,
+      "bracketpos": "M5T",
+      "courtid": -1,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 5,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 14235,
+          "firstname": "Samantha",
+          "lastname": "Finley",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1587757567363B2B64933-2633-4B14-889E-2854C08BA1EC.jpeg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 118444,
+          "firstname": "Gina",
+          "lastname": "Ramirez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_2856-118444.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 5,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 5,
+      "bracketpos": "M5B",
+      "courtid": -1,
+      "bracketteamid": 29,
+      "bracketteamname": "Team 29",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 5,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 29,
+          "teamname": "Team 29",
+          "playerid": 9884,
+          "firstname": "Bye",
+          "lastname": "User 116",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 29,
+          "teamname": "Team 29",
+          "playerid": 9885,
+          "firstname": "Bye",
+          "lastname": "User 115",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 5,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 4,
+      "bracketpos": "M4T",
+      "courtid": -1,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 4,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9709,
+          "firstname": "Diane",
+          "lastname": "Brummett",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Bazaart_7C023029-60A9-47D9-8206-F611086AD50C-9709.jpeg "
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 198589,
+          "firstname": "Kelly",
+          "lastname": "Paul",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 4,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 4,
+      "bracketpos": "M4B",
+      "courtid": -1,
+      "bracketteamid": 24,
+      "bracketteamname": "Team 24",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 4,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9874,
+          "firstname": "Bye",
+          "lastname": "User 126",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 24,
+          "teamname": "Team 24",
+          "playerid": 9875,
+          "firstname": "Bye",
+          "lastname": "User 125",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 4,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 3,
+      "bracketpos": "M3T",
+      "courtid": -1,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 3,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 43379,
+          "firstname": "Allison",
+          "lastname": "Springer",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613048226359Allison Peters.JPG"
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 61675,
+          "firstname": "Katy",
+          "lastname": "Bartell",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Katy Bartell-4903-61675.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 3,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 3,
+      "bracketpos": "M3B",
+      "courtid": -1,
+      "bracketteamid": 25,
+      "bracketteamname": "Team 25",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 3,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 25,
+          "teamname": "Team 25",
+          "playerid": 9876,
+          "firstname": "Bye",
+          "lastname": "User 124",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 25,
+          "teamname": "Team 25",
+          "playerid": 9877,
+          "firstname": "Bye",
+          "lastname": "User 123",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 3,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 2,
+      "bracketpos": "M2T",
+      "courtid": 21,
+      "bracketteamid": 16,
+      "bracketteamname": "Team 16",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 2,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 26695,
+          "firstname": "Jackie",
+          "lastname": "Sayasone",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1613049133335Jackie Sayasone.JPG"
+        },
+        {
+          "teamid": 16,
+          "teamname": "Team 16",
+          "playerid": 55717,
+          "firstname": "Trina",
+          "lastname": "Cayford",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_0925-55717.png "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 2,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:26:10",
+          "matchEndTime": "2026-06-06 18:26:10"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 2,
+      "bracketpos": "M2B",
+      "courtid": 21,
+      "bracketteamid": 17,
+      "bracketteamname": "Team 17",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 2,
+          "scoreaway": 21,
+          "scorehome": 10,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 162648,
+          "firstname": "Zoey",
+          "lastname": "Kallio",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 17,
+          "teamname": "Team 17",
+          "playerid": 171643,
+          "firstname": "RaqueL",
+          "lastname": "Padilla",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/IMG_8716-171643.jpeg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 2,
+          "gameID": 1,
+          "scoreHome": 10,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 18:26:10",
+          "matchEndTime": "2026-06-06 18:26:10"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 1,
+      "bracketpos": "M1T",
+      "courtid": -1,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 1,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 123379,
+          "firstname": "Kiersten",
+          "lastname": "Leos",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 125495,
+          "firstname": "Dawn",
+          "lastname": "Fay",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/DFAY-125495.jpg "
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 1,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 1,
+      "bracketpos": "M1B",
+      "courtid": -1,
+      "bracketteamid": 32,
+      "bracketteamname": "Team 32",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 248182,
+          "matchid": 1,
+          "scoreaway": 10,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 32,
+          "teamname": "Team 32",
+          "playerid": 9890,
+          "firstname": "Bye",
+          "lastname": "User 110",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 32,
+          "teamname": "Team 32",
+          "playerid": 9891,
+          "firstname": "Bye",
+          "lastname": "User 109",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 248182,
+          "matchID": 1,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 10,
+          "matchStatusID": 5,
+          "matchStartTime": "2026-06-06 17:52:00",
+          "matchEndTime": "2026-06-06 17:52:00"
+        }
+      ]
+    }
+  ],
+  "rosterDetails": {
+    "leaguename": "ACL Fort Worth Signature Open - Open Women's Doubles",
+    "team_count": 32
+  },
+  "playoffsTypeID": 2,
+  "cachedData": true,
+  "_fetchedAt": "2026-06-20T10:48:01.418970+00:00",
+  "_aclResponseDate": "Sat, 20 Jun 2026 10:48:01 GMT",
+  "_aclEtag": "W/\"1b241-IC54NU1bWpOvSUXDVJ0BZkncG4o\""
+}

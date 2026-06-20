@@ -1,0 +1,1900 @@
+{
+  "status": "OK",
+  "message": "Successfully Get Bracket Data",
+  "eventInfo": {
+    "leagueYear": 2020,
+    "leagueyear": 2020,
+    "eventYear": 2020,
+    "leagueSessionID": 1,
+    "leaguesessionid": 1,
+    "leagueID": 25082,
+    "leagueid": 25082,
+    "eventID": 25082,
+    "leaguename": "jan 24 draw 2",
+    "leagueName": "jan 24 draw 2",
+    "eventName": "jan 24 draw 2",
+    "leagueTypeCOBS": "Y",
+    "tourID": -1,
+    "leagueDay": "Thu",
+    "leagueTime": "7:45 PM",
+    "starttime": "7:45 PM",
+    "startdate": "2020-01-24",
+    "leaguestartdate": "2020-01-24",
+    "leagueStartDate": "2020-01-24",
+    "courtTotal": 1,
+    "courtTotalType": "R",
+    "courtTotalDetails": "4",
+    "eventtype": "L",
+    "eventType": "L",
+    "eventsubtype": "O",
+    "eventSubType": "O",
+    "eventGenderType": "B",
+    "eventBaggerLevel": "-1",
+    "eventPlayerType": "E",
+    "leagueStatus": "C",
+    "leagueESPNFlag": "N",
+    "sendCourtSMS": "N",
+    "sendScoreSMS": "N",
+    "teamTourney": "N",
+    "leagueBlindDraw": 1,
+    "blindDraw": 1,
+    "matchtype": "D",
+    "matchType": "D",
+    "brackettype": "D",
+    "bracketType": "D",
+    "winnerBracketType": 0,
+    "loserBracketType": 0,
+    "preRegistrationOpen": "Y",
+    "eventFee": 5,
+    "leagueNotes": "",
+    "leaguePreRegistrationOpen": "Y",
+    "espnFlag": "N",
+    "fantasyExternalID": -1,
+    "fantasyExternalEventInfo": null,
+    "eventCharityFlag": "N",
+    "eventCharityAmountRaised": 0,
+    "eventGroupID": 1,
+    "eventGroupSubID": "L",
+    "eventGroupCollegeName": "undefined",
+    "eventGroupCollegeType": "",
+    "liveRoundStats": "0",
+    "eventScoringType": "ANY",
+    "roundLimit": -1,
+    "roundLimitBracket": -1,
+    "playerPoolSize": 0,
+    "redZoneActiveFlag": 0,
+    "autoAssignCourt": "N",
+    "reservedCourtID": "-1",
+    "deviceDisplayMode": "BASIC",
+    "entryFeePerPersonGoldPlatinum": 0,
+    "additionalMoneyForPayouts": 0,
+    "addDirectorNonMemberFeeToPayout": "0.00",
+    "entryFeesCollectedOnline": 0,
+    "entryFeesCollectedCash": 0,
+    "payoutPercentage": 0,
+    "totalAmountPaidOut": 0,
+    "totalPrizePool": 0,
+    "ACLFeesCollected": 0,
+    "directorPerPlayerFee": 0,
+    "directorRevenue": 0,
+    "eventPaid": "N",
+    "eventPaidTimeStamp": null,
+    "totalEntryFeesCollected": 0,
+    "matchPlayFormat": "B",
+    "matchPlaySinglesSpots": 0,
+    "matchPlayDoublesSpots": 0,
+    "totalMatchPlaySpots": 0,
+    "matchPlayBracketFormat": "D",
+    "aclLite": 0,
+    "indoor": 0,
+    "holdMySpotStatus": null,
+    "holdMySpotMaxTeamCount": null,
+    "holdMySpotPaymentOptions": null,
+    "useABGrouping": 0,
+    "leagueLocationID": 453,
+    "leagueLocationName": "Williamsport Moose Lodge",
+    "locationName": "Williamsport Moose Lodge",
+    "leagueAddress": "119 Conococheague St.",
+    "locationAddress": "119 Conococheague St.",
+    "locationCity": "Williamsport",
+    "locationState": "MD",
+    "locationZip": "21795",
+    "leaguePhone": "",
+    "leagueWebsite": "",
+    "leagueEmailAddress": "",
+    "leagueImage": "",
+    "leagueMiscDetails": null,
+    "locationLng": -77.821006,
+    "locationLat": 39.601315,
+    "countryCode": "US",
+    "fldPlayerID": 9266,
+    "eventAdminID": 9266,
+    "adminID": 9266,
+    "playerFirstName": "Peggy",
+    "playerLastName": "Crosco",
+    "playerEmail": "pcrosco@gmail.com",
+    "adminFirstName": "Peggy",
+    "adminLastName": "Crosco",
+    "adminEmail": "pcrosco@gmail.com",
+    "eventBucketID": 5,
+    "bucketID": 5,
+    "eventGroupDesc": "ACL",
+    "teamCount": 9,
+    "eventListType": "bracket",
+    "superEventID": null,
+    "superEventName": null,
+    "superEventStatus": null
+  },
+  "bracketDetails": [
+    null,
+    {
+      "roundid": null,
+      "rounddesc": "FINAL",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 16,
+      "bracketpos": "M16T",
+      "courtid": 2,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 16,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 9267,
+          "firstname": "Brianna",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1540658349976Snapchat-1723662187.jpg"
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 21245,
+          "firstname": "George",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 16,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 22:29:44",
+          "matchEndTime": "2020-01-24 22:29:44"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "FINAL",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 16,
+      "bracketpos": "M16B",
+      "courtid": 2,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 16,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 8959,
+          "firstname": "Todd",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 26625,
+          "firstname": "Robert",
+          "lastname": "Gipe",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 16,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 22:29:44",
+          "matchEndTime": "2020-01-24 22:29:44"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Semi-Finals",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 15,
+      "bracketpos": "M15T",
+      "courtid": 3,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 15,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 8959,
+          "firstname": "Todd",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 26625,
+          "firstname": "Robert",
+          "lastname": "Gipe",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 15,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 22:02:00",
+          "matchEndTime": "2020-01-24 22:02:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Semi-Finals",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 15,
+      "bracketpos": "M15B",
+      "courtid": 3,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 15,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 15,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 22:02:00",
+          "matchEndTime": "2020-01-24 22:02:00"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Quarter-Finals",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 14,
+      "bracketpos": "M14T",
+      "courtid": 2,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 14,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 11800,
+          "firstname": "Randy",
+          "lastname": "Wyand",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Resized_20181130_080902-11800.jpg "
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 29459,
+          "firstname": "kalena",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 14,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:48:12",
+          "matchEndTime": "2020-01-24 21:48:12"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Quarter-Finals",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 14,
+      "bracketpos": "M14B",
+      "courtid": 2,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 14,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 14,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:48:12",
+          "matchEndTime": "2020-01-24 21:48:12"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Quarter-Finals",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 13,
+      "bracketpos": "M13T",
+      "courtid": 3,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 13,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 9267,
+          "firstname": "Brianna",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1540658349976Snapchat-1723662187.jpg"
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 21245,
+          "firstname": "George",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 13,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:38:28",
+          "matchEndTime": "2020-01-24 21:38:28"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Quarter-Finals",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 13,
+      "bracketpos": "M13B",
+      "courtid": 3,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 13,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 8959,
+          "firstname": "Todd",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 26625,
+          "firstname": "Robert",
+          "lastname": "Gipe",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 13,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:38:28",
+          "matchEndTime": "2020-01-24 21:38:28"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 12,
+      "bracketpos": "M12T",
+      "courtid": 1,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 12,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 11800,
+          "firstname": "Randy",
+          "lastname": "Wyand",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Resized_20181130_080902-11800.jpg "
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 29459,
+          "firstname": "kalena",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 12,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:28:03",
+          "matchEndTime": "2020-01-24 21:28:03"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 12,
+      "bracketpos": "M12B",
+      "courtid": 1,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 12,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9266,
+          "firstname": "Peggy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1543974468275FB_IMG_1543877842754.jpg"
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 49942,
+          "firstname": "Francisco",
+          "lastname": "Hernandez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1576645492000FB_IMG_1576573338271.jpg"
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 12,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:28:03",
+          "matchEndTime": "2020-01-24 21:28:03"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 11,
+      "bracketpos": "M11T",
+      "courtid": 2,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 11,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 11,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:28:23",
+          "matchEndTime": "2020-01-24 21:28:23"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 4",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 11,
+      "bracketpos": "M11B",
+      "courtid": 2,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 11,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 51453,
+          "firstname": "Fluffy",
+          "lastname": "Saunders",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 55726,
+          "firstname": "steve",
+          "lastname": "pindell",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 11,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:28:23",
+          "matchEndTime": "2020-01-24 21:28:23"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 10,
+      "bracketpos": "M10T",
+      "courtid": 3,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 10,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 11800,
+          "firstname": "Randy",
+          "lastname": "Wyand",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Resized_20181130_080902-11800.jpg "
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 29459,
+          "firstname": "kalena",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 10,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:17:27",
+          "matchEndTime": "2020-01-24 21:17:27"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 10,
+      "bracketpos": "M10B",
+      "courtid": 3,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 10,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 8959,
+          "firstname": "Todd",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 26625,
+          "firstname": "Robert",
+          "lastname": "Gipe",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 10,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:17:27",
+          "matchEndTime": "2020-01-24 21:17:27"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 9,
+      "bracketpos": "M9T",
+      "courtid": 2,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 9,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 51453,
+          "firstname": "Fluffy",
+          "lastname": "Saunders",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 55726,
+          "firstname": "steve",
+          "lastname": "pindell",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 9,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:54:35",
+          "matchEndTime": "2020-01-24 20:54:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 9,
+      "bracketpos": "M9B",
+      "courtid": 2,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 9,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 9267,
+          "firstname": "Brianna",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1540658349976Snapchat-1723662187.jpg"
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 21245,
+          "firstname": "George",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 9,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:54:35",
+          "matchEndTime": "2020-01-24 20:54:35"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 8,
+      "bracketpos": "M8T",
+      "courtid": 2,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 8,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9266,
+          "firstname": "Peggy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1543974468275FB_IMG_1543877842754.jpg"
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 49942,
+          "firstname": "Francisco",
+          "lastname": "Hernandez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1576645492000FB_IMG_1576573338271.jpg"
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 8,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:05:21",
+          "matchEndTime": "2020-01-24 21:05:21"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 8,
+      "bracketpos": "M8B",
+      "courtid": 2,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 8,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 12284,
+          "firstname": "Tracy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1550436144883received_1173911909413607.jpeg"
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 30105,
+          "firstname": "Jason",
+          "lastname": "Lucas",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 8,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:05:21",
+          "matchEndTime": "2020-01-24 21:05:21"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 7,
+      "bracketpos": "M7T",
+      "courtid": 1,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 7,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 22650,
+          "firstname": "Josh",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/154558473239320181205_105742.jpg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 51454,
+          "firstname": "Jason",
+          "lastname": "Saunders",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 7,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:13:59",
+          "matchEndTime": "2020-01-24 21:13:59"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 3",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 7,
+      "bracketpos": "M7B",
+      "courtid": 1,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 7,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 7,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:13:59",
+          "matchEndTime": "2020-01-24 21:13:59"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 6,
+      "bracketpos": "M6T",
+      "courtid": 3,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 6,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9266,
+          "firstname": "Peggy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1543974468275FB_IMG_1543877842754.jpg"
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 49942,
+          "firstname": "Francisco",
+          "lastname": "Hernandez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1576645492000FB_IMG_1576573338271.jpg"
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 6,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:54:46",
+          "matchEndTime": "2020-01-24 20:54:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "L",
+      "bracketmatchid": 6,
+      "bracketpos": "M6B",
+      "courtid": 3,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 6,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 48155,
+          "firstname": "tyler",
+          "lastname": "brown",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/FB_IMG_1631767577926-48155.jpg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 55727,
+          "firstname": "mary",
+          "lastname": "pindell",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 6,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:54:46",
+          "matchEndTime": "2020-01-24 20:54:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 5,
+      "bracketpos": "M5T",
+      "courtid": 4,
+      "bracketteamid": 1,
+      "bracketteamname": "Team 1",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 5,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 11800,
+          "firstname": "Randy",
+          "lastname": "Wyand",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/Resized_20181130_080902-11800.jpg "
+        },
+        {
+          "teamid": 1,
+          "teamname": "Team 1",
+          "playerid": 29459,
+          "firstname": "kalena",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 5,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:02:29",
+          "matchEndTime": "2020-01-24 21:02:29"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 5,
+      "bracketpos": "M5B",
+      "courtid": 4,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 5,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 5,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 21:02:29",
+          "matchEndTime": "2020-01-24 21:02:29"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 4,
+      "bracketpos": "M4T",
+      "courtid": 1,
+      "bracketteamid": 4,
+      "bracketteamname": "Team 4",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 4,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 22650,
+          "firstname": "Josh",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/154558473239320181205_105742.jpg"
+        },
+        {
+          "teamid": 4,
+          "teamname": "Team 4",
+          "playerid": 51454,
+          "firstname": "Jason",
+          "lastname": "Saunders",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 4,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:55:17",
+          "matchEndTime": "2020-01-24 20:55:17"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 4,
+      "bracketpos": "M4B",
+      "courtid": 1,
+      "bracketteamid": 5,
+      "bracketteamname": "Team 5",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 4,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 8959,
+          "firstname": "Todd",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 5,
+          "teamname": "Team 5",
+          "playerid": 26625,
+          "firstname": "Robert",
+          "lastname": "Gipe",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 4,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:55:17",
+          "matchEndTime": "2020-01-24 20:55:17"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 3,
+      "bracketpos": "M3T",
+      "courtid": 2,
+      "bracketteamid": 3,
+      "bracketteamname": "Team 3",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 3,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 9267,
+          "firstname": "Brianna",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1540658349976Snapchat-1723662187.jpg"
+        },
+        {
+          "teamid": 3,
+          "teamname": "Team 3",
+          "playerid": 21245,
+          "firstname": "George",
+          "lastname": "Dilling",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 3,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:41:46",
+          "matchEndTime": "2020-01-24 20:41:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 3,
+      "bracketpos": "M3B",
+      "courtid": 2,
+      "bracketteamid": 6,
+      "bracketteamname": "Team 6",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 3,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 12284,
+          "firstname": "Tracy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1550436144883received_1173911909413607.jpeg"
+        },
+        {
+          "teamid": 6,
+          "teamname": "Team 6",
+          "playerid": 30105,
+          "firstname": "Jason",
+          "lastname": "Lucas",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 3,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:41:46",
+          "matchEndTime": "2020-01-24 20:41:46"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 2,
+      "bracketpos": "M2T",
+      "courtid": 1,
+      "bracketteamid": 2,
+      "bracketteamname": "Team 2",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 2,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 48155,
+          "firstname": "tyler",
+          "lastname": "brown",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/FB_IMG_1631767577926-48155.jpg "
+        },
+        {
+          "teamid": 2,
+          "teamname": "Team 2",
+          "playerid": 55727,
+          "firstname": "mary",
+          "lastname": "pindell",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 2,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:31:22",
+          "matchEndTime": "2020-01-24 20:31:22"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 2",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 2,
+      "bracketpos": "M2B",
+      "courtid": 1,
+      "bracketteamid": 7,
+      "bracketteamname": "Team 7",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 2,
+          "scoreaway": 21,
+          "scorehome": 0,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 51453,
+          "firstname": "Fluffy",
+          "lastname": "Saunders",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 7,
+          "teamname": "Team 7",
+          "playerid": 55726,
+          "firstname": "steve",
+          "lastname": "pindell",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 2,
+          "gameID": 1,
+          "scoreHome": 0,
+          "scoreAway": 21,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:31:22",
+          "matchEndTime": "2020-01-24 20:31:22"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 1,
+      "bracketpos": "M1T",
+      "courtid": 3,
+      "bracketteamid": 8,
+      "bracketteamname": "Team 8",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 1,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 54086,
+          "firstname": "Derrick",
+          "lastname": "Dockery",
+          "playernickname": "",
+          "photoimage": null
+        },
+        {
+          "teamid": 8,
+          "teamname": "Team 8",
+          "playerid": 56247,
+          "firstname": "Johnny",
+          "lastname": "Walker",
+          "playernickname": "",
+          "photoimage": null
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 1,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 1,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:43:05",
+          "matchEndTime": "2020-01-24 20:43:05"
+        }
+      ]
+    },
+    {
+      "roundid": null,
+      "rounddesc": "Round 1",
+      "forfeit": false,
+      "bracketside": "W",
+      "bracketmatchid": 1,
+      "bracketpos": "M1B",
+      "courtid": 3,
+      "bracketteamid": 9,
+      "bracketteamname": "Team 9",
+      "scores": [
+        {
+          "gameno": 1,
+          "leagueid": 25082,
+          "matchid": 1,
+          "scoreaway": 0,
+          "scorehome": 21,
+          "weekid": 1
+        }
+      ],
+      "player_info": [
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 9266,
+          "firstname": "Peggy",
+          "lastname": "Crosco",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1543974468275FB_IMG_1543877842754.jpg"
+        },
+        {
+          "teamid": 9,
+          "teamname": "Team 9",
+          "playerid": 49942,
+          "firstname": "Francisco",
+          "lastname": "Hernandez",
+          "playernickname": "",
+          "photoimage": "https://mysqlvm.blob.core.windows.net/acl-player-photos/1576645492000FB_IMG_1576573338271.jpg"
+        }
+      ],
+      "matchStatusID": 5,
+      "matchSortPos": 2,
+      "gameResults": [
+        {
+          "leagueID": 25082,
+          "matchID": 1,
+          "gameID": 1,
+          "scoreHome": 21,
+          "scoreAway": 0,
+          "matchStatusID": 5,
+          "matchStartTime": "2020-01-24 20:43:05",
+          "matchEndTime": "2020-01-24 20:43:05"
+        }
+      ]
+    }
+  ],
+  "rosterDetails": {
+    "leaguename": "jan 24 draw 2",
+    "team_count": 9
+  },
+  "playoffsTypeID": 2,
+  "cachedData": false,
+  "_fetchedAt": "2026-06-20T01:27:59.297928+00:00",
+  "_aclResponseDate": "Sat, 20 Jun 2026 01:27:59 GMT",
+  "_aclEtag": "W/\"719b-PSsuyjb7UREHiXiN69BTETafB0U\""
+}

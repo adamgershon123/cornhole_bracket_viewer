@@ -328,6 +328,27 @@ export async function refreshPrivatePlayerDirectory(token:string): Promise<any> 
   return response.json();
 }
 
+export async function fetchPrivateDirectorDirectory(token:string, options:any={}): Promise<any> {
+  const query = new URLSearchParams({
+    view: options.view || 'DIRECTORS', search: options.search || '', state: options.state || 'ALL',
+    dateFrom: options.dateFrom || '', dateTo: options.dateTo || '', limit: String(options.limit || 100),
+  });
+  const response = await fetch(`${API_BASE}/api/private/director-directory?${query}`, {
+    cache: 'no-store', headers: { 'X-Player-Directory-Token': token },
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
+export async function refreshPrivateDirectorDirectory(token:string): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/private/director-directory/refresh`, {
+    method: 'POST', headers: {'content-type':'application/json','X-Player-Directory-Token':token},
+    body: JSON.stringify({limit:1000}),
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
 export async function runPredictionLifecycle(): Promise<any> {
   const response = await fetch(`${API_BASE}/api/prediction-operations/run`, {
     method: 'POST',

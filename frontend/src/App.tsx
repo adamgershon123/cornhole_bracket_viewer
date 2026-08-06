@@ -21,6 +21,7 @@ import VenueAnalyticsView from './components/VenueAnalyticsView';
 import PredictivePlayerProfileView from './components/PredictivePlayerProfileView';
 import PlayerAnalyticsLeaderboardView from './components/PlayerAnalyticsLeaderboardView';
 import PlayerDirectoryView from './components/PlayerDirectoryView';
+import DirectorDirectoryView from './components/DirectorDirectoryView';
 import { BracketProbabilities } from './components/BracketProbabilities';
 import { PlayerMode } from './components/PlayerMode';
 import { ViewerMode } from './components/ViewerMode';
@@ -51,7 +52,7 @@ type PlayerEvent = {
 
 const BRACKET_REFRESH_MS = 120000;
 const MATCH_STATS_REFRESH_MS = 10000;
-type AppView = 'TOURNAMENT' | 'BRACKET_FLOW' | 'BRACKET_PREDICTIONS' | 'GAME' | 'STANDINGS' | 'STATISTICS' | 'PREDICTIONS' | 'PROFILE' | 'LEADERBOARD' | 'DIRECTORY' | 'VENUES';
+type AppView = 'TOURNAMENT' | 'BRACKET_FLOW' | 'BRACKET_PREDICTIONS' | 'GAME' | 'STANDINGS' | 'STATISTICS' | 'PREDICTIONS' | 'PROFILE' | 'LEADERBOARD' | 'DIRECTORY' | 'DIRECTORS' | 'VENUES';
 const SEASON_SETTINGS_KEY = 'cornhole.lastSeasonSettings';
 const SEASON_DATA_KEY = 'cornhole.lastSeasonStandings';
 
@@ -115,6 +116,7 @@ function getInitialView(): AppView {
   if (value === 'profile' || value === 'predictive-profile') return 'PROFILE';
   if (value === 'leaderboard' || value === 'player-rankings') return 'LEADERBOARD';
   if (value === 'directory' || value === 'player-directory') return 'DIRECTORY';
+  if (value === 'directors' || value === 'director-directory') return 'DIRECTORS';
   if (value === 'venues' || value === 'venue-analytics') return 'VENUES';
 
   if (value === 'bracket-flow') {
@@ -1727,7 +1729,7 @@ async function loadPlayerEvents(
         )}
         {!isSwapEvent ? (
           <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
-            {(['TOURNAMENT', 'BRACKET_FLOW', 'BRACKET_PREDICTIONS', 'STATISTICS', 'STANDINGS', 'PREDICTIONS', 'PROFILE', 'LEADERBOARD', 'DIRECTORY', 'VENUES'] as const).map(nextView => (
+            {(['TOURNAMENT', 'BRACKET_FLOW', 'BRACKET_PREDICTIONS', 'STATISTICS', 'STANDINGS', 'PREDICTIONS', 'PROFILE', 'LEADERBOARD', 'DIRECTORY', 'DIRECTORS', 'VENUES'] as const).map(nextView => (
               <button
                 key={nextView}
                 type="button"
@@ -1748,6 +1750,8 @@ async function loadPlayerEvents(
                               ? 'leaderboard'
                             : nextView === 'DIRECTORY'
                               ? 'directory'
+                            : nextView === 'DIRECTORS'
+                              ? 'directors'
                               : nextView === 'VENUES'
                                 ? 'venues'
                               : nextView === 'PROFILE'
@@ -1765,7 +1769,7 @@ async function loadPlayerEvents(
                 }`}
                 aria-pressed={view === nextView}
               >
-                {nextView === 'TOURNAMENT' ? 'Matches' : nextView === 'BRACKET_FLOW' ? 'Bracket Flow' : nextView === 'BRACKET_PREDICTIONS' ? 'Bracket Predictions' : nextView === 'STATISTICS' ? 'Tournament Stats' : nextView === 'STANDINGS' ? 'Season Stats' : nextView === 'PREDICTIONS' ? 'Predictions' : nextView === 'PROFILE' ? 'Player Profile' : nextView === 'DIRECTORY' ? 'Player Directory' : nextView === 'VENUES' ? 'Venues' : 'Player Rankings'}
+                {nextView === 'TOURNAMENT' ? 'Matches' : nextView === 'BRACKET_FLOW' ? 'Bracket Flow' : nextView === 'BRACKET_PREDICTIONS' ? 'Bracket Predictions' : nextView === 'STATISTICS' ? 'Tournament Stats' : nextView === 'STANDINGS' ? 'Season Stats' : nextView === 'PREDICTIONS' ? 'Predictions' : nextView === 'PROFILE' ? 'Player Profile' : nextView === 'DIRECTORY' ? 'Player Directory' : nextView === 'DIRECTORS' ? 'Directors' : nextView === 'VENUES' ? 'Venues' : 'Player Rankings'}
               </button>
             ))}
           </div>
@@ -1777,6 +1781,7 @@ async function loadPlayerEvents(
               ['PROFILE', 'Player Profile'],
               ['LEADERBOARD', 'Player Rankings'],
               ['DIRECTORY', 'Player Directory'],
+              ['DIRECTORS', 'Directors'],
               ['VENUES', 'Venues'],
             ] as const).map(([nextView, label]) => (
               <button
@@ -1793,6 +1798,8 @@ async function loadPlayerEvents(
                           ? 'venues'
                         : nextView === 'DIRECTORY'
                           ? 'directory'
+                        : nextView === 'DIRECTORS'
+                          ? 'directors'
                         : nextView === 'PROFILE'
                           ? 'profile'
                           : 'leaderboard',
@@ -2127,6 +2134,7 @@ async function loadPlayerEvents(
 {view === 'PROFILE' && <PredictivePlayerProfileView playerId={new URLSearchParams(location.search).get('playerId') || '142125'} />}
 {view === 'LEADERBOARD' && <PlayerAnalyticsLeaderboardView />}
 {view === 'DIRECTORY' && <PlayerDirectoryView />}
+{view === 'DIRECTORS' && <DirectorDirectoryView />}
 {view === 'VENUES' && <VenueAnalyticsView />}
 {statusRoute && loading && (
   <section className="mx-auto mt-6 max-w-xl rounded-[28px] border border-sky-300/20 bg-zinc-950 p-8 text-center">

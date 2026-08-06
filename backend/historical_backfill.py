@@ -600,6 +600,8 @@ def start_worker() -> None:
                     seed_known_players(conn)
                 elif lane == CONTACT_LANE:
                     seed_contact_backfill(conn)
+                    from director_directory import refresh_director_index
+                    refresh_director_index(conn, limit=250)
                 conn.execute(
                     """
                     UPDATE historical_backfill_state
@@ -715,6 +717,8 @@ def run_one(
             seed_known_players(conn)
         elif lane == CONTACT_LANE:
             seed_contact_backfill(conn)
+            from director_directory import refresh_director_index
+            refresh_director_index(conn, limit=250)
         return {"status": "IDLE"}
     item = dict(item)
     now = utc_now()
@@ -769,17 +773,20 @@ def _process_item(
 ) -> dict[str, Any]:
     if item["item_type"] == "CONTACT_EVENT":
         from player_contact_directory import refresh_player_contact_index
+        from director_directory import refresh_director_index
 
         event_id = int(item["event_id"])
         before = int(conn.execute("SELECT COUNT(*) FROM player_contacts").fetchone()[0])
         fetch_swap_standings(conn, event_id)
         fetch_swap_up_next(conn, event_id)
         refresh = refresh_player_contact_index(conn, DATA_DIR)
+        director_refresh = refresh_director_index(conn, limit=5)
         after = int(conn.execute("SELECT COUNT(*) FROM player_contacts").fetchone()[0])
         return {
             **_empty_result(),
             "contactsIndexed": max(0, after - before),
             "contactRecordsSeen": int(refresh.get("contactRecordsSeen") or 0),
+            "directorEventsIndexed": int(director_refresh.get("indexed") or 0),
             "networkRequests": 2,
         }
     if item["item_type"] == "PLAYER":
@@ -1148,7 +1155,7 @@ def _finish_item(
         int(result.get(key) or 0) > 0
         for key in (
             "eventsDiscovered", "playersDiscovered", "gamesDownloaded",
-            "roundsAdded", "contactsIndexed",
+            "roundsAdded", "contactsIndexed", "directorEventsIndexed",
         )
     )
     conn.execute(

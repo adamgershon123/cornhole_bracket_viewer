@@ -40,6 +40,7 @@ from predictive_player_profile import (
     start_player_analytics_snapshot_worker,
 )
 from player_contact_directory import player_contact_directory, refresh_player_contact_index
+from director_directory import director_directory, refresh_director_index
 from clutch_rating import validate_clutch_rating
 from profile_rating_validation import validate_profile_ratings
 from profile_feature_model_validation import validate_profile_features_in_matchup_model
@@ -2105,6 +2106,35 @@ def api_private_player_directory_refresh():
             conn,
             Path(DATA_DIR) / "season_platform" / "raw",
             force=bool((request.get_json(silent=True) or {}).get("force")),
+        ))
+
+
+@app.route("/api/private/director-directory")
+def api_private_director_directory():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    with season_platform_db() as conn:
+        return jsonify(director_directory(
+            conn,
+            view=request.args.get("view", "DIRECTORS").strip().upper(),
+            search=request.args.get("search", ""),
+            state=request.args.get("state", "ALL").strip().upper(),
+            date_from=request.args.get("dateFrom", ""),
+            date_to=request.args.get("dateTo", ""),
+            limit=min(max(int(request.args.get("limit", 100)), 1), 250),
+        ))
+
+
+@app.route("/api/private/director-directory/refresh", methods=["POST"])
+def api_private_director_directory_refresh():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    body = request.get_json(silent=True) or {}
+    with season_platform_db() as conn:
+        return jsonify(refresh_director_index(
+            conn, limit=min(max(int(body.get("limit", 1000)), 1), 5000)
         ))
 
 

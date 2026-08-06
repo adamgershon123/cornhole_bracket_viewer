@@ -1073,6 +1073,18 @@ def fetch_bracket(
     )
     event = event_from_bracket(payload, fallback_event_id=event_id)
     upsert_event(conn, event, bracket_downloaded=True, bracket_is_complete=bracket_completed(payload))
+    try:
+        from director_directory import index_director_event_payload
+
+        index_director_event_payload(
+            conn,
+            payload,
+            source_payload_id=meta.get("sourcePayloadId"),
+            fallback_event_id=event_id,
+        )
+    except Exception:
+        # Private director indexing must never block bracket availability.
+        pass
     if bracket_completed(payload):
         try:
             from double_dip_analysis import analyze_double_elimination_final, store_double_dip_records

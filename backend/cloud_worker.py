@@ -9,7 +9,8 @@ import signal
 import threading
 import time
 
-from app import start_prediction_lifecycle_worker
+from app import DATA_DIR, start_prediction_lifecycle_worker
+from double_dip_analysis import start_double_dip_history_worker
 from historical_backfill import start_worker as start_historical_backfill_worker
 from historical_archive_backtest import auto_refresh_backtest
 from payload_archive import start_payload_archive_worker
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     start_historical_backfill_worker()
     start_payload_archive_worker(season_platform_db)
     start_player_analytics_snapshot_worker(season_platform_db)
+    start_double_dip_history_worker(season_platform_db, data_dir=DATA_DIR)
     start_backtest_refresh_worker()
     while running:
         time.sleep(5)

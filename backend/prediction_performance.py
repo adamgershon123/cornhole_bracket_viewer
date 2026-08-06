@@ -84,6 +84,16 @@ def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
 
 def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     initialize_bracket_snapshot_schema(conn)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tournament_prediction_evaluation_cache(
+          event_id INTEGER PRIMARY KEY,
+          snapshot_created_at TEXT NOT NULL,
+          evaluation_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
     # Iterate the cursor instead of fetchall(). Historical replay can create
     # thousands of snapshots whose JSON payloads are large; retaining all raw
     # JSON strings at once can exhaust the web worker before scoring begins.
@@ -101,6 +111,23 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     )
     rows = []
     for snapshot in snapshots:
+        # Historical replay snapshots and their archived outcomes are immutable.
+        # Score each once, then reuse the compact evaluation instead of parsing
+        # and sorting thousands of full forecast payloads on every UI refresh.
+        if snapshot["replay_champion_player_ids_json"]:
+            cached = conn.execute(
+                """
+                SELECT evaluation_json
+                FROM tournament_prediction_evaluation_cache
+                WHERE event_id=? AND snapshot_created_at=?
+                """,
+                (int(snapshot["event_id"]), snapshot["created_at"]),
+            ).fetchone()
+            if cached:
+                cached_row = _json(cached["evaluation_json"])
+                if cached_row:
+                    rows.append(cached_row)
+                    continue
         payload = _json(snapshot["payload_json"])
         teams = [
             team for team in payload.get("teams") or []
@@ -139,7 +166,7 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
             for index, probability in enumerate(probabilities)
         )
         favorite = ranked[0]
-        rows.append({
+        evaluation = {
             "eventId": int(snapshot["event_id"]),
             "eventName": snapshot["event_name"] or f"Event {snapshot['event_id']}",
             "eventDate": snapshot["event_date"],
@@ -171,7 +198,26 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                 (round(probabilities[index], 6), index == champion_index)
                 for index in range(len(ranked))
             ],
-        })
+        }
+        rows.append(evaluation)
+        if snapshot["replay_champion_player_ids_json"]:
+            conn.execute(
+                """
+                INSERT INTO tournament_prediction_evaluation_cache(
+                  event_id, snapshot_created_at, evaluation_json, cached_at
+                ) VALUES(?,?,?,CURRENT_TIMESTAMP)
+                ON CONFLICT(event_id) DO UPDATE SET
+                  snapshot_created_at=excluded.snapshot_created_at,
+                  evaluation_json=excluded.evaluation_json,
+                  cached_at=CURRENT_TIMESTAMP
+                """,
+                (
+                    int(snapshot["event_id"]),
+                    snapshot["created_at"],
+                    json.dumps(evaluation, separators=(",", ":")),
+                ),
+            )
+    conn.commit()
     return rows
 
 

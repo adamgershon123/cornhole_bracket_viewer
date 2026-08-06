@@ -1,6 +1,8 @@
 import json
 import csv
 import hmac
+import csv
+import io
 import io
 import os
 import re
@@ -2109,6 +2111,36 @@ def api_private_player_directory_refresh():
         ))
 
 
+def _csv_download(rows, filename: str):
+    records = [dict(row) for row in rows]
+    output = io.StringIO(newline="")
+    if records:
+        writer = csv.DictWriter(output, fieldnames=list(records[0].keys()), extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(records)
+    response = Response(output.getvalue(), content_type="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@app.route("/api/private/player-directory/export")
+def api_private_player_directory_export():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    with season_platform_db() as conn:
+        result = player_contact_directory(
+            conn,
+            search=request.args.get("search", ""),
+            classification=request.args.get("classification", "ALL").strip().upper(),
+            membership=request.args.get("membership", "ALL").strip().upper(),
+            contact=request.args.get("contact", "ALL").strip().upper(),
+            limit=50000,
+            offset=0,
+        )
+        return _csv_download(result["players"], "cheesebaggers-player-directory.csv")
+
+
 @app.route("/api/private/director-directory")
 def api_private_director_directory():
     access_error = _private_directory_access_error()
@@ -2136,6 +2168,26 @@ def api_private_director_directory_refresh():
         return jsonify(refresh_director_index(
             conn, limit=min(max(int(body.get("limit", 1000)), 1), 5000)
         ))
+
+
+@app.route("/api/private/director-directory/export")
+def api_private_director_directory_export():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    selected_view = request.args.get("view", "DIRECTORS").strip().upper()
+    with season_platform_db() as conn:
+        result = director_directory(
+            conn,
+            view=selected_view,
+            search=request.args.get("search", ""),
+            state=request.args.get("state", "ALL").strip().upper(),
+            date_from=request.args.get("dateFrom", ""),
+            date_to=request.args.get("dateTo", ""),
+            limit=50000,
+        )
+        name = {"VENUES": "venues", "EVENTS": "events"}.get(selected_view, "directors")
+        return _csv_download(result["rows"], f"cheesebaggers-{name}.csv")
 
 
 @app.route("/api/prediction-operations/clutch-validation")

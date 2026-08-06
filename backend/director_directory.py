@@ -227,7 +227,7 @@ def director_directory(
     if date_to:
         clauses.append("de.event_date<=?"); params.append(date_to)
     where = " AND ".join(clauses)
-    max_rows = max(1, min(int(limit), 250))
+    max_rows = max(1, min(int(limit), 50000))
 
     if view == "VENUES":
         rows = conn.execute(f"""

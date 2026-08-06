@@ -1,6 +1,6 @@
-import { LockKeyhole, Mail, Phone, RefreshCw, Search, ShieldCheck, UserRound } from 'lucide-react';
+import { Download, LockKeyhole, Mail, Phone, RefreshCw, Search, ShieldCheck, UserRound } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
-import { fetchPrivatePlayerDirectory, refreshPrivatePlayerDirectory } from '../lib/api';
+import { exportPrivatePlayerDirectory, fetchPrivatePlayerDirectory, refreshPrivatePlayerDirectory } from '../lib/api';
 
 const TOKEN_KEY = 'cheesebaggers.playerDirectoryAccess';
 const PAGE_SIZE = 100;
@@ -108,6 +108,7 @@ export default function PlayerDirectoryView() {
             <p className="mt-2 text-sm leading-6 text-zinc-500">Analytics profiles joined to captured ACL player contact records.</p>
           </div>
           <div className="flex gap-2">
+            <button type="button" onClick={()=>exportPrivatePlayerDirectory(token,{search,classification,membership,contact}).catch((reason:any)=>setError(reason.message))} className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-300/10 px-4 font-black text-emerald-200"><Download size={17}/>Export CSV</button>
             <button type="button" onClick={refreshIndex} disabled={refreshing} className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/10 px-4 font-black text-amber-200 disabled:opacity-50">
               <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''}/>{refreshing ? 'Indexing…' : 'Index new captures'}
             </button>

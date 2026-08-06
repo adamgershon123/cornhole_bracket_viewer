@@ -349,6 +349,27 @@ export async function refreshPrivateDirectorDirectory(token:string): Promise<any
   return response.json();
 }
 
+async function downloadPrivateCsv(url:string, token:string, filename:string) {
+  const response = await fetch(url, {headers:{'X-Player-Directory-Token':token}});
+  if (!response.ok) throw new Error(await readableApiError(response));
+  const blob = await response.blob();
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+  URL.revokeObjectURL(href);
+}
+
+export function exportPrivatePlayerDirectory(token:string, options:any={}) {
+  const query=new URLSearchParams({search:options.search||'',classification:options.classification||'ALL',membership:options.membership||'ALL',contact:options.contact||'ALL'});
+  return downloadPrivateCsv(`${API_BASE}/api/private/player-directory/export?${query}`,token,'cheesebaggers-player-directory.csv');
+}
+
+export function exportPrivateDirectorDirectory(token:string, options:any={}) {
+  const view=options.view||'DIRECTORS';
+  const query=new URLSearchParams({view,search:options.search||'',state:options.state||'ALL',dateFrom:options.dateFrom||'',dateTo:options.dateTo||''});
+  return downloadPrivateCsv(`${API_BASE}/api/private/director-directory/export?${query}`,token,`cheesebaggers-${String(view).toLowerCase()}.csv`);
+}
+
 export async function runPredictionLifecycle(): Promise<any> {
   const response = await fetch(`${API_BASE}/api/prediction-operations/run`, {
     method: 'POST',

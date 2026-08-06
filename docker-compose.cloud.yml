@@ -6,6 +6,7 @@ services:
     environment:
       DATA_DIR: /data
       PORT: 5173
+      PLAYER_DIRECTORY_TOKEN: ${PLAYER_DIRECTORY_TOKEN:-}
     volumes:
       - ./cloud-data:/data
     expose:

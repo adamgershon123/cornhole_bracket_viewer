@@ -288,6 +288,46 @@ export async function fetchPlayerAnalyticsLeaderboard(
   return response.json();
 }
 
+export async function fetchPrivatePlayerDirectory(
+  token:string,
+  options: {
+    search?:string;
+    classification?:string;
+    membership?:string;
+    contact?:string;
+    limit?:number;
+    offset?:number;
+  } = {},
+): Promise<any> {
+  const query = new URLSearchParams({
+    search: options.search || '',
+    classification: options.classification || 'ALL',
+    membership: options.membership || 'ALL',
+    contact: options.contact || 'ALL',
+    limit: String(options.limit || 100),
+    offset: String(options.offset || 0),
+  });
+  const response = await fetch(`${API_BASE}/api/private/player-directory?${query}`, {
+    cache: 'no-store',
+    headers: { 'X-Player-Directory-Token': token },
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
+export async function refreshPrivatePlayerDirectory(token:string): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/private/player-directory/refresh`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'X-Player-Directory-Token': token,
+    },
+    body: JSON.stringify({ force: false }),
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
 export async function runPredictionLifecycle(): Promise<any> {
   const response = await fetch(`${API_BASE}/api/prediction-operations/run`, {
     method: 'POST',

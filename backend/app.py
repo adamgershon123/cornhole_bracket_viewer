@@ -1,5 +1,6 @@
 import json
 import csv
+import hmac
 import io
 import os
 import re
@@ -8,6 +9,7 @@ import sqlite3
 import tempfile
 import time
 import threading
+from pathlib import Path
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
@@ -37,6 +39,7 @@ from predictive_player_profile import (
     predictive_player_profile,
     start_player_analytics_snapshot_worker,
 )
+from player_contact_directory import player_contact_directory, refresh_player_contact_index
 from clutch_rating import validate_clutch_rating
 from profile_rating_validation import validate_profile_ratings
 from profile_feature_model_validation import validate_profile_features_in_matchup_model
@@ -2049,6 +2052,60 @@ def api_player_analytics_leaderboard():
         "proPlayers": sum(1 for row in rows if row.get("isPro")),
         "snapshot": snapshot_status,
     })
+
+
+def _private_directory_access_error():
+    configured = os.environ.get("PLAYER_DIRECTORY_TOKEN", "").strip()
+    if not configured:
+        return jsonify({
+            "error": "Player directory access has not been configured.",
+            "code": "DIRECTORY_NOT_CONFIGURED",
+        }), 503
+    supplied = request.headers.get("X-Player-Directory-Token", "").strip()
+    authorization = request.headers.get("Authorization", "").strip()
+    if not supplied and authorization.lower().startswith("bearer "):
+        supplied = authorization[7:].strip()
+    if not supplied or not hmac.compare_digest(supplied, configured):
+        return jsonify({
+            "error": "A valid player directory access code is required.",
+            "code": "DIRECTORY_ACCESS_REQUIRED",
+        }), 401
+    return None
+
+
+@app.route("/api/private/player-directory")
+def api_private_player_directory():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    classification = request.args.get("classification", "ALL").strip().upper()
+    membership = request.args.get("membership", "ALL").strip().upper()
+    contact = request.args.get("contact", "ALL").strip().upper()
+    limit = min(max(int(request.args.get("limit", 100)), 1), 250)
+    offset = max(int(request.args.get("offset", 0)), 0)
+    with season_platform_db() as conn:
+        return jsonify(player_contact_directory(
+            conn,
+            search=request.args.get("search", ""),
+            classification=classification,
+            membership=membership,
+            contact=contact,
+            limit=limit,
+            offset=offset,
+        ))
+
+
+@app.route("/api/private/player-directory/refresh", methods=["POST"])
+def api_private_player_directory_refresh():
+    access_error = _private_directory_access_error()
+    if access_error:
+        return access_error
+    with season_platform_db() as conn:
+        return jsonify(refresh_player_contact_index(
+            conn,
+            Path(DATA_DIR) / "season_platform" / "raw",
+            force=bool((request.get_json(silent=True) or {}).get("force")),
+        ))
 
 
 @app.route("/api/prediction-operations/clutch-validation")

@@ -328,11 +328,18 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
     monitored = conn.execute(
         """
         SELECT m.*, d.event_name, d.event_date, d.advertised_time,
-               d.location_city, d.location_state, d.location_country
+               d.location_city, d.location_state, d.location_country,
+               CASE
+                 WHEN m.enabled=1 THEN 'ACTIVE'
+                 WHEN m.last_poll_status='COMPLETE' THEN 'COMPLETE'
+                 ELSE 'ARCHIVED'
+               END AS tracking_status
         FROM monitored_events m
         LEFT JOIN discovered_events d ON CAST(d.event_id AS TEXT)=m.event_id
-        WHERE m.enabled=1 OR m.last_poll_status='COMPLETE'
-        ORDER BY d.event_date, d.advertised_time, m.event_id
+        WHERE m.enabled=1
+           OR m.last_poll_status='COMPLETE'
+           OR d.event_date BETWEEN date('now', '-7 days') AND date('now')
+        ORDER BY d.event_date DESC, d.advertised_time DESC, m.event_id
         """
     ).fetchall()
     candidates = conn.execute(

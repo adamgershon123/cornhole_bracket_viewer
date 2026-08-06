@@ -1040,7 +1040,10 @@ export default function PredictionOperationsView() {
         <div className="rounded-[26px] border border-white/10 bg-zinc-950 p-5">
           <div className="flex items-center gap-2">
             <Activity size={18} className="text-emerald-300" />
-            <h3 className="font-black text-white">Monitored events</h3>
+            <div>
+              <h3 className="font-black text-white">Monitoring and tracking</h3>
+              <p className="mt-1 text-xs text-zinc-500">Active polling plus recently archived tournament records.</p>
+            </div>
             <select
               value={eventGroupFilter}
               onChange={event => setEventGroupFilter(event.target.value as any)}
@@ -1073,8 +1076,16 @@ export default function PredictionOperationsView() {
                     <span className="rounded-full bg-violet-400/15 px-2.5 py-1 text-violet-200">SIT &amp; GO</span>
                   )}
                   <span className="rounded-full bg-sky-400/10 px-2.5 py-1 text-sky-300">{event.schedule_format}</span>
-                  <span className={`rounded-full px-2.5 py-1 ${event.last_poll_status === 'ERROR' ? 'bg-red-400/10 text-red-300' : 'bg-emerald-400/10 text-emerald-300'}`}>
-                    {event.last_poll_status || 'WAITING'}
+                  <span className={`rounded-full px-2.5 py-1 ${
+                    event.tracking_status === 'ACTIVE'
+                      ? 'bg-emerald-400/10 text-emerald-300'
+                      : event.last_poll_status === 'ERROR'
+                        ? 'bg-red-400/10 text-red-300'
+                        : 'bg-zinc-400/10 text-zinc-300'
+                  }`}>
+                    {event.tracking_status === 'ACTIVE'
+                      ? (event.last_poll_status || 'WAITING')
+                      : (event.tracking_status || event.last_poll_status || 'ARCHIVED')}
                   </span>
                 </div>
               </a>

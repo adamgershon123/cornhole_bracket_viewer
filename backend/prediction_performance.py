@@ -56,7 +56,7 @@ def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
                 [
                     {
                         key: value for key, value in row.items()
-                        if key != "teamForecasts"
+                        if key != "calibrationForecasts"
                     }
                     for row in tournament_rows
                 ],
@@ -84,6 +84,9 @@ def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
 
 def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     initialize_bracket_snapshot_schema(conn)
+    # Iterate the cursor instead of fetchall(). Historical replay can create
+    # thousands of snapshots whose JSON payloads are large; retaining all raw
+    # JSON strings at once can exhaust the web worker before scoring begins.
     snapshots = conn.execute(
         """
         SELECT s.event_id, s.payload_json, s.created_at,
@@ -95,7 +98,7 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         WHERE s.snapshot_type='PREGAME'
         ORDER BY s.created_at
         """
-    ).fetchall()
+    )
     rows = []
     for snapshot in snapshots:
         payload = _json(snapshot["payload_json"])
@@ -162,13 +165,11 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
             ),
             "modelVersion": payload.get("modelVersion") or "unknown",
             "snapshotOrigin": payload.get("snapshotOrigin") or "LIVE_FROZEN",
-            "teamForecasts": [
-                {
-                    "teamId": str(team.get("teamId")),
-                    "probability": round(probabilities[index], 6),
-                    "won": index == champion_index,
-                }
-                for index, team in enumerate(ranked)
+            # Calibration needs only probability/outcome pairs. Compact tuples
+            # avoid retaining team dictionaries for every historical forecast.
+            "calibrationForecasts": [
+                (round(probabilities[index], 6), index == champion_index)
+                for index in range(len(ranked))
             ],
         })
     return rows
@@ -520,22 +521,22 @@ def _calibration(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     forecasts = [
         forecast
         for row in rows
-        for forecast in row.get("teamForecasts") or []
+        for forecast in row.get("calibrationForecasts") or []
     ]
     output = []
     for minimum, maximum, label in buckets:
         sample = [
             forecast for forecast in forecasts
-            if minimum <= float(forecast["probability"]) < maximum
+            if minimum <= float(forecast[0]) < maximum
         ]
         if not sample:
             continue
-        wins = sum(int(forecast["won"]) for forecast in sample)
+        wins = sum(int(forecast[1]) for forecast in sample)
         output.append({
             "group": label,
             "teams": len(sample),
             "averagePredictedProbability": round(
-                mean(float(forecast["probability"]) for forecast in sample), 6
+                mean(float(forecast[0]) for forecast in sample), 6
             ),
             "actualChampionshipRate": round(wins / len(sample), 6),
             "actualChampionshipRate95": _wilson_interval(wins, len(sample)),

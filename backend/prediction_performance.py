@@ -101,10 +101,13 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         """
         SELECT s.event_id, s.payload_json, s.created_at,
                o.champion_player_ids_json AS replay_champion_player_ids_json,
+               c.snapshot_created_at AS cached_snapshot_created_at,
+               c.evaluation_json AS cached_evaluation_json,
                e.event_name, e.event_date, e.bracket_type, e.match_type
         FROM bracket_prediction_snapshots s
         LEFT JOIN events e ON e.event_id=s.event_id
         LEFT JOIN historical_tournament_replay_outcomes o ON o.event_id=s.event_id
+        LEFT JOIN tournament_prediction_evaluation_cache c ON c.event_id=s.event_id
         WHERE s.snapshot_type='PREGAME'
         ORDER BY s.created_at
         """
@@ -115,20 +118,15 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         # Historical replay snapshots and their archived outcomes are immutable.
         # Score each once, then reuse the compact evaluation instead of parsing
         # and sorting thousands of full forecast payloads on every UI refresh.
-        if snapshot["replay_champion_player_ids_json"]:
-            cached = conn.execute(
-                """
-                SELECT evaluation_json
-                FROM tournament_prediction_evaluation_cache
-                WHERE event_id=? AND snapshot_created_at=?
-                """,
-                (int(snapshot["event_id"]), snapshot["created_at"]),
-            ).fetchone()
-            if cached:
-                cached_row = _json(cached["evaluation_json"])
-                if cached_row:
-                    rows.append(cached_row)
-                    continue
+        if (
+            snapshot["replay_champion_player_ids_json"]
+            and snapshot["cached_snapshot_created_at"] == snapshot["created_at"]
+            and snapshot["cached_evaluation_json"]
+        ):
+            cached_row = _json(snapshot["cached_evaluation_json"])
+            if cached_row:
+                rows.append(cached_row)
+                continue
         payload = _json(snapshot["payload_json"])
         teams = [
             team for team in payload.get("teams") or []

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sqlite3
 from collections import defaultdict, deque
 from datetime import date, datetime, timedelta, timezone
@@ -15,6 +16,15 @@ from chronological_evaluation import historical_matchups
 
 
 BACKTEST_VERSION = "historical-archive-holdout-v6"
+AUTO_REFRESH_GAME_DELTA = max(
+    1, int(os.environ.get("HISTORICAL_BACKTEST_GAME_DELTA", "500"))
+)
+AUTO_REFRESH_ROUND_DELTA = max(
+    1, int(os.environ.get("HISTORICAL_BACKTEST_ROUND_DELTA", "10000"))
+)
+AUTO_REFRESH_MIN_AGE = timedelta(
+    hours=max(1, int(os.environ.get("HISTORICAL_BACKTEST_MIN_AGE_HOURS", "6")))
+)
 FEATURE_NAMES = ("pprDelta", "fourBaggerDelta", "bagsInDelta")
 EXPECTED_FEATURE_NAMES = (
     "adjustedPprDelta",
@@ -38,9 +48,11 @@ def historical_backtest_report(
     ).fetchone()
     if cached and not refresh:
         payload = json.loads(cached["payload_json"])
+        refresh_state = backtest_refresh_state(conn, cached=cached)
         payload["cacheStatus"] = (
             "CURRENT" if cached["ledger_signature"] == signature else "NEW_DATA_AVAILABLE"
         )
+        payload["refreshState"] = refresh_state
         return payload
     payload = _run_backtest(conn)
     generated_at = datetime.now(timezone.utc).isoformat()
@@ -49,6 +61,7 @@ def historical_backtest_report(
         "generatedAt": generated_at,
         "ledgerSignature": signature,
         "cacheStatus": "CURRENT",
+        "sourceLedger": _signature_counts(signature),
     })
     conn.execute(
         """
@@ -64,6 +77,69 @@ def historical_backtest_report(
     )
     conn.commit()
     return payload
+
+
+def backtest_refresh_state(
+    conn: sqlite3.Connection,
+    *,
+    cached: sqlite3.Row | None = None,
+) -> dict[str, Any]:
+    _init_schema(conn)
+    cached = cached or conn.execute(
+        "SELECT * FROM historical_backtest_snapshots WHERE backtest_version=?",
+        (BACKTEST_VERSION,),
+    ).fetchone()
+    current = _signature_counts(_ledger_signature(conn))
+    if not cached:
+        return {
+            "due": True,
+            "reason": "NO_SNAPSHOT",
+            "current": current,
+            "gameDelta": current["games"],
+            "roundDelta": current["rounds"],
+        }
+    previous = _signature_counts(cached["ledger_signature"])
+    try:
+        generated = datetime.fromisoformat(
+            str(cached["generated_at"]).replace("Z", "+00:00")
+        )
+        if generated.tzinfo is None:
+            generated = generated.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        generated = datetime.min.replace(tzinfo=timezone.utc)
+    age = datetime.now(timezone.utc) - generated
+    game_delta = max(0, current["games"] - previous["games"])
+    round_delta = max(0, current["rounds"] - previous["rounds"])
+    threshold_reached = (
+        game_delta >= AUTO_REFRESH_GAME_DELTA
+        or round_delta >= AUTO_REFRESH_ROUND_DELTA
+    )
+    return {
+        "due": bool(age >= AUTO_REFRESH_MIN_AGE and threshold_reached),
+        "reason": "DATA_THRESHOLD" if threshold_reached else "WAITING_FOR_DATA",
+        "generatedAt": cached["generated_at"],
+        "ageSeconds": max(0, int(age.total_seconds())),
+        "current": current,
+        "previous": previous,
+        "gameDelta": game_delta,
+        "roundDelta": round_delta,
+        "gameThreshold": AUTO_REFRESH_GAME_DELTA,
+        "roundThreshold": AUTO_REFRESH_ROUND_DELTA,
+    }
+
+
+def auto_refresh_backtest(conn: sqlite3.Connection) -> dict[str, Any]:
+    state = backtest_refresh_state(conn)
+    if not state["due"]:
+        return {"status": "CURRENT", **state}
+    report = historical_backtest_report(conn, refresh=True)
+    return {
+        "status": "REFRESHED",
+        "generatedAt": report.get("generatedAt"),
+        "archiveMatchups": report.get("archiveMatchups", 0),
+        "eligibleMatchups": report.get("eligibleMatchups", 0),
+        **state,
+    }
 
 
 def _run_backtest(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -486,6 +562,14 @@ def _ledger_signature(conn: sqlite3.Connection) -> str:
     games = int(conn.execute("SELECT COUNT(*) FROM games").fetchone()[0])
     rounds = int(conn.execute("SELECT COUNT(*) FROM player_rounds").fetchone()[0])
     return f"games:{games}:rounds:{rounds}"
+
+
+def _signature_counts(signature: str) -> dict[str, int]:
+    parts = str(signature or "").split(":")
+    try:
+        return {"games": int(parts[1]), "rounds": int(parts[3])}
+    except (IndexError, TypeError, ValueError):
+        return {"games": 0, "rounds": 0}
 
 
 def _init_schema(conn: sqlite3.Connection) -> None:

@@ -172,6 +172,8 @@ export default function PredictionOperationsView() {
   const learning = data?.predictionLearning || {};
   const performance = data?.predictionPerformance || {};
   const historicalBacktest = performance?.historicalBacktest || {};
+  const hourlyThroughput = backfill?.throughput?.lastHour || {};
+  const dailyThroughput = backfill?.throughput?.last24Hours || {};
   const matchPerformance = performance?.matchPerformance || {};
   const tournamentPerformance = performance?.tournamentPerformance || {};
   const tournamentOverall = tournamentPerformance?.overall || {};
@@ -331,6 +333,19 @@ export default function PredictionOperationsView() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-sky-300/20 bg-sky-300/[.05] p-4">
+            <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">Actual collection throughput</div>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div><div className="text-2xl font-black text-white">{Number(hourlyThroughput.attempts || 0).toLocaleString()}</div><div className="text-xs text-zinc-500">tasks attempted · last hour</div></div>
+              <div><div className="text-2xl font-black text-emerald-300">{Number(hourlyThroughput.productive || 0).toLocaleString()}</div><div className="text-xs text-zinc-500">productive tasks · last hour</div></div>
+              <div><div className="text-2xl font-black text-sky-300">+{Number(hourlyThroughput.games_downloaded || 0).toLocaleString()}</div><div className="text-xs text-zinc-500">games · last hour</div></div>
+              <div><div className="text-2xl font-black text-sky-300">+{Number(hourlyThroughput.rounds_added || 0).toLocaleString()}</div><div className="text-xs text-zinc-500">player rounds · last hour</div></div>
+            </div>
+            <div className="mt-3 border-t border-white/10 pt-3 text-xs text-zinc-500">
+              Last 24 hours: {Number(dailyThroughput.completed || 0).toLocaleString()} completed · {Number(dailyThroughput.productive || 0).toLocaleString()} productive · {Number(dailyThroughput.failed_attempts || 0).toLocaleString()} failed attempts · {Number(dailyThroughput.terminal_failures || 0).toLocaleString()} terminal
+            </div>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -577,6 +592,11 @@ export default function PredictionOperationsView() {
           <div className="border-t border-white/10 px-4 py-3 text-xs text-zinc-500">
             365-day lookback · strict prior-date cutoff · generated {historicalBacktest.generatedAt ? new Date(historicalBacktest.generatedAt).toLocaleString() : 'not yet'}
             {historicalBacktest.cacheStatus === 'NEW_DATA_AVAILABLE' && <span className="ml-2 font-black text-amber-300">New archive data awaits the next backtest refresh.</span>}
+            {historicalBacktest.refreshState && (
+              <div className={`mt-3 rounded-xl border p-3 ${historicalBacktest.refreshState.due ? 'border-amber-300/30 bg-amber-300/10 text-amber-100' : 'border-white/10 bg-white/[.03] text-zinc-400'}`}>
+                Automatic refresh: {historicalBacktest.refreshState.due ? 'queued now' : 'watching for meaningful growth'} · +{Number(historicalBacktest.refreshState.gameDelta || 0).toLocaleString()} games / +{Number(historicalBacktest.refreshState.roundDelta || 0).toLocaleString()} rounds since the saved evaluation.
+              </div>
+            )}
           </div>
         </div>
 

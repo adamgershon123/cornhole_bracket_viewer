@@ -6,10 +6,12 @@ cannot make the public interface unresponsive under concurrent traffic.
 from __future__ import annotations
 
 import signal
+import threading
 import time
 
 from app import start_prediction_lifecycle_worker
 from historical_backfill import start_worker as start_historical_backfill_worker
+from historical_archive_backtest import auto_refresh_backtest
 from payload_archive import start_payload_archive_worker
 from predictive_player_profile import start_player_analytics_snapshot_worker
 from season_platform import db as season_platform_db
@@ -23,6 +25,33 @@ def stop_worker(*_: object) -> None:
     running = False
 
 
+def start_backtest_refresh_worker() -> None:
+    def worker() -> None:
+        time.sleep(45)
+        while running:
+            try:
+                with season_platform_db() as conn:
+                    result = auto_refresh_backtest(conn)
+                if result.get("status") == "REFRESHED":
+                    print(
+                        "Historical backtest refreshed: "
+                        f"{result.get('eligibleMatchups', 0)} eligible matchups",
+                        flush=True,
+                    )
+            except Exception as exc:
+                print(f"Historical backtest refresh failed: {exc}", flush=True)
+            for _ in range(60):
+                if not running:
+                    return
+                time.sleep(5)
+
+    threading.Thread(
+        target=worker,
+        daemon=True,
+        name="historical-backtest-refresh",
+    ).start()
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, stop_worker)
     signal.signal(signal.SIGINT, stop_worker)
@@ -30,6 +59,6 @@ if __name__ == "__main__":
     start_historical_backfill_worker()
     start_payload_archive_worker(season_platform_db)
     start_player_analytics_snapshot_worker(season_platform_db)
+    start_backtest_refresh_worker()
     while running:
         time.sleep(5)
-

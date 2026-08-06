@@ -5,12 +5,23 @@ import unittest
 from historical_archive_backtest import (
     _metrics,
     _paired_comparison,
+    _signature_counts,
     _shrunk_effect,
     _shrunk_rate_effect,
 )
 
 
 class HistoricalArchiveBacktestTests(unittest.TestCase):
+    def test_ledger_signature_counts_support_refresh_deltas(self) -> None:
+        self.assertEqual(
+            _signature_counts("games:26351:rounds:685756"),
+            {"games": 26351, "rounds": 685756},
+        )
+        self.assertEqual(
+            _signature_counts("invalid"),
+            {"games": 0, "rounds": 0},
+        )
+
     def test_context_effect_is_shrunk_toward_player_baseline(self) -> None:
         self.assertEqual(_shrunk_effect(0, 0, 7.0), 0.0)
         raw_effect = (80 / 10) - 7.0

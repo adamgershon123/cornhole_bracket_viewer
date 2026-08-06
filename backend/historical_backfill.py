@@ -128,8 +128,27 @@ def initialize_schema(conn: sqlite3.Connection) -> None:
             updated_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS historical_backfill_activity (
+            activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            queue_id INTEGER,
+            collection_lane TEXT NOT NULL,
+            item_type TEXT NOT NULL,
+            item_key TEXT NOT NULL,
+            outcome TEXT NOT NULL,
+            productive INTEGER NOT NULL DEFAULT 0,
+            terminal INTEGER NOT NULL DEFAULT 0,
+            events_discovered INTEGER NOT NULL DEFAULT 0,
+            players_discovered INTEGER NOT NULL DEFAULT 0,
+            games_downloaded INTEGER NOT NULL DEFAULT 0,
+            rounds_added INTEGER NOT NULL DEFAULT 0,
+            error TEXT,
+            occurred_at TEXT NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_historical_backfill_next
             ON historical_backfill_queue(status, not_before, priority DESC, queue_id);
+        CREATE INDEX IF NOT EXISTS idx_historical_backfill_activity_time
+            ON historical_backfill_activity(occurred_at, collection_lane);
         """
     )
     now = utc_now()
@@ -320,6 +339,14 @@ def status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
     }
     from payload_archive import payload_archive_health
 
+    throughput = {
+        label: _throughput_since(conn, datetime.now(timezone.utc) - delta)
+        for label, delta in (
+            ("lastHour", timedelta(hours=1)),
+            ("last24Hours", timedelta(hours=24)),
+        )
+    }
+
     return {
         "enabled": True,
         "paused": bool(state["paused"]),
@@ -349,6 +376,7 @@ def status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         "stateRetainedAtStartup": True,
         "payloadArchive": payload_archive_health(conn),
+        "throughput": throughput,
         "lanes": {
             lane: {
                 "lane": lane,
@@ -659,6 +687,8 @@ def run_one(
           CASE WHEN priority >= ? THEN 0 ELSE 1 END,
           CASE WHEN priority >= ? THEN priority ELSE NULL END DESC,
           CASE WHEN item_type=? THEN 0 ELSE 1 END,
+          attempts ASC,
+          CASE WHEN item_type IN ('GAME', 'EVENT') THEN event_id END DESC,
           priority DESC,
           queue_id
         LIMIT 1
@@ -1019,6 +1049,13 @@ def _finish_item(
     result: dict[str, Any],
 ) -> None:
     now = utc_now()
+    productive = any(
+        int(result.get(key) or 0) > 0
+        for key in (
+            "eventsDiscovered", "playersDiscovered", "gamesDownloaded",
+            "roundsAdded",
+        )
+    )
     conn.execute(
         """
         UPDATE historical_backfill_queue
@@ -1066,6 +1103,24 @@ def _finish_item(
             item.get("collection_lane") or PREDICTION_LANE,
         ),
     )
+    conn.execute(
+        """
+        INSERT INTO historical_backfill_activity(
+            queue_id, collection_lane, item_type, item_key, outcome,
+            productive, terminal, events_discovered, players_discovered,
+            games_downloaded, rounds_added, occurred_at
+        ) VALUES (?, ?, ?, ?, 'COMPLETE', ?, 1, ?, ?, ?, ?, ?)
+        """,
+        (
+            item["queue_id"],
+            item.get("collection_lane") or PREDICTION_LANE,
+            item["item_type"], item["item_key"], 1 if productive else 0,
+            int(result.get("eventsDiscovered") or 0),
+            int(result.get("playersDiscovered") or 0),
+            int(result.get("gamesDownloaded") or 0),
+            int(result.get("roundsAdded") or 0), now,
+        ),
+    )
     conn.commit()
 
 
@@ -1075,7 +1130,10 @@ def _fail_item(
     exc: Exception,
 ) -> None:
     attempts = int(item["attempts"] or 0) + 1
-    terminal = attempts >= MAX_ATTEMPTS
+    status_code = _http_status_code(exc)
+    permanent_http_failure = status_code in {400, 401, 403, 404, 409, 410, 422}
+    server_retry_limit = 2 if status_code and status_code >= 500 else MAX_ATTEMPTS
+    terminal = permanent_http_failure or attempts >= server_retry_limit
     priority_item = int(item.get("priority") or 0) >= PRIORITY_THRESHOLD
     delay_minutes = 0 if priority_item else min(2 ** attempts, 24 * 60)
     not_before = (
@@ -1125,7 +1183,51 @@ def _fail_item(
             item.get("collection_lane") or PREDICTION_LANE,
         ),
     )
+    conn.execute(
+        """
+        INSERT INTO historical_backfill_activity(
+            queue_id, collection_lane, item_type, item_key, outcome,
+            productive, terminal, error, occurred_at
+        ) VALUES (?, ?, ?, ?, 'FAILED_ATTEMPT', 0, ?, ?, ?)
+        """,
+        (
+            item["queue_id"],
+            item.get("collection_lane") or PREDICTION_LANE,
+            item["item_type"], item["item_key"], 1 if terminal else 0,
+            message, now,
+        ),
+    )
     conn.commit()
+
+
+def _http_status_code(exc: Exception) -> int | None:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return int(exc.response.status_code)
+    return None
+
+
+def _throughput_since(
+    conn: sqlite3.Connection,
+    cutoff: datetime,
+) -> dict[str, int]:
+    row = conn.execute(
+        """
+        SELECT
+          COUNT(*) AS attempts,
+          SUM(CASE WHEN outcome='COMPLETE' THEN 1 ELSE 0 END) AS completed,
+          SUM(CASE WHEN productive=1 THEN 1 ELSE 0 END) AS productive,
+          SUM(CASE WHEN outcome='FAILED_ATTEMPT' THEN 1 ELSE 0 END) AS failed_attempts,
+          SUM(CASE WHEN terminal=1 AND outcome='FAILED_ATTEMPT' THEN 1 ELSE 0 END) AS terminal_failures,
+          SUM(events_discovered) AS events_discovered,
+          SUM(players_discovered) AS players_discovered,
+          SUM(games_downloaded) AS games_downloaded,
+          SUM(rounds_added) AS rounds_added
+        FROM historical_backfill_activity
+        WHERE occurred_at >= ?
+        """,
+        (cutoff.isoformat(),),
+    ).fetchone()
+    return {key: int(row[key] or 0) for key in row.keys()}
 
 
 def _recover_stale_processing(conn: sqlite3.Connection) -> None:

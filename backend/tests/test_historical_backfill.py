@@ -2,6 +2,8 @@ import sqlite3
 import unittest
 from unittest.mock import patch
 
+import requests
+
 from historical_backfill import (
     initialize_schema,
     run_one,
@@ -157,6 +159,66 @@ class HistoricalBackfillTests(unittest.TestCase):
         selected = process_item.call_args.args[1]
         self.assertEqual(selected["item_key"], "priority-event")
         self.assertEqual(result["queuePriority"], 1000)
+
+    @patch("historical_backfill._process_item")
+    def test_permanent_http_failure_is_terminal_without_retries(self, process_item):
+        response = requests.Response()
+        response.status_code = 409
+        response.url = "https://api.example.test/conflict"
+        process_item.side_effect = requests.HTTPError(response=response)
+        now = "2026-01-01T00:00:00+00:00"
+        self.conn.execute(
+            """
+            INSERT INTO historical_backfill_queue(
+                item_type, item_key, event_id, priority, status,
+                created_at, updated_at
+            ) VALUES ('EVENT', 'conflict', 100, 100, 'PENDING', ?, ?)
+            """,
+            (now, now),
+        )
+        self.conn.commit()
+
+        result = run_one(self.conn)
+
+        self.assertEqual(result["status"], "FAILED")
+        row = self.conn.execute(
+            "SELECT status, attempts FROM historical_backfill_queue"
+        ).fetchone()
+        self.assertEqual(row["status"], "FAILED")
+        self.assertEqual(row["attempts"], 1)
+        throughput = status_snapshot(self.conn)["throughput"]["lastHour"]
+        self.assertEqual(throughput["failed_attempts"], 1)
+        self.assertEqual(throughput["terminal_failures"], 1)
+
+    @patch("historical_backfill._process_item")
+    def test_throughput_distinguishes_productive_completion(self, process_item):
+        process_item.return_value = {
+            "eventsDiscovered": 0,
+            "playersDiscovered": 0,
+            "gamesDownloaded": 1,
+            "roundsAdded": 40,
+            "authBlocked": 0,
+            "networkRequests": 1,
+        }
+        now = "2026-01-01T00:00:00+00:00"
+        self.conn.execute(
+            """
+            INSERT INTO historical_backfill_queue(
+                item_type, item_key, event_id, priority, status,
+                created_at, updated_at
+            ) VALUES ('GAME', 'productive', 200, 100, 'PENDING', ?, ?)
+            """,
+            (now, now),
+        )
+        self.conn.commit()
+
+        run_one(self.conn)
+        throughput = status_snapshot(self.conn)["throughput"]["lastHour"]
+
+        self.assertEqual(throughput["completed"], 1)
+        self.assertEqual(throughput["productive"], 1)
+        self.assertEqual(throughput["games_downloaded"], 1)
+        self.assertEqual(throughput["rounds_added"], 40)
 
     def test_venue_export_groups_events_at_the_same_coordinates(self):
         rows = [

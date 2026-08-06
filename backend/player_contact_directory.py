@@ -80,6 +80,50 @@ def _player_contact_records(value: Any) -> Iterable[dict[str, Any]]:
             yield from _player_contact_records(child)
 
 
+def index_contact_payload(
+    conn: sqlite3.Connection,
+    payload: Any,
+    *,
+    source_endpoint: str,
+    source_event_id: str | int | None = None,
+    source_file: str = "database-payload",
+    observed_at: str | None = None,
+) -> dict[str, int]:
+    """Index contacts from one private ACL payload without publishing them."""
+    initialize_player_contact_schema(conn)
+    now = utc_now()
+    observed = observed_at or now
+    records = list(_player_contact_records(payload))
+    changed: set[int] = set()
+    for record in records:
+        changed.add(record["player_id"])
+        conn.execute(
+            """
+            INSERT INTO player_contacts(
+                player_id,email,phone,source_endpoint,source_event_id,
+                source_file,source_modified_at,observed_at,updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(player_id) DO UPDATE SET
+                email=COALESCE(excluded.email,player_contacts.email),
+                phone=COALESCE(excluded.phone,player_contacts.phone),
+                source_endpoint=excluded.source_endpoint,
+                source_event_id=COALESCE(excluded.source_event_id,player_contacts.source_event_id),
+                source_file=excluded.source_file,
+                source_modified_at=excluded.source_modified_at,
+                observed_at=excluded.observed_at,
+                updated_at=excluded.updated_at
+            """,
+            (
+                record["player_id"], record["email"], record["phone"],
+                source_endpoint,
+                _clean(record.get("event_id")) or _clean(source_event_id),
+                source_file, observed, observed, now,
+            ),
+        )
+    conn.commit()
+    return {"recordsSeen": len(records), "playersChanged": len(changed)}
+
+
 def refresh_player_contact_index(
     conn: sqlite3.Connection,
     raw_root: str | Path,
@@ -118,30 +162,12 @@ def refresh_player_contact_index(
                 records = list(_player_contact_records(payload))
                 modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
                 now = utc_now()
-                for record in records:
-                    contact_records += 1
-                    changed_players.add(record["player_id"])
-                    conn.execute(
-                        """
-                        INSERT INTO player_contacts(
-                            player_id,email,phone,source_endpoint,source_event_id,
-                            source_file,source_modified_at,observed_at,updated_at
-                        ) VALUES (?,?,?,?,?,?,?,?,?)
-                        ON CONFLICT(player_id) DO UPDATE SET
-                            email=COALESCE(excluded.email,player_contacts.email),
-                            phone=COALESCE(excluded.phone,player_contacts.phone),
-                            source_endpoint=excluded.source_endpoint,
-                            source_event_id=COALESCE(excluded.source_event_id,player_contacts.source_event_id),
-                            source_file=excluded.source_file,
-                            source_modified_at=excluded.source_modified_at,
-                            observed_at=excluded.observed_at,
-                            updated_at=excluded.updated_at
-                        """,
-                        (
-                            record["player_id"], record["email"], record["phone"], source,
-                            _clean(record.get("event_id")), relative, modified_at, modified_at, now,
-                        ),
-                    )
+                indexed = index_contact_payload(
+                    conn, payload, source_endpoint=source,
+                    source_file=relative, observed_at=modified_at,
+                )
+                contact_records += indexed["recordsSeen"]
+                changed_players.update(record["player_id"] for record in records)
                 conn.execute(
                     """
                     INSERT INTO player_contact_source_files(

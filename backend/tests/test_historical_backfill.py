@@ -7,6 +7,7 @@ import requests
 from historical_backfill import (
     initialize_schema,
     run_one,
+    seed_contact_backfill,
     seed_known_players,
     set_lane_paused,
     set_paused,
@@ -90,6 +91,24 @@ class HistoricalBackfillTests(unittest.TestCase):
         self.assertEqual(seed_known_players(self.conn), 1)
         self.assertEqual(seed_known_players(self.conn), 0)
         self.assertEqual(status_snapshot(self.conn)["queue"]["pending"], 1)
+
+    def test_contact_backfill_prioritizes_events_with_missing_contacts(self):
+        self.conn.execute("INSERT INTO players(player_id, display_name) VALUES (31, 'Missing Contact')")
+        self.conn.execute(
+            "INSERT INTO events(event_id,event_date,blind_draw) VALUES (77,'2026-07-01',1)"
+        )
+        self.conn.execute(
+            "INSERT INTO team_members(team_id,player_id,event_id) VALUES ('77:1',31,77)"
+        )
+        self.conn.commit()
+
+        self.assertEqual(seed_contact_backfill(self.conn), 1)
+        self.assertEqual(seed_contact_backfill(self.conn), 0)
+        row = self.conn.execute(
+            "SELECT item_type,collection_lane FROM historical_backfill_queue WHERE item_key='77'"
+        ).fetchone()
+        self.assertEqual(row["item_type"], "CONTACT_EVENT")
+        self.assertEqual(row["collection_lane"], "CONTACT_ENRICHMENT")
 
     @patch("historical_backfill._process_item")
     def test_scheduler_prevents_player_discovery_from_starving_events(

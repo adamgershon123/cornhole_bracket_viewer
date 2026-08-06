@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from player_contact_directory import player_contact_directory, refresh_player_contact_index
+from player_contact_directory import (
+    index_contact_payload,
+    player_contact_directory,
+    refresh_player_contact_index,
+)
 
 
 class PlayerContactDirectoryTests(unittest.TestCase):
@@ -68,6 +72,24 @@ class PlayerContactDirectoryTests(unittest.TestCase):
         row = self.conn.execute("SELECT email,phone FROM player_contacts WHERE player_id=10").fetchone()
         self.assertEqual(row["email"], "ten@example.com")
         self.assertEqual(row["phone"], "555-0101")
+
+    def test_indexes_fresh_schedule_payload_without_file_rescan(self):
+        result = index_contact_payload(
+            self.conn,
+            {"players": [{
+                "playerID": 20,
+                "playerEmail": "twenty@example.com",
+                "playerPhoneNo": "555-0200",
+            }]},
+            source_endpoint="swap-schedule-breakdown",
+            source_event_id=99,
+        )
+        self.assertEqual(result["playersChanged"], 1)
+        row = self.conn.execute(
+            "SELECT email,source_event_id FROM player_contacts WHERE player_id=20"
+        ).fetchone()
+        self.assertEqual(row["email"], "twenty@example.com")
+        self.assertEqual(row["source_event_id"], "99")
 
 
 if __name__ == "__main__":

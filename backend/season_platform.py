@@ -1129,6 +1129,21 @@ def fetch_and_index_upcoming_schedule(
         completion_checker=schedule_completed,
         payload_sanitizer=lambda value: redact_discovery_payload(value)[0],
     )
+    # Contact fields are private, but the same schedule response can enrich the
+    # admin-only directory without another ACL request.
+    try:
+        from player_contact_directory import index_contact_payload
+
+        index_contact_payload(
+            conn,
+            payload,
+            source_endpoint=endpoint,
+            source_event_id=event_id,
+            source_file=str(path),
+        )
+    except Exception:
+        # Contact enrichment must never block live schedule ingestion.
+        pass
     ingestion = ingest_schedule_matchups(
         conn,
         event_id=event_id,

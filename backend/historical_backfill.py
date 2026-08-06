@@ -12,11 +12,14 @@ from typing import Any
 import requests
 
 from season_platform import (
+    DATA_DIR,
     db,
     fetch_bracket,
     fetch_event_player_classifications,
     fetch_match_stats,
     fetch_player_events,
+    fetch_swap_standings,
+    fetch_swap_up_next,
     index_relevant_matches,
     normalize_match_stats_to_rounds,
 )
@@ -40,7 +43,8 @@ PRIORITY_THRESHOLD = int(
 )
 PREDICTION_LANE = "PREDICTION"
 CLASSIFIED_LANE = "ACL_CLASSIFIED"
-COLLECTION_LANES = (PREDICTION_LANE, CLASSIFIED_LANE)
+CONTACT_LANE = "CONTACT_ENRICHMENT"
+COLLECTION_LANES = (PREDICTION_LANE, CLASSIFIED_LANE, CONTACT_LANE)
 # Completed games produce the training rows that make the crawl useful. Keep
 # discovery moving, but reserve most worker turns for converting known events
 # into brackets and known games into round data.
@@ -384,6 +388,8 @@ def status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
                     "Prediction history"
                     if lane == PREDICTION_LANE
                     else "ACL-classified players"
+                    if lane == CLASSIFIED_LANE
+                    else "Contact enrichment"
                 ),
                 "paused": bool(lane_states[lane]["paused"]),
                 "status": (
@@ -589,8 +595,11 @@ def start_worker() -> None:
         try:
             with db() as conn:
                 initialize_schema(conn)
-                promote_cached_event_geography(conn)
-                seed_known_players(conn)
+                if lane == PREDICTION_LANE:
+                    promote_cached_event_geography(conn)
+                    seed_known_players(conn)
+                elif lane == CONTACT_LANE:
+                    seed_contact_backfill(conn)
                 conn.execute(
                     """
                     UPDATE historical_backfill_state
@@ -704,6 +713,8 @@ def run_one(
     if item is None:
         if lane == PREDICTION_LANE:
             seed_known_players(conn)
+        elif lane == CONTACT_LANE:
+            seed_contact_backfill(conn)
         return {"status": "IDLE"}
     item = dict(item)
     now = utc_now()
@@ -756,6 +767,21 @@ def _process_item(
     conn: sqlite3.Connection,
     item: dict[str, Any],
 ) -> dict[str, Any]:
+    if item["item_type"] == "CONTACT_EVENT":
+        from player_contact_directory import refresh_player_contact_index
+
+        event_id = int(item["event_id"])
+        before = int(conn.execute("SELECT COUNT(*) FROM player_contacts").fetchone()[0])
+        fetch_swap_standings(conn, event_id)
+        fetch_swap_up_next(conn, event_id)
+        refresh = refresh_player_contact_index(conn, DATA_DIR)
+        after = int(conn.execute("SELECT COUNT(*) FROM player_contacts").fetchone()[0])
+        return {
+            **_empty_result(),
+            "contactsIndexed": max(0, after - before),
+            "contactRecordsSeen": int(refresh.get("contactRecordsSeen") or 0),
+            "networkRequests": 2,
+        }
     if item["item_type"] == "PLAYER":
         before = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
         events, metadata = fetch_player_events(
@@ -772,6 +798,12 @@ def _process_item(
                 priority=80,
                 source=f"player:{item['player_id']}",
                 lane=item.get("collection_lane") or PREDICTION_LANE,
+            )
+            _enqueue_contact_event(
+                conn,
+                int(event["eventId"]),
+                priority=25,
+                source=f"player:{item['player_id']}",
             )
         conn.commit()
         after = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
@@ -791,6 +823,12 @@ def _process_item(
             conn,
             int(item["event_id"]),
             preserve_contact_data=True,
+        )
+        _enqueue_contact_event(
+            conn,
+            int(item["event_id"]),
+            priority=800,
+            source=f"event-roster:{item['event_id']}",
         )
         classification = (
             fetch_event_player_classifications(
@@ -962,6 +1000,63 @@ def _enqueue_event(
     )
 
 
+def _enqueue_contact_event(
+    conn: sqlite3.Connection,
+    event_id: int,
+    *,
+    priority: int,
+    source: str,
+) -> int:
+    return _enqueue(
+        conn, "CONTACT_EVENT", str(event_id), priority=priority, source=source,
+        event_id=event_id, lane=CONTACT_LANE,
+    )
+
+
+def seed_contact_backfill(conn: sqlite3.Connection, limit: int = 250) -> int:
+    """Queue historical events where known participants still lack contacts."""
+    initialize_schema(conn)
+    from player_contact_directory import initialize_player_contact_schema
+
+    initialize_player_contact_schema(conn)
+    rows = conn.execute(
+        """
+        WITH event_players AS (
+            SELECT event_id, player_id FROM team_members
+            UNION SELECT event_id, player_id FROM player_rounds
+            UNION SELECT event_id, player_id FROM event_results
+            UNION SELECT event_id, player_id FROM swap_standings
+            UNION SELECT event_id, player_id FROM swap_up_next
+        )
+        SELECT ep.event_id,
+               SUM(CASE WHEN pc.player_id IS NULL THEN 1 ELSE 0 END) AS missing,
+               MAX(COALESCE(e.event_date,'')) AS event_date,
+               MAX(COALESCE(e.blind_draw,0)) AS blind_draw
+        FROM event_players ep
+        LEFT JOIN player_contacts pc ON pc.player_id=ep.player_id
+        LEFT JOIN events e ON e.event_id=ep.event_id
+        LEFT JOIN historical_backfill_queue q
+          ON q.item_type='CONTACT_EVENT' AND q.item_key=CAST(ep.event_id AS TEXT)
+        WHERE pc.player_id IS NULL AND q.queue_id IS NULL
+        GROUP BY ep.event_id
+        HAVING missing > 0
+        ORDER BY blind_draw DESC, event_date DESC, missing DESC
+        LIMIT ?
+        """,
+        (max(1, min(int(limit), 1000)),),
+    ).fetchall()
+    queued = 0
+    for row in rows:
+        queued += _enqueue_contact_event(
+            conn,
+            int(row["event_id"]),
+            priority=300 + min(int(row["missing"] or 0), 100),
+            source="historical-contact-gap",
+        )
+    conn.commit()
+    return queued
+
+
 def _enqueue_game(
     conn: sqlite3.Connection,
     event_id: int,
@@ -1053,7 +1148,7 @@ def _finish_item(
         int(result.get(key) or 0) > 0
         for key in (
             "eventsDiscovered", "playersDiscovered", "gamesDownloaded",
-            "roundsAdded",
+            "roundsAdded", "contactsIndexed",
         )
     )
     conn.execute(

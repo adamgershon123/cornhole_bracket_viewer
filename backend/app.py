@@ -48,6 +48,7 @@ from swing_performance import validate_swing_performance
 from opponent_adjusted_performance import validate_opponent_adjustment
 from prediction_weighting import prediction_weighting_policy
 from bracket_simulation import simulate_bracket
+from double_dip_analysis import championship_double_dip_profile, start_double_dip_history_worker
 from bracket_prediction_snapshots import (
     bracket_player_ids,
     bracket_roster_ready,
@@ -1671,6 +1672,12 @@ def api_match(event_id: str, match_id: str):
     if game_id:
         item["games"] = [g for g in item["games"] if g["gameId"] == game_id]
         item["activeGame"] = item["games"][0] if item["games"] else None
+    with season_platform_db() as conn:
+        item["championshipDoubleDip"] = championship_double_dip_profile(
+            conn,
+            payload=data,
+            match_id=match_id,
+        )
     attach_match_profile_trajectories(item)
     return jsonify(item)
 
@@ -1697,6 +1704,12 @@ def api_match_game_stats(event_id: str, match_id: str, game_id: int):
     item["activeGame"] = item["games"][0] if item["games"] else None
     if item["activeGame"]:
         item["score"] = item["activeGame"].get("score", item.get("score"))
+    with season_platform_db() as conn:
+        item["championshipDoubleDip"] = championship_double_dip_profile(
+            conn,
+            payload=data,
+            match_id=match_id,
+        )
     attach_match_profile_trajectories(item)
 
     return jsonify(item)
@@ -2682,4 +2695,5 @@ if __name__ == "__main__":
     start_historical_backfill_worker()
     start_payload_archive_worker(season_platform_db)
     start_player_analytics_snapshot_worker(season_platform_db)
+    start_double_dip_history_worker(season_platform_db, data_dir=DATA_DIR)
     app.run(host="0.0.0.0", port=port, debug=debug)

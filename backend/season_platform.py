@@ -1073,6 +1073,16 @@ def fetch_bracket(
     )
     event = event_from_bracket(payload, fallback_event_id=event_id)
     upsert_event(conn, event, bracket_downloaded=True, bracket_is_complete=bracket_completed(payload))
+    if bracket_completed(payload):
+        try:
+            from double_dip_analysis import analyze_double_elimination_final, store_double_dip_records
+            record = analyze_double_elimination_final(payload)
+            if record:
+                store_double_dip_records(conn, [record])
+        except Exception:
+            # Double-dip analytics must never prevent the underlying ACL bracket
+            # from being cached and normalized.
+            pass
     upsert_manifest(
         conn,
         entity_type="event",

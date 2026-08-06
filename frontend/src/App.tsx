@@ -10,6 +10,7 @@ import { MomentumChart } from './components/MomentumChart';
 import { RoundTimeline } from './components/RoundTimeline';
 import { RoundWalkthrough } from './components/RoundWalkthrough';
 import { TaleOfTheTape } from './components/TaleOfTheTape';
+import { ChampionshipDoubleDip } from './components/ChampionshipDoubleDip';
 import { PlayerProfileTrajectory } from './components/PlayerProfileTrajectory';
 import { LiveWinProbabilityChart } from './components/LiveWinProbabilityChart';
 import StandingsView from './components/StandingsView';
@@ -795,6 +796,7 @@ function App() {
             ...existing,
             status: normalized.status,
             statusId: normalized.statusId,
+            championshipDoubleDip: normalized.championshipDoubleDip || existing.championshipDoubleDip,
             score: resolvedScore,
             activeGame: {
               ...existingGame,
@@ -2194,6 +2196,8 @@ async function loadPlayerEvents(
       selectedRound={selectedReplayRound}
       completed={matchLooksCompleted(match)}
     />
+
+    <ChampionshipDoubleDip profile={match.championshipDoubleDip} />
 
     {displayedRound === 0 && <TaleOfTheTape
       players={players}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +12,9 @@ from typing import Any, Iterable
 
 ANALYSIS_VERSION = "double-dip-history-v1"
 VENUE_PRIOR_EVENTS = 50.0
+PLAYER_PRIOR_APPEARANCES = 12.0
+_HISTORY_WORKER_STARTED = False
+_HISTORY_WORKER_LOCK = threading.Lock()
 
 
 def double_dip_report(
@@ -69,6 +73,30 @@ def double_dip_report(
     }
 
 
+def start_double_dip_history_worker(db_factory, *, data_dir: str | Path) -> None:
+    """Populate the player ledger from already-cached brackets without delaying requests."""
+    global _HISTORY_WORKER_STARTED
+    with _HISTORY_WORKER_LOCK:
+        if _HISTORY_WORKER_STARTED:
+            return
+        _HISTORY_WORKER_STARTED = True
+
+    def run() -> None:
+        try:
+            root = Path(data_dir)
+            paths = list(root.glob("event_*.json"))
+            paths.extend((root / "season_platform" / "raw" / "brackets").glob("event_*.json"))
+            with db_factory() as conn:
+                report = double_dip_report(conn, bracket_paths=paths)
+                records = report.get("events") or []
+                for offset in range(0, len(records), 50):
+                    store_double_dip_records(conn, records[offset:offset + 50])
+        except Exception as exc:
+            print(f"Double-dip history backfill failed: {exc}")
+
+    threading.Thread(target=run, name="double-dip-history", daemon=True).start()
+
+
 def store_double_dip_records(conn: sqlite3.Connection, records: list[dict[str, Any]]) -> int:
     _init_schema(conn)
     for row in records:
@@ -101,6 +129,24 @@ def store_double_dip_records(conn: sqlite3.Connection, records: list[dict[str, A
                 row.get("kingSeatWaitMinutes"), row.get("challengerWaitMinutes"), ANALYSIS_VERSION,
             ),
         )
+        outcome = _outcome_code(row)
+        for role, player_key in (
+            ("KING_SEAT", "kingSeatPlayerIds"),
+            ("CHALLENGER", "challengerPlayerIds"),
+        ):
+            conn.execute(
+                "DELETE FROM double_dip_player_events WHERE event_id=? AND role=?",
+                (row["eventId"], role),
+            )
+            for player_id in row.get(player_key) or []:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO double_dip_player_events(
+                      event_id, player_id, role, outcome, analysis_version
+                    ) VALUES(?,?,?,?,?)
+                    """,
+                    (row["eventId"], int(player_id), role, outcome, ANALYSIS_VERSION),
+                )
     conn.commit()
     return len(records)
 
@@ -135,6 +181,188 @@ def double_dip_baseline(conn: sqlite3.Connection, *, venue_key: str | None) -> d
     }
 
 
+def championship_double_dip_profile(
+    conn: sqlite3.Connection,
+    *,
+    payload: dict[str, Any],
+    match_id: str | int,
+) -> dict[str, Any] | None:
+    """Return role-specific championship history for the two current finalists."""
+    _init_schema(conn)
+    context = championship_match_context(payload, match_id=match_id)
+    if not context:
+        return None
+
+    completed = analyze_double_elimination_final(payload)
+    if completed:
+        store_double_dip_records(conn, [completed])
+
+    overall_rows = conn.execute(
+        "SELECT reset_occurred, king_seat_won FROM double_dip_events"
+    ).fetchall()
+    overall = _outcome_rates(overall_rows)
+    return {
+        **context,
+        "analysisVersion": ANALYSIS_VERSION,
+        "definitions": {
+            "kingSeat": "Reached the championship without a loss and must be beaten twice.",
+            "challenger": "Reached the championship through the elimination bracket and must win twice.",
+            "rating": "Historical rate shrunk toward all recorded championships when the player sample is small.",
+        },
+        "kingSeat": _role_profile(
+            conn,
+            role="KING_SEAT",
+            player_ids=context["kingSeatPlayerIds"],
+            player_names=context["kingSeatPlayerNames"],
+            overall=overall,
+        ),
+        "challenger": _role_profile(
+            conn,
+            role="CHALLENGER",
+            player_ids=context["challengerPlayerIds"],
+            player_names=context["challengerPlayerNames"],
+            overall=overall,
+        ),
+    }
+
+
+def championship_match_context(payload: dict[str, Any], *, match_id: str | int) -> dict[str, Any] | None:
+    details = [row for row in payload.get("bracketDetails") or [] if isinstance(row, dict)]
+    selected_id = _integer(match_id)
+    if selected_id is None:
+        return None
+    rows = [row for row in details if _integer(row.get("bracketmatchid")) == selected_id]
+    if len(rows) < 2 or not any(token in str(rows[0].get("rounddesc") or "").upper() for token in ("FINAL", "CHAMP")):
+        return None
+    top, bottom = _top_bottom(rows)
+    if not top or not bottom:
+        return None
+    top_id, bottom_id = str(top.get("bracketteamid")), str(bottom.get("bracketteamid"))
+    king_id = _king_seat_id(details, selected_id, {top_id, bottom_id})
+    if not king_id:
+        return None
+    challenger_id = bottom_id if king_id == top_id else top_id
+    teams = {top_id: top, bottom_id: bottom}
+
+    def players(team_id: str) -> tuple[list[int], list[str]]:
+        ids, names = [], []
+        for player in teams[team_id].get("player_info") or []:
+            player_id = _integer(player.get("playerid") or player.get("id"))
+            if player_id is not None:
+                ids.append(player_id)
+            name = " ".join(filter(None, [player.get("firstname"), player.get("lastname")])).strip()
+            names.append(name or (f"Player {player_id}" if player_id is not None else "Unknown player"))
+        return ids, names
+
+    king_ids, king_names = players(king_id)
+    challenger_ids, challenger_names = players(challenger_id)
+    return {
+        "status": "AVAILABLE",
+        "matchId": str(selected_id),
+        "kingSeatTeamId": king_id,
+        "challengerTeamId": challenger_id,
+        "kingSeatPlayerIds": king_ids,
+        "kingSeatPlayerNames": king_names,
+        "challengerPlayerIds": challenger_ids,
+        "challengerPlayerNames": challenger_names,
+    }
+
+
+def _role_profile(conn, *, role: str, player_ids: list[int], player_names: list[str], overall: dict[str, float]) -> dict[str, Any]:
+    players = []
+    for index, player_id in enumerate(player_ids):
+        rows = conn.execute(
+            """
+            SELECT e.reset_occurred, e.king_seat_won
+            FROM double_dip_player_events p
+            JOIN double_dip_events e ON e.event_id=p.event_id
+            WHERE p.player_id=? AND p.role=?
+            """,
+            (player_id, role),
+        ).fetchall()
+        players.append(_participant_summary(
+            player_id=player_id,
+            player_name=player_names[index] if index < len(player_names) else f"Player {player_id}",
+            role=role,
+            rows=rows,
+            overall=overall,
+        ))
+
+    placeholders = ",".join("?" for _ in player_ids)
+    combined_rows = []
+    if placeholders:
+        combined_rows = conn.execute(
+            f"""
+            SELECT DISTINCT e.event_id, e.reset_occurred, e.king_seat_won
+            FROM double_dip_player_events p
+            JOIN double_dip_events e ON e.event_id=p.event_id
+            WHERE p.player_id IN ({placeholders}) AND p.role=?
+            """,
+            (*player_ids, role),
+        ).fetchall()
+    raw = _outcome_rates(combined_rows)
+    keys = _role_keys(role)
+    team_average = {
+        key: round(mean([player["rating"][key] for player in players]), 4) if players else None
+        for key in keys
+    }
+    return {
+        "role": role,
+        "players": players,
+        "teamAverageRating": team_average,
+        "combinedHistory": {
+            "appearances": len(combined_rows),
+            **{key: raw[key] for key in keys},
+        },
+    }
+
+
+def _participant_summary(*, player_id: int, player_name: str, role: str, rows, overall) -> dict[str, Any]:
+    raw = _outcome_rates(rows)
+    appearances = len(rows)
+    keys = _role_keys(role)
+    weight = appearances / (appearances + PLAYER_PRIOR_APPEARANCES) if appearances else 0.0
+    return {
+        "playerId": player_id,
+        "playerName": player_name,
+        "appearances": appearances,
+        "sampleConfidence": round(weight, 4),
+        "raw": {key: raw[key] if appearances else None for key in keys},
+        "rating": {
+            key: round(weight * raw[key] + (1.0 - weight) * overall[key], 4)
+            for key in keys
+        },
+    }
+
+
+def _role_keys(role: str) -> tuple[str, str, str]:
+    return ("winInOneRate", "winInTwoRate", "doubleDippedRate") if role == "KING_SEAT" else (
+        "loseFirstRate", "loseSecondRate", "completeDoubleDipRate"
+    )
+
+
+def _outcome_rates(rows) -> dict[str, float]:
+    count = len(rows)
+    divisor = float(count or 1)
+    king_one = sum(not bool(row["reset_occurred"]) and bool(row["king_seat_won"]) for row in rows)
+    king_two = sum(bool(row["reset_occurred"]) and bool(row["king_seat_won"]) for row in rows)
+    challenger = sum(bool(row["reset_occurred"]) and not bool(row["king_seat_won"]) for row in rows)
+    return {
+        "winInOneRate": king_one / divisor,
+        "winInTwoRate": king_two / divisor,
+        "doubleDippedRate": challenger / divisor,
+        "loseFirstRate": king_one / divisor,
+        "loseSecondRate": king_two / divisor,
+        "completeDoubleDipRate": challenger / divisor,
+    }
+
+
+def _outcome_code(row: dict[str, Any]) -> str:
+    if not row["resetOccurred"]:
+        return "KING_WON_ONE"
+    return "KING_WON_TWO" if row["kingSeatWon"] else "CHALLENGER_DOUBLE_DIP"
+
+
 def _init_schema(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -149,6 +377,16 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_double_dip_venue ON double_dip_events(venue_key)")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS double_dip_player_events(
+          event_id INTEGER NOT NULL, player_id INTEGER NOT NULL,
+          role TEXT NOT NULL, outcome TEXT NOT NULL, analysis_version TEXT NOT NULL,
+          PRIMARY KEY(event_id, player_id, role)
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_double_dip_player_role ON double_dip_player_events(player_id, role)")
     conn.commit()
 
 

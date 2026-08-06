@@ -1,6 +1,11 @@
+import sqlite3
 import unittest
 
-from double_dip_analysis import analyze_double_elimination_final
+from double_dip_analysis import (
+    analyze_double_elimination_final,
+    championship_double_dip_profile,
+    store_double_dip_records,
+)
 
 
 class DoubleDipAnalysisTests(unittest.TestCase):
@@ -29,6 +34,40 @@ class DoubleDipAnalysisTests(unittest.TestCase):
             ],
         }
         self.assertIsNone(analyze_double_elimination_final(payload))
+
+    def test_player_profiles_use_role_specific_championship_outcomes(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        payloads = [
+            self._payload(91, [(21, 10)]),
+            self._payload(92, [(10, 21), (21, 17)]),
+            self._payload(93, [(10, 21), (15, 21)]),
+        ]
+        records = [analyze_double_elimination_final(payload) for payload in payloads]
+        store_double_dip_records(conn, records)
+        result = championship_double_dip_profile(conn, payload=payloads[-1], match_id=12)
+
+        king = result["kingSeat"]
+        challenger = result["challenger"]
+        self.assertEqual(king["combinedHistory"]["appearances"], 3)
+        self.assertAlmostEqual(king["combinedHistory"]["winInOneRate"], 1 / 3)
+        self.assertAlmostEqual(king["combinedHistory"]["winInTwoRate"], 1 / 3)
+        self.assertAlmostEqual(king["combinedHistory"]["doubleDippedRate"], 1 / 3)
+        self.assertAlmostEqual(challenger["combinedHistory"]["loseFirstRate"], 1 / 3)
+        self.assertAlmostEqual(challenger["combinedHistory"]["loseSecondRate"], 1 / 3)
+        self.assertAlmostEqual(challenger["combinedHistory"]["completeDoubleDipRate"], 1 / 3)
+
+    def _payload(self, event_id, scores):
+        games = [self._game(index, home, away) for index, (home, away) in enumerate(scores, start=1)]
+        return {
+            "eventInfo": {"eventID": event_id},
+            "bracketDetails": [
+                self._row(7, "W", 10, "Winner Final", games=[self._game(1, 21, 10)]),
+                self._row(8, "L", 11, "Loser Final", games=[self._game(1, 21, 15)]),
+                self._row(7, "L", 12, "Final", "M12T", games),
+                self._row(8, "L", 12, "Final", "M12B", games),
+            ],
+        }
 
     @staticmethod
     def _game(game_id, home, away):

@@ -18,7 +18,7 @@ export type GameState = {
 }
 export type RoundRow = { round:number; netPoints:number; scoringTeamId:string|null; gameState?:GameState; players:{playerId:string; teamId:string; name:string; grossPoints:number; teamScoreAfter:number; bagsIn?:number; bagsOn?:number; bagsOff?:number; fourBagger?:boolean}[] }
 export type Game = { gameId:number; statusId:number; status?:string; currentRound?:number|string; score:{top:number|null;bottom:number|null}; players:PlayerStat[]; rounds:RoundRow[]; liveWinProbability?:any; profileTrajectories?:any }
-export type Match = { eventId:string; matchId:string; courtId:string; roundDescription:string; bracketSide:string; statusId:number; status:string; currentRound?:number|string; teams:{top:{id:string;name:string};bottom:{id:string;name:string}}; score:{top:number|null;bottom:number|null}; games:Game[]; activeGame?:Game }
+export type Match = { eventId:string; matchId:string; courtId:string; roundDescription:string; bracketSide:string; statusId:number; status:string; currentRound?:number|string; teams:{top:{id:string;name:string};bottom:{id:string;name:string}}; score:{top:number|null;bottom:number|null}; games:Game[]; activeGame?:Game; championshipDoubleDip?:any }
 export type EventResponse = { event:{id:string; name:string; status?:string; leagueStatus?:string; courts:string[]; lastUpdated:number}; matches:Match[]; notifications?:{type?:string; message?:string; source?:string}[] }
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 export async function fetchEvent(eventId:string, stats=false): Promise<EventResponse>{

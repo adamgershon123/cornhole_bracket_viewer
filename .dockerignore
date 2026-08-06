@@ -1,0 +1,12 @@
+.git
+.agents
+.codex
+.pnpm-store
+backend/__pycache__
+backend/.venv
+backend/data
+frontend/node_modules
+frontend/dist
+*.pyc
+*.log
+

@@ -16,7 +16,7 @@ export default function TournamentPage() {
     setLoading(true);
 
     try {
-      const data = await fetchEvent(eventId, true);
+      const data = await fetchEvent(eventId, false);
 		setEventData(data);
     } finally {
       setLoading(false);

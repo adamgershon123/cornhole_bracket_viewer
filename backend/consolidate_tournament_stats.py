@@ -4,8 +4,14 @@ import json
 from collections import defaultdict
 from markupsafe import Markup
 
-def consolidate_tournament_stats(event_id):
-    data_dir = "data"
+def configured_data_dir():
+    """Return the shared data directory used by downloaded and derived stats."""
+    return os.environ.get("DATA_DIR", "data")
+
+
+def consolidate_tournament_stats(event_id, data_dir=None):
+    data_dir = data_dir or configured_data_dir()
+    os.makedirs(data_dir, exist_ok=True)
     prefix = f"event_{event_id}_match_"
     output_path = os.path.join(data_dir, f"event_{event_id}_player_totals.json")
     highlights_path = os.path.join(data_dir, f"event_{event_id}_highlights.json")
@@ -22,7 +28,7 @@ def consolidate_tournament_stats(event_id):
     highest_dpr = {"player": "", "dpr": -9999, "match": ""} # Net points per round in a game
 
     match_files = [f for f in os.listdir(data_dir) if prefix in f and f.endswith("_stats.json")]
-    print(f"📦 Found {len(match_files)} stats files to process for event {event_id} totals.")
+    print(f"Found {len(match_files)} stats files to process for event {event_id} totals.")
 
     for file in match_files:
         path = os.path.join(data_dir, file)
@@ -88,7 +94,7 @@ def consolidate_tournament_stats(event_id):
                         player_totals[pid1]["rounds_tied"] += 1
                         player_totals[pid2]["rounds_tied"] += 1
         except Exception as e:
-            print(f"⚠️ Error reading or processing file {file}: {e}")
+            print(f"Error reading or processing file {file}: {e}")
 
 # In consolidate_tournament_stats.py
 # ... (other parts of the function are as you provided in the 9.5KB version) ...
@@ -129,15 +135,15 @@ def consolidate_tournament_stats(event_id):
     # ... (rest of the function: saving JSON files, etc.)
     with open(output_path, "w", encoding="utf-8") as out:
         json.dump(player_totals, out, indent=2)
-    print(f"✅ Saved consolidated stats to {output_path}")
+    print(f"Saved consolidated stats to {output_path}")
 
     with open(highlights_path, "w", encoding="utf-8") as out:
         json.dump({"highest_ppr": highest_ppr, "highest_dpr": highest_dpr}, out, indent=2)
-    print(f"✅ Saved highlights to {highlights_path}")
+    print(f"Saved highlights to {highlights_path}")
 
 
-def render_highlights_section(event_id): # This function stays in consolidate_tournament_stats.py
-    path = f"data/event_{event_id}_highlights.json"
+def render_highlights_section(event_id, data_dir=None): # This function stays in consolidate_tournament_stats.py
+    path = os.path.join(data_dir or configured_data_dir(), f"event_{event_id}_highlights.json")
     if not os.path.exists(path):
         return "<p>No highlights data available.</p>"
     try:

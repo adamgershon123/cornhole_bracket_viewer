@@ -12,11 +12,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Set `ACL_SESSION_COOKIE` when the ACL cookie expires:
-
-```bash
-export ACL_SESSION_COOKIE='connect.sid=...'
-```
+ACL data calls use public/Fanzone-style headers. Cookie fallback is disabled; if ACL blocks a match-stat response with `401` or `403`, the API returns a coverage warning instead of retrying with authentication.
 
 ## Frontend
 
@@ -63,6 +59,16 @@ http://localhost:5001/?event_id=248182
 
 - `GET /api/raw/events/<event_id>`  
   Debug endpoint for the raw cached ACL bracket response.
+
+## Season/Career Platform APIs
+
+- `GET /api/season-platform/gather?playerId=<id>&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+  Builds the player-focused season cache. It fetches player event indexes, bracket data, and only the selected player's match stats by default. The season platform does not use the ACL session cookie; if ACL blocks a match-stat request with `401` or `403`, the response includes a warning notification and marks that game as missing coverage. Add `playerIds=1,2,3` for multiple players, `refreshIndex=1` to refresh cached event indexes, `force=1` to force completed data refreshes, `profiles=1` to cache sanitized player profiles, or `mode=full` for heavier full-event match stat gathering.
+
+- `GET /api/season-platform/leaderboard`
+  Reads the normalized SQLite ledger and returns sortable leaderboard rows. Optional filters include `playerId`/`playerIds`, `startDate`, `endDate`, `locationId`, `partnerId`, `opponentId`, and `courtId`.
+
+The season platform writes raw API payloads under `backend/data/season_platform/raw` and normalized data to `backend/data/season_platform/season_platform.db`. Repeated stats are calculated from the `player_rounds` ledger.
 
 ## What changed
 

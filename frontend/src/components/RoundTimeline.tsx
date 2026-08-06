@@ -8,16 +8,16 @@ type Props = {
   bottomTeamId?: string;
 };
 
-const TEAM_1_CARD = 'border-blue-400/90 bg-blue-400/10';
-const TEAM_2_CARD = 'border-red-400/90 bg-red-400/10';
-const WASH_CARD = 'border-yellow-300/90 bg-yellow-300/10';
-
-const TEAM_1_TEXT = 'text-blue-400';
-const TEAM_2_TEXT = 'text-red-400';
-const WASH_TEXT = 'text-yellow-300';
-
-const THROWER_PAIR_A_TEXT = 'text-green-400';
-const THROWER_PAIR_B_TEXT = 'text-orange-400';
+type ScoreRow = {
+  key: string;
+  playerId?: string;
+  name: string;
+  detail: string;
+  team: 'top' | 'bottom';
+  pair: 1 | 2;
+  scores: Record<number, number | string>;
+  total: number;
+};
 
 export function RoundTimeline({
   rounds,
@@ -26,243 +26,129 @@ export function RoundTimeline({
   topTeamId,
   bottomTeamId,
 }: Props) {
-  const team1Name = topTeamName || 'Team 1';
-  const team2Name = bottomTeamName || 'Team 2';
-
-  const playerPairs = getPlayerPairsFromRounds(rounds);
-
-  const pairA = {
-    team1: playerPairs.pairA.team1 || 'Team 1 Player A',
-    team2: playerPairs.pairA.team2 || 'Team 2 Player A',
-  };
-
-  const pairB = {
-    team1: playerPairs.pairB.team1 || 'Team 1 Player B',
-    team2: playerPairs.pairB.team2 || 'Team 2 Player B',
-  };
+  const rows = buildScoreRows(rounds, topTeamId, bottomTeamId);
+  const roundNumbers = rounds.map(round => Number(round.round)).filter(Number.isFinite);
 
   return (
     <section className="glass rounded-[28px] p-4 overflow-hidden">
-      <h2 className="text-lg font-black mb-4">Round by Round</h2>
-
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-blue-400/80 bg-blue-400/10 p-4">
-          <div className="text-xs font-black uppercase tracking-[0.25em] text-blue-400">
-            Team 1
-          </div>
-          <div className="mt-1 text-xl font-black leading-tight text-white">
-            {team1Name}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-red-400/80 bg-red-400/10 p-4">
-          <div className="text-xs font-black uppercase tracking-[0.25em] text-red-400">
-            Team 2
-          </div>
-          <div className="mt-1 text-xl font-black leading-tight text-white">
-            {team2Name}
-          </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-black uppercase tracking-wider">Score Per Round</h2>
+        <div className="flex flex-wrap gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
+          <LegendDot color="bg-green-500" label="Odd rounds" />
+          <LegendDot color="bg-orange-500" label="Even rounds" />
         </div>
       </div>
 
-      <div className="grid grid-cols-[minmax(90px,0.8fr)_minmax(0,3fr)_minmax(90px,0.8fr)] gap-3 items-start">
-		<ThrowerPanel
-		  title="Odd Rounds"
-		  color="green"
-		  team1Player={pairA.team1}
-		  team2Player={pairA.team2}
-		/>
-
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-          {rounds.map((r) => {
-            const isWash = !r.netPoints || Number(r.netPoints) === 0;
-
-            const winningTeam = isWash
-              ? 'wash'
-              : r.scoringTeamId === topTeamId
-                ? 'team1'
-                : r.scoringTeamId === bottomTeamId
-                  ? 'team2'
-                  : inferWinningTeamFromScores(r);
-
-            const roundCardClass =
-              winningTeam === 'team1'
-                ? TEAM_1_CARD
-                : winningTeam === 'team2'
-                  ? TEAM_2_CARD
-                  : WASH_CARD;
-
-            const pointsTextClass =
-              winningTeam === 'team1'
-                ? TEAM_1_TEXT
-                : winningTeam === 'team2'
-                  ? TEAM_2_TEXT
-                  : WASH_TEXT;
-
-            const throwerPair = getThrowerPair(r);
-            const scoreClass =
-              throwerPair === 'A' ? THROWER_PAIR_A_TEXT : THROWER_PAIR_B_TEXT;
-
-            const scores = getRoundScores(r);
-
-            return (
-              <div
-                key={r.round}
-                className={`rounded-2xl border ${roundCardClass} px-2 py-3 text-center min-w-0`}
-              >
-                <div className="text-xs font-bold text-zinc-400">
-                  R{r.round}
-                </div>
-
-                <div
-                  className={`mt-1 font-black leading-none ${pointsTextClass} ${
-                    isWash ? 'text-[3rem]' : 'text-[3.25rem]'
-                  }`}
-                >
-                  {isWash ? (
-                    <span className="inline-block scale-x-75">W</span>
-                  ) : (
-                    r.netPoints
-                  )}
-                </div>
-
-                <div className="my-2 h-px bg-white/15" />
-
-                <div className={`text-[1.75rem] font-black leading-none ${scoreClass}`}>
-                  {scores.top}
-                </div>
-
-                <div className="text-[0.9rem] font-black leading-none text-zinc-500">
-                  –
-                </div>
-
-                <div className={`text-[1.75rem] font-black leading-none ${scoreClass}`}>
-                  {scores.bottom}
-                </div>
-              </div>
-            );
-          })}
+      <div className="mb-3 grid grid-cols-1 gap-2 text-sm font-bold text-zinc-400 sm:grid-cols-2">
+        <div className="rounded-xl border border-blue-400/40 bg-blue-400/10 px-3 py-2">
+          <span className="text-blue-400">Team 1</span> / {topTeamName || 'Team 1'}
         </div>
-
-        <ThrowerPanel
-		  title="Even Rounds"
-		  color="orange"
-		  team1Player={pairB.team1}
-		  team2Player={pairB.team2}
-		/>
+        <div className="rounded-xl border border-red-400/40 bg-red-400/10 px-3 py-2">
+          <span className="text-red-400">Team 2</span> / {bottomTeamName || 'Team 2'}
+        </div>
       </div>
 
-      <div className="mt-4 text-xs font-bold text-zinc-500">
-	  Border color = round winner. Yellow = wash. Green scores = odd rounds. Orange scores = even rounds.
-	</div>
+      <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <table className="min-w-max w-full border-collapse bg-zinc-950/70">
+          <thead>
+            <tr className="border-b border-white/10 text-left text-sm uppercase tracking-widest text-zinc-400">
+              <th className="sticky left-0 z-10 min-w-[12rem] bg-zinc-950 px-3 py-3 font-black">
+                Player
+              </th>
+              {roundNumbers.map(round => (
+                <th key={round} className="min-w-[4.25rem] border-l border-white/10 px-3 py-3 text-center font-black">
+                  {round}
+                </th>
+              ))}
+              <th className="min-w-[5rem] border-l border-white/10 px-3 py-3 text-center font-black">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.key} className="border-b border-white/10 last:border-b-0">
+                <td className="sticky left-0 z-10 min-w-[12rem] bg-zinc-950 px-3 py-3">
+                  <div className="text-lg font-black leading-tight">{row.name}</div>
+                  <div className="text-sm font-bold text-zinc-400">{row.detail}</div>
+                </td>
+                {roundNumbers.map(round => {
+                  const value = row.scores[round] ?? '';
+                  const isOdd = round % 2 === 1;
+                  return (
+                    <td
+                      key={round}
+                      className="border-l border-white/10 px-3 py-3 text-center"
+                    >
+                      <span className={`text-3xl font-black ${isOdd ? 'text-green-500' : 'text-orange-400'}`}>
+                        {value}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className={`border-l border-white/10 px-3 py-3 text-center text-4xl font-black ${row.team === 'top' ? 'text-blue-400' : 'text-red-400'}`}>
+                  {row.total}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs font-bold text-zinc-500">
+        <span>Swipe horizontally to see all rounds.</span>
+        <span>{roundNumbers.length} rounds</span>
+      </div>
     </section>
   );
 }
 
-function ThrowerPanel({
-  title,
-  color,
-  team1Player,
-  team2Player,
-}: {
-  title: string;
-  color: 'green' | 'orange';
-  team1Player: string;
-  team2Player: string;
-}) {
-  const border =
-    color === 'green'
-      ? 'border-green-400/80 bg-green-400/10'
-      : 'border-orange-400/80 bg-orange-400/10';
-
-  const text =
-    color === 'green'
-      ? 'text-green-400'
-      : 'text-orange-400';
-
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div className={`sticky top-3 rounded-2xl border ${border} p-3`}>
-      <div className={`text-xs font-black uppercase tracking-[0.2em] ${text}`}>
-        {title}
-      </div>
-
-      <div className="mt-3 space-y-3">
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">
-            Team 1
-          </div>
-          <div className="text-sm font-black leading-tight text-white">
-            {team1Player}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-red-400">
-            Team 2
-          </div>
-          <div className="text-sm font-black leading-tight text-white">
-            {team2Player}
-          </div>
-        </div>
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-2">
+      <span className={`h-3 w-3 rounded-full ${color}`} />
+      {label}
+    </span>
   );
 }
 
-function getRoundScores(round: any) {
-  const players = round.players || [];
+function buildScoreRows(rounds: RoundRow[], topTeamId?: string, bottomTeamId?: string): ScoreRow[] {
+  const rows = new Map<string, ScoreRow>();
 
-  return {
-    top: players[0]?.grossPoints ?? '-',
-    bottom: players[1]?.grossPoints ?? '-',
-  };
-}
-
-function getThrowerPair(round: any): 'A' | 'B' {
-  return Number(round.round || 1) % 2 === 1 ? 'A' : 'B';
-}
-
-function inferWinningTeamFromScores(round: any): 'team1' | 'team2' | 'wash' {
-  const scores = getRoundScores(round);
-  const top = Number(scores.top);
-  const bottom = Number(scores.bottom);
-
-  if (!Number.isFinite(top) || !Number.isFinite(bottom)) return 'wash';
-  if (top === bottom) return 'wash';
-
-  return top > bottom ? 'team1' : 'team2';
-}
-
-function getPlayerPairsFromRounds(rounds: RoundRow[]) {
-  const pairA = { team1: '', team2: '' };
-  const pairB = { team1: '', team2: '' };
-
-  rounds.forEach((round: any) => {
-    const pair = getThrowerPair(round);
+  rounds.forEach(round => {
+    const roundNo = Number(round.round);
     const players = round.players || [];
 
-    const team1Player =
-      players[0]?.name ||
-      players[0]?.playerName ||
-      players[0]?.shortName ||
-      '';
+    players.forEach(player => {
+      const team = String(player.teamId) === String(bottomTeamId) ? 'bottom' : 'top';
+      const pair = roundNo % 2 === 1 ? 1 : 2;
+      const key = String(player.playerId || `${team}-${player.name}`);
+      const existing = rows.get(key);
+      const detail = `${team === 'top' ? 'Team 1' : 'Team 2'} - P${pair}`;
 
-    const team2Player =
-      players[1]?.name ||
-      players[1]?.playerName ||
-      players[1]?.shortName ||
-      '';
+      if (!existing) {
+        rows.set(key, {
+          key,
+          playerId: player.playerId,
+          name: player.name,
+          detail,
+          team,
+          pair,
+          scores: {},
+          total: 0,
+        });
+      }
 
-    if (pair === 'A') {
-      if (!pairA.team1 && team1Player) pairA.team1 = team1Player;
-      if (!pairA.team2 && team2Player) pairA.team2 = team2Player;
-    }
-
-    if (pair === 'B') {
-      if (!pairB.team1 && team1Player) pairB.team1 = team1Player;
-      if (!pairB.team2 && team2Player) pairB.team2 = team2Player;
-    }
+      const row = rows.get(key)!;
+      const points = Number(player.grossPoints ?? 0);
+      row.scores[roundNo] = Number.isFinite(points) ? points : '';
+      if (Number.isFinite(points)) row.total += points;
+    });
   });
 
-  return { pairA, pairB };
+  return [...rows.values()].sort((a, b) => {
+    if (a.pair !== b.pair) return a.pair - b.pair;
+    if (a.team !== b.team) return a.team === 'top' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 }

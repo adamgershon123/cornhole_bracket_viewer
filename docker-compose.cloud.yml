@@ -1,0 +1,49 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    command: ["gunicorn", "--bind", "0.0.0.0:5173", "--workers", "1", "--threads", "8", "--timeout", "120", "--access-logfile", "-", "app:app"]
+    environment:
+      DATA_DIR: /data
+      PORT: 5173
+    volumes:
+      - ./cloud-data:/data
+    expose:
+      - "5173"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:5173/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2300M
+
+  workers:
+    build: .
+    restart: unless-stopped
+    command: ["python", "cloud_worker.py"]
+    healthcheck:
+      disable: true
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - ./cloud-data:/data
+    depends_on:
+      web:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1300M
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    network_mode: service:web
+    depends_on:
+      web:
+        condition: service_healthy

@@ -8,6 +8,14 @@ import requests
 ACL_BASE = "https://api.iplayacl.com/api/v1"
 
 
+PUBLIC_HEADERS = {
+    "accept": "application/json, text/plain, */*",
+    "origin": "https://fanzone.iplayacl.com",
+    "referer": "https://fanzone.iplayacl.com/",
+    "user-agent": "Mozilla/5.0",
+}
+
+
 @dataclass
 class SeasonConfig:
     player_id: int
@@ -19,13 +27,13 @@ class SeasonConfig:
 
 
 def acl_get(path: str) -> dict[str, Any]:
-    response = requests.get(f"{ACL_BASE}{path}", timeout=30)
+    response = requests.get(f"{ACL_BASE}{path}", headers=PUBLIC_HEADERS, timeout=30)
     response.raise_for_status()
     return response.json()
 
 
 def parse_event_detail(payload: dict[str, Any]) -> dict[str, Any]:
-    data = payload.get("data") or payload
+    data = payload.get("data") or payload.get("eventInfo") or payload
 
     return {
         "eventId": int(data.get("eventID") or data.get("leagueID") or data.get("eventId")),
@@ -59,6 +67,7 @@ def parse_player_event(row: dict[str, Any]) -> dict[str, Any]:
             or row.get("leagueStartDate")
             or row.get("leaguestartdate")
         ),
+        "locationId": row.get("leagueLocationID") or row.get("locationId"),
         "locationName": (
             row.get("leagueLocationName")
             or row.get("locationName")
@@ -72,7 +81,10 @@ def parse_player_event(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 def get_event_details(event_id: int) -> dict[str, Any]:
-    return parse_event_detail(acl_get(f"/events/{event_id}"))
+    try:
+        return parse_event_detail(acl_get(f"/events/{event_id}"))
+    except requests.HTTPError:
+        return parse_event_detail(acl_get(f"/bracket-data/{event_id}"))
 
 
 def get_player_events(player_id: int, bucket_id: int, status: str) -> list[dict[str, Any]]:
@@ -116,11 +128,10 @@ def get_player_completed_events(player_id: int, bucket_id: int) -> list[dict[str
     return deduped
 
 
-def get_candidate_events(config: SeasonConfig, seed_event: dict[str, Any]) -> list[dict[str, Any]]:
+def get_candidate_events(config: SeasonConfig) -> list[dict[str, Any]]:
     player_events = get_player_completed_events(config.player_id, config.bucket_id)
     print("PLAYER EVENTS COUNT:", len(player_events))
     print("FIRST 5 PLAYER EVENTS:", player_events[:5])
-    print("SEED LOCATION:", seed_event.get("locationId"), seed_event.get("locationName"))
 
     candidates: list[dict[str, Any]] = []
 
@@ -140,9 +151,6 @@ def get_candidate_events(config: SeasonConfig, seed_event: dict[str, Any]) -> li
         try:
             detail = get_event_details(event_id)
         except Exception:
-            continue
-
-        if detail.get("locationId") != seed_event.get("locationId"):
             continue
 
         candidates.append(detail)
@@ -218,21 +226,23 @@ def normalize_standing_row(row: dict[str, Any]) -> dict[str, Any]:
 
 def build_consolidated_standings(config: SeasonConfig) -> dict[str, Any]:
     seed_event = get_event_details(config.seed_event_id)
-    included_events = get_candidate_events(config, seed_event)
+    included_events = get_candidate_events(config)
 
     players: dict[int, dict[str, Any]] = {}
     focused_player_id = config.player_id
     partner_history: dict[int, dict[str, Any]] = {}
+    skipped_events = []
     
     for event in included_events:
         event_id = int(event["eventId"])
-        skipped_events = []
         raw_rows = get_event_standings(event_id)
         if not raw_rows:
             skipped_events.append({
                 "eventId": event_id,
                 "eventName": event.get("eventName"),
                 "date": event.get("date"),
+                "locationId": event.get("locationId"),
+                "locationName": event.get("locationName"),
                 "reason": "No standings returned",
             })
             continue
@@ -284,6 +294,8 @@ def build_consolidated_standings(config: SeasonConfig) -> dict[str, Any]:
                         "eventId": event_id,
                         "eventName": event.get("eventName"),
                         "date": event.get("date"),
+                        "locationId": event.get("locationId"),
+                        "locationName": event.get("locationName"),
                         "place": place,
                         "points": points,
                         "teamId": team_id,
@@ -320,6 +332,8 @@ def build_consolidated_standings(config: SeasonConfig) -> dict[str, Any]:
                             "eventId": event_id,
                             "eventName": event.get("eventName"),
                             "date": event.get("date"),
+                            "locationId": event.get("locationId"),
+                            "locationName": event.get("locationName"),
                             "place": place,
                             "points": points,
                             "teamId": team_id,
@@ -348,8 +362,10 @@ def build_consolidated_standings(config: SeasonConfig) -> dict[str, Any]:
         "season": {
             "playerId": config.player_id,
             "seedEventId": config.seed_event_id,
-            "locationId": seed_event.get("locationId"),
-            "locationName": seed_event.get("locationName"),
+            "seedEventName": seed_event.get("eventName"),
+            "scope": "season",
+            "locationId": None,
+            "locationName": "All Locations",
             "startDate": config.start_date,
             "endDate": config.end_date,
             "includedEventCount": len(included_events),
@@ -359,6 +375,8 @@ def build_consolidated_standings(config: SeasonConfig) -> dict[str, Any]:
                     "eventId": e.get("eventId"),
                     "eventName": e.get("eventName"),
                     "date": e.get("date"),
+                    "locationId": e.get("locationId"),
+                    "locationName": e.get("locationName"),
                     "teamCount": e.get("teamCount"),
                 }
                 for e in included_events

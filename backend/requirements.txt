@@ -5,3 +5,4 @@ gunicorn==22.0.0 # Or a recent version
 requests==2.32.3
 matplotlib
 flask-cors==4.0.1
+tzfpy==1.1.0

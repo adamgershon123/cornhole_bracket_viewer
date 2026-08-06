@@ -26,17 +26,28 @@ function roundLabel(match: any) {
   );
 }
 
+function getGameScore(match: any, side: 'top' | 'bottom') {
+  const game = match?.activeGame || match?.games?.[0];
+  return game?.score?.[side] ?? match?.score?.[side] ?? null;
+}
+
+function displayScore(score: unknown) {
+  return typeof score === 'number' && Number.isFinite(score) ? String(score) : '';
+}
+
 export function TournamentMatchCard({ match, onClick }: Props) {
   const top = match?.teams?.top;
   const bottom = match?.teams?.bottom;
+  const topScore = getGameScore(match, 'top') ?? top?.score ?? match?.scoreTop;
+  const bottomScore = getGameScore(match, 'bottom') ?? bottom?.score ?? match?.scoreBottom;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="block w-full rounded-[28px] border border-white/10 bg-zinc-900 p-4 text-left shadow-lg active:scale-[0.99]"
+      className="block w-full rounded-2xl border border-white/10 bg-zinc-900 p-4 text-left shadow-lg active:scale-[0.99]"
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0 text-sm font-bold text-zinc-400">
           <span>Court {match.courtId || '?'}</span>
           <span className="mx-2 text-zinc-600">•</span>
@@ -50,14 +61,14 @@ export function TournamentMatchCard({ match, onClick }: Props) {
 
       <TeamRow
         name={top?.name || 'TBD'}
-        score={top?.score ?? match?.scoreTop ?? '-'}
+        score={displayScore(topScore)}
       />
 
-      <div className="my-3 h-px bg-white/10" />
+      <div className="my-2 h-px bg-white/10" />
 
       <TeamRow
         name={bottom?.name || 'TBD'}
-        score={bottom?.score ?? match?.scoreBottom ?? '-'}
+        score={displayScore(bottomScore)}
       />
     </button>
   );
@@ -72,11 +83,11 @@ function TeamRow({
 }) {
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-      <div className="min-w-0 text-[clamp(1.4rem,6vw,2rem)] font-black leading-tight tracking-tight">
+      <div className="min-w-0 text-[clamp(1.15rem,5vw,1.65rem)] font-black leading-tight">
         {name}
       </div>
 
-      <div className="min-w-[3rem] text-right text-[clamp(2.75rem,14vw,4.5rem)] font-black leading-none tabular-nums">
+      <div className="min-w-[2.5rem] text-right text-[clamp(2rem,10vw,3.25rem)] font-black leading-none tabular-nums text-white">
         {score}
       </div>
     </div>

@@ -110,6 +110,7 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         """
     )
     rows = []
+    pending_cache_rows = []
     for snapshot in snapshots:
         # Historical replay snapshots and their archived outcomes are immutable.
         # Score each once, then reuse the compact evaluation instead of parsing
@@ -201,7 +202,17 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         }
         rows.append(evaluation)
         if snapshot["replay_champion_player_ids_json"]:
-            conn.execute(
+            pending_cache_rows.append(
+                (
+                    int(snapshot["event_id"]), snapshot["created_at"],
+                    json.dumps(evaluation, separators=(",", ":")),
+                )
+            )
+    # Do not upgrade the long-running snapshot read cursor into a write
+    # transaction mid-iteration; another worker may be writing to the WAL.
+    if pending_cache_rows:
+        try:
+            conn.executemany(
                 """
                 INSERT INTO tournament_prediction_evaluation_cache(
                   event_id, snapshot_created_at, evaluation_json, cached_at
@@ -211,13 +222,13 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                   evaluation_json=excluded.evaluation_json,
                   cached_at=CURRENT_TIMESTAMP
                 """,
-                (
-                    int(snapshot["event_id"]),
-                    snapshot["created_at"],
-                    json.dumps(evaluation, separators=(",", ":")),
-                ),
+                pending_cache_rows,
             )
-    conn.commit()
+            conn.commit()
+        except sqlite3.OperationalError as exc:
+            conn.rollback()
+            if "locked" not in str(exc).lower():
+                raise
     return rows
 
 

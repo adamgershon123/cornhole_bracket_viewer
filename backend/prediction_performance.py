@@ -4,6 +4,8 @@ import json
 import math
 import os
 import sqlite3
+import threading
+import time
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean
@@ -22,10 +24,29 @@ FIELD_SIZE_BUCKETS = (
     (33, 64, "33–64 teams"),
     (65, 10_000, "65+ teams"),
 )
+_REPORT_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_REPORT_CACHE_LOCK = threading.Lock()
+_REPORT_CACHE_SECONDS = 30.0
 
 
 def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
     """Score frozen match and tournament forecasts against final results."""
+    database_path = next(
+        (str(row[2]) for row in conn.execute("PRAGMA database_list") if row[1] == "main"),
+        "",
+    )
+    if database_path:
+        with _REPORT_CACHE_LOCK:
+            cached = _REPORT_CACHE.get(database_path)
+            if cached and time.monotonic() - cached[0] < _REPORT_CACHE_SECONDS:
+                return cached[1]
+            report = _build_prediction_performance_report(conn)
+            _REPORT_CACHE[database_path] = (time.monotonic(), report)
+            return report
+    return _build_prediction_performance_report(conn)
+
+
+def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
     match_rows = prediction_evaluation_report(conn, limit=250)["evaluations"]
     replay_status = historical_tournament_replay_status(conn)
     tournament_rows = _tournament_evaluations(conn)

@@ -84,7 +84,11 @@ def simulate_bracket(
         or event_info.get("locationName")
         or ""
     )
-    championship_context = double_dip_baseline(conn, venue_key=venue_key)
+    championship_context = double_dip_baseline(
+        conn,
+        venue_key=venue_key,
+        cutoff_date=event_date,
+    )
     abstained_pairs: set[tuple[str, str]] = set()
 
     def team_features(team: dict[str, Any]) -> dict[str, Any]:

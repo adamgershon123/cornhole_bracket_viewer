@@ -151,17 +151,27 @@ def store_double_dip_records(conn: sqlite3.Connection, records: list[dict[str, A
     return len(records)
 
 
-def double_dip_baseline(conn: sqlite3.Connection, *, venue_key: str | None) -> dict[str, Any]:
+def double_dip_baseline(
+    conn: sqlite3.Connection,
+    *,
+    venue_key: str | None,
+    cutoff_date: str | None = None,
+) -> dict[str, Any]:
     _init_schema(conn)
+    cutoff_clause = " WHERE event_date < ?" if cutoff_date else ""
+    cutoff_params = (str(cutoff_date),) if cutoff_date else ()
     overall = conn.execute(
         "SELECT COUNT(*) AS events, AVG(king_seat_won) AS king_rate, AVG(reset_occurred) AS reset_rate FROM double_dip_events"
+        + cutoff_clause,
+        cutoff_params,
     ).fetchone()
     total = int(overall["events"] or 0)
     overall_king = float(overall["king_rate"]) if total else 0.75
     overall_reset = float(overall["reset_rate"]) if total else 0.5
     venue = conn.execute(
-        "SELECT COUNT(*) AS events, AVG(king_seat_won) AS king_rate, AVG(reset_occurred) AS reset_rate FROM double_dip_events WHERE venue_key=?",
-        (str(venue_key or ""),),
+        "SELECT COUNT(*) AS events, AVG(king_seat_won) AS king_rate, AVG(reset_occurred) AS reset_rate FROM double_dip_events WHERE venue_key=?"
+        + (" AND event_date < ?" if cutoff_date else ""),
+        (str(venue_key or ""), *cutoff_params),
     ).fetchone()
     venue_events = int(venue["events"] or 0)
     weight = venue_events / (venue_events + VENUE_PRIOR_EVENTS) if venue_events else 0.0
@@ -172,6 +182,7 @@ def double_dip_baseline(conn: sqlite3.Connection, *, venue_key: str | None) -> d
         "overallKingSeatChampionshipRate": round(overall_king, 6),
         "overallResetRate": round(overall_reset, 6),
         "venueKey": venue_key,
+        "cutoffDate": cutoff_date,
         "venueEvents": venue_events,
         "venueWeight": round(weight, 6),
         "venueKingSeatChampionshipRate": round(venue_king, 6) if venue_events else None,

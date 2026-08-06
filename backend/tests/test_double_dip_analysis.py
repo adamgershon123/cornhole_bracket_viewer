@@ -4,6 +4,7 @@ import unittest
 from double_dip_analysis import (
     analyze_double_elimination_final,
     championship_double_dip_profile,
+    double_dip_baseline,
     store_double_dip_records,
 )
 
@@ -56,6 +57,18 @@ class DoubleDipAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(challenger["combinedHistory"]["loseFirstRate"], 1 / 3)
         self.assertAlmostEqual(challenger["combinedHistory"]["loseSecondRate"], 1 / 3)
         self.assertAlmostEqual(challenger["combinedHistory"]["completeDoubleDipRate"], 1 / 3)
+
+    def test_historical_baseline_excludes_future_championships(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        early = analyze_double_elimination_final(self._payload(91, [(21, 10)]))
+        early["eventDate"] = "2025-01-01"
+        future = analyze_double_elimination_final(self._payload(92, [(10, 21), (15, 21)]))
+        future["eventDate"] = "2026-01-01"
+        store_double_dip_records(conn, [early, future])
+        baseline = double_dip_baseline(conn, venue_key="Unknown venue", cutoff_date="2025-06-01")
+        self.assertEqual(baseline["overallEvents"], 1)
+        self.assertEqual(baseline["overallKingSeatChampionshipRate"], 1.0)
 
     def _payload(self, event_id, scores):
         games = [self._game(index, home, away) for index, (home, away) in enumerate(scores, start=1)]

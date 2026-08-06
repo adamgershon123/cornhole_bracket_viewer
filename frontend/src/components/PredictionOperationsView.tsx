@@ -58,6 +58,13 @@ function Metric({
   );
 }
 
+function MiniMetric({ label, value }: { label: string; value: string | number }) {
+  return <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+    <div className="text-[10px] font-black uppercase tracking-[.16em] text-zinc-500">{label}</div>
+    <div className="mt-1 text-xl font-black text-white">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+  </div>;
+}
+
 export default function PredictionOperationsView() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -177,6 +184,7 @@ export default function PredictionOperationsView() {
   const matchPerformance = performance?.matchPerformance || {};
   const tournamentPerformance = performance?.tournamentPerformance || {};
   const tournamentOverall = tournamentPerformance?.overall || {};
+  const tournamentReplay = performance?.historicalTournamentReplay || {};
   const commonSample = shadow?.commonSample || {};
   const baselineModel = commonSample?.baseline || {};
   const challengerModel = commonSample?.challenger || {};
@@ -605,6 +613,16 @@ export default function PredictionOperationsView() {
           <Metric label="Tournament favorite won" value={pct(tournamentOverall?.favoriteAccuracy)} detail={`${tournamentOverall?.resolvedTournaments || 0} resolved tournaments`} tone="amber" />
           <Metric label="Champion in top 3" value={pct(tournamentOverall?.topThreeHitRate)} detail="Pregame forecast ranking" tone="blue" />
           <Metric label="Average champion rank" value={tournamentOverall?.averageChampionRank ?? '—'} detail={`Average field ${tournamentOverall?.averageFieldSize ?? '—'} teams`} tone="zinc" />
+        </div>
+        <div className="mt-3 rounded-2xl border border-sky-400/20 bg-sky-400/[.045] p-4">
+          <div className="text-xs font-black uppercase tracking-[.18em] text-sky-300">Historical tournament replay</div>
+          <div className="mt-2 grid gap-3 sm:grid-cols-4">
+            <MiniMetric label="Reconstructed forecasts" value={tournamentReplay?.historicalReplaySnapshots || 0} />
+            <MiniMetric label="Live frozen forecasts" value={tournamentReplay?.liveFrozenSnapshots || 0} />
+            <MiniMetric label="Remaining candidates" value={tournamentReplay?.candidatesRemaining || 0} />
+            <MiniMetric label="Replay engine" value={tournamentReplay?.status || 'NOT STARTED'} />
+          </div>
+          <p className="mt-3 text-xs leading-5 text-zinc-500">Historical forecasts use the original roster and only player evidence dated before that event. Results are joined only after the forecast has been saved.</p>
         </div>
         <div className={`mt-3 rounded-2xl border p-3 text-sm ${
           tournamentOverall?.sampleStatus === 'ESTABLISHED'

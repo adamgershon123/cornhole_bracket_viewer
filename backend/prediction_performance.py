@@ -11,6 +11,7 @@ from typing import Any, Iterable
 
 from bracket_prediction_snapshots import _init_schema as initialize_bracket_snapshot_schema
 from historical_archive_backtest import historical_backtest_report
+from historical_tournament_replay import historical_tournament_replay_status
 from prediction_evaluation import prediction_evaluation_report
 
 
@@ -26,9 +27,11 @@ FIELD_SIZE_BUCKETS = (
 def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
     """Score frozen match and tournament forecasts against final results."""
     match_rows = prediction_evaluation_report(conn, limit=250)["evaluations"]
+    replay_status = historical_tournament_replay_status(conn)
     tournament_rows = _tournament_evaluations(conn)
     return {
         "historicalBacktest": historical_backtest_report(conn),
+        "historicalTournamentReplay": replay_status,
         "matchPerformance": {
             "overall": _binary_summary(match_rows),
             "byConfidence": _grouped_binary_summary(
@@ -84,9 +87,11 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     snapshots = conn.execute(
         """
         SELECT s.event_id, s.payload_json, s.created_at,
+               o.champion_player_ids_json AS replay_champion_player_ids_json,
                e.event_name, e.event_date, e.bracket_type, e.match_type
         FROM bracket_prediction_snapshots s
         LEFT JOIN events e ON e.event_id=s.event_id
+        LEFT JOIN historical_tournament_replay_outcomes o ON o.event_id=s.event_id
         WHERE s.snapshot_type='PREGAME'
         ORDER BY s.created_at
         """
@@ -101,9 +106,15 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         if len(teams) < 2:
             continue
         event_id = int(snapshot["event_id"])
-        champion_player_ids, resolution_source = _resolved_champion_player_ids(
-            conn, event_id
-        )
+        if snapshot["replay_champion_player_ids_json"]:
+            champion_player_ids = {
+                int(value) for value in _json(snapshot["replay_champion_player_ids_json"])
+            }
+            resolution_source = "HISTORICAL_REPLAY_COMPLETED_BRACKET"
+        else:
+            champion_player_ids, resolution_source = _resolved_champion_player_ids(
+                conn, event_id
+            )
         if not champion_player_ids:
             continue
         champion = _match_champion_team(teams, champion_player_ids)
@@ -150,6 +161,7 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                 payload.get("coverage", {}).get("modelCoverageRate")
             ),
             "modelVersion": payload.get("modelVersion") or "unknown",
+            "snapshotOrigin": payload.get("snapshotOrigin") or "LIVE_FROZEN",
             "teamForecasts": [
                 {
                     "teamId": str(team.get("teamId")),

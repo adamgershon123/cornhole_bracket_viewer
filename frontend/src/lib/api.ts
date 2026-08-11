@@ -184,6 +184,12 @@ export async function fetchPredictionOperations(): Promise<any> {
   return response.json();
 }
 
+export async function fetchModelResearch(): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/model-research`);
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
 export async function fetchHistoricalBackfill(): Promise<any> {
   const response = await fetch(`${API_BASE}/api/historical-backfill`, {
     cache: 'no-store',

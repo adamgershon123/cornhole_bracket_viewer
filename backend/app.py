@@ -31,6 +31,9 @@ from lifecycle_runner import (
     prediction_operations_snapshot,
     run_lifecycle_cycle,
 )
+from prediction_feedback import prediction_learning_report
+from prediction_performance import prediction_performance_report
+from model_research import model_research_report
 from game_state_reconstruction import reconstruct_game_states
 from live_win_probability import calculate_probability_series
 from live_probability_evaluation import evaluate_live_probability
@@ -2134,6 +2137,16 @@ def api_season_platform_leaderboard():
 def api_prediction_operations():
     with season_platform_db() as conn:
         return jsonify(prediction_operations_snapshot(conn))
+
+
+@app.route("/api/model-research")
+def api_model_research():
+    with season_platform_db() as conn:
+        return jsonify(model_research_report(
+            prediction_performance_report(conn),
+            prediction_learning_report(conn),
+            historical_backfill_status(conn),
+        ))
 
 
 @app.route("/api/prediction-operations/live-validation")

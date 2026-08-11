@@ -70,6 +70,13 @@ from scoring_distribution_challenger import (
 )
 from match_profile_trajectory import match_profile_trajectories
 from tournament_report_cards import build_tournament_report_cards
+from data_integrity import (
+    INTEGRITY_VERSION,
+    READY as INTEGRITY_READY,
+    game_is_analytics_ready,
+    integrity_summary,
+    record_artifact_lineage,
+)
 from standings import compute_standings
 from season_standings import SeasonConfig, build_consolidated_standings
 from historical_backfill import (
@@ -1810,6 +1817,24 @@ def api_tournament_report_cards(event_id: str):
     if request.method == "GET":
         saved = read_json(output_path, None)
         if saved:
+            with season_platform_db() as conn:
+                state = integrity_summary(conn, int(event_id))
+                lineage = conn.execute(
+                    """SELECT integrity_version,integrity_status FROM derived_artifact_lineage
+                       WHERE artifact_type='tournament-report-card' AND artifact_id=?""",
+                    (str(event_id),),
+                ).fetchone()
+            lineage_current = bool(
+                lineage
+                and lineage[0] == INTEGRITY_VERSION
+                and lineage[1] == INTEGRITY_READY
+            )
+            if state["blocked"] or not state["migrationReady"] or not lineage_current:
+                return jsonify({
+                    "status": "DATA_INTEGRITY_BLOCKED",
+                    "message": "This saved report predates v2 certification or one or more source games are not verified.",
+                    "dataIntegrity": state,
+                }), 409
             return jsonify(saved)
         return jsonify({
             "status": "NOT_GENERATED",
@@ -1822,7 +1847,10 @@ def api_tournament_report_cards(event_id: str):
     try:
         normalized = 0
         deferred_locked_games = []
+        completed_targets = []
         for match_id, game_id, is_live in played_game_stat_targets(data):
+            if not is_live:
+                completed_targets.append((str(match_id), int(game_id)))
             if is_live and request.args.get("refresh_live", "1") == "1":
                 maybe_fetch_match_stats(event_id, match_id, game_id, force=True)
             payload = load_game_stats(event_id, match_id, game_id)
@@ -1844,6 +1872,18 @@ def api_tournament_report_cards(event_id: str):
                     # still safe to report while this missing game is retried on
                     # the next explicit recalculation.
                     deferred_locked_games.append({"matchId": str(match_id), "gameId": int(game_id)})
+        blocked_games = [
+            {"matchId": match_id, "gameId": game_id}
+            for match_id, game_id in completed_targets
+            if not game_is_analytics_ready(conn, int(event_id), match_id, game_id)
+        ]
+        if blocked_games:
+            return jsonify({
+                "status": "DATA_INTEGRITY_BLOCKED",
+                "message": "Report generation stopped because completed game data is incomplete, unavailable, or quarantined.",
+                "blockedGames": blocked_games,
+                "dataIntegrity": integrity_summary(conn, int(event_id)),
+            }), 409
         report = build_tournament_report_cards(conn, int(event_id))
         report["normalizedPlayerRounds"] = normalized
         report["deferredLockedGames"] = deferred_locked_games
@@ -1858,9 +1898,36 @@ def api_tournament_report_cards(event_id: str):
     report["event"] = {**(report.get("event") or {}), **event_summary}
     if str(event_summary.get("leagueStatus") or event_summary.get("status") or "").upper() in {"C", "COMPLETE", "COMPLETED"}:
         report["status"] = "COMPLETE"
+    report["dataIntegrity"] = {
+        "version": INTEGRITY_VERSION,
+        "status": INTEGRITY_READY,
+        "verified": True,
+    }
+    with season_platform_db() as lineage_conn:
+        record_artifact_lineage(
+            lineage_conn,
+            "tournament-report-card",
+            str(event_id),
+            "tournament-report-cards-v2",
+            INTEGRITY_READY,
+            {"eventId": int(event_id), "gameCount": len(report.get("matches") or [])},
+        )
+        lineage_conn.commit()
     with open(output_path, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
     return jsonify(report)
+
+
+@app.get("/api/data-integrity/status")
+def api_data_integrity_status():
+    with season_platform_db() as conn:
+        return jsonify(integrity_summary(conn))
+
+
+@app.get("/api/events/<event_id>/data-integrity")
+def api_event_data_integrity(event_id: str):
+    with season_platform_db() as conn:
+        return jsonify(integrity_summary(conn, int(event_id)))
 
 def consolidated_standings_response():
     player_id = int(request.args.get("playerId", "0"))

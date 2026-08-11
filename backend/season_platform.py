@@ -32,6 +32,15 @@ from upcoming_matchups import (
 from event_discovery import initialize_event_discovery_schema, redact_discovery_payload
 from outcome_ingestion import initialize_outcome_schema, ingest_completed_outcomes
 from player_contact_directory import index_contact_payload
+from data_integrity import (
+    PARTIAL,
+    QUARANTINED,
+    READY,
+    ensure_integrity_schema,
+    inspect_match_payload,
+    reconcile_normalized_game,
+    record_game_integrity,
+)
 
 
 ACL_BASE = "https://api.iplayacl.com/api/v1"
@@ -400,6 +409,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     initialize_upcoming_schema(conn)
     initialize_event_discovery_schema(conn)
     initialize_outcome_schema(conn)
+    ensure_integrity_schema(conn)
     conn.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_ingestion_attempts_endpoint_entity
@@ -1484,6 +1494,8 @@ def event_context(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
 def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, match_id: str, game_id: int, payload: dict[str, Any]) -> int:
     context = event_context(conn, event_id)
     court_id = str(payload.get("courtid") or "")
+    completed = match_stats_completed(payload)
+    raw_check = inspect_match_payload(payload, completed=completed)
     rows_by_round: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for row in payload.get("event_match_inning_history", []) or []:
         try:
@@ -1491,12 +1503,58 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
         except Exception:
             continue
 
+    if not completed:
+        # V2 keeps live/incremental observations in the preserved raw payload,
+        # never in the analytics ledger. All existing profile/model queries can
+        # therefore read player_rounds knowing every row came from a verified
+        # final response.
+        conn.execute(
+            "DELETE FROM player_rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
+        conn.execute(
+            "DELETE FROM rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
+        record_game_integrity(
+            conn, event_id, str(match_id), game_id,
+            raw_status="LIVE", normalization_status="RAW_ONLY",
+            integrity_status=PARTIAL, analytics_ready=False,
+            expected_player_rows=int(raw_check["expectedPlayerRows"]), normalized_player_rows=0,
+            expected_rounds=int(raw_check["expectedRounds"]), normalized_rounds=0,
+            checks=raw_check, source_payload_hash=payload_hash(payload),
+        )
+        conn.commit()
+        return 0
+
+    if completed and not raw_check["passed"]:
+        # Fail closed: an invalid final response cannot leave an earlier live
+        # snapshot available to profiles, reports, rankings, or model training.
+        conn.execute(
+            "DELETE FROM player_rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
+        conn.execute(
+            "DELETE FROM rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
+        record_game_integrity(
+            conn, event_id, str(match_id), game_id,
+            raw_status="FINAL", normalization_status="BLOCKED",
+            integrity_status=QUARANTINED, analytics_ready=False,
+            expected_player_rows=int(raw_check["expectedPlayerRows"]), normalized_player_rows=0,
+            expected_rounds=int(raw_check["expectedRounds"]), normalized_rounds=0,
+            checks=raw_check, source_payload_hash=payload_hash(payload),
+        )
+        conn.commit()
+        return 0
+
     # Live match-stat responses are incremental. Once ACL marks a game final,
     # its inning history is the authoritative snapshot and must replace any
     # partial rows saved while the game was underway. Without this replacement,
     # an early one- or two-inning snapshot can remain in the analytics ledger
     # forever even though the cached ACL response later contains the full game.
-    if rows_by_round and match_stats_completed(payload):
+    if rows_by_round and completed:
         conn.execute(
             "DELETE FROM player_rounds WHERE event_id=? AND match_id=? AND game_id=?",
             (event_id, str(match_id), game_id),
@@ -1615,6 +1673,37 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
                 ),
             )
             saved += 1
+
+    if completed:
+        normalized_check = reconcile_normalized_game(conn, event_id, str(match_id), game_id, payload)
+        combined_check = {
+            "passed": bool(raw_check["passed"] and normalized_check["passed"]),
+            "errors": [*raw_check["errors"], *normalized_check["errors"]],
+            "warnings": raw_check["warnings"],
+            "raw": raw_check,
+            "normalized": normalized_check,
+        }
+        if not normalized_check["passed"]:
+            conn.execute(
+                "DELETE FROM player_rounds WHERE event_id=? AND match_id=? AND game_id=?",
+                (event_id, str(match_id), game_id),
+            )
+            conn.execute(
+                "DELETE FROM rounds WHERE event_id=? AND match_id=? AND game_id=?",
+                (event_id, str(match_id), game_id),
+            )
+            saved = 0
+        record_game_integrity(
+            conn, event_id, str(match_id), game_id,
+            raw_status="FINAL", normalization_status="RECONCILED" if normalized_check["passed"] else "BLOCKED",
+            integrity_status=READY if normalized_check["passed"] else QUARANTINED,
+            analytics_ready=bool(normalized_check["passed"]),
+            expected_player_rows=int(raw_check["expectedPlayerRows"]),
+            normalized_player_rows=int(normalized_check["normalizedPlayerRows"]),
+            expected_rounds=int(raw_check["expectedRounds"]),
+            normalized_rounds=int(normalized_check["normalizedRounds"]),
+            checks=combined_check, source_payload_hash=payload_hash(payload),
+        )
     conn.commit()
     return saved
 

@@ -2142,13 +2142,10 @@ def api_prediction_operations():
 @app.route("/api/model-research")
 def api_model_research():
     with season_platform_db() as conn:
-        try:
-            performance = prediction_performance_report(conn)
-            learning = prediction_learning_report(conn)
-        except sqlite3.OperationalError as exc:
-            if "locked" not in str(exc).lower():
-                raise
-            performance, learning = cached_model_research_inputs(conn)
+        # This is a status/read endpoint. Never make the browser wait for a
+        # full evaluation or compete with collection workers for SQLite's
+        # writer slot; background jobs own refreshes of these saved snapshots.
+        performance, learning = cached_model_research_inputs(conn)
         try:
             collection = historical_backfill_status(conn)
         except sqlite3.OperationalError as exc:

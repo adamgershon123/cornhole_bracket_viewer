@@ -30,9 +30,20 @@ Six singles games used ACL's shared placeholder team identifier. V2 now permits
 that raw convention for singles and normalizes each player to a distinct
 player-specific team. The same condition remains invalid for doubles.
 
+The remaining shared-team-ID payloads were also checked for a deterministic
+fallback using ACL's `teamhomeaway` marker. None had both a complete H/A pair in
+every round and a stable side for every player. The 55 affected doubles games
+therefore remain quarantined. V2 does not infer their teams from row order,
+player order, names, or surrounding bracket results.
+
+The other quarantines are limited to declared summary totals that do not match
+the supplied round history and incomplete player/round histories. These are
+retained as raw evidence but excluded from profiles, grades, and predictions.
+
 ## Remaining work before production apply
 
-- Review the 63 structurally quarantined completed games.
+- Preserve the 63 reviewed structural quarantines and expose their reasons in
+  integrity status; none has enough internally consistent evidence for repair.
 - Decide how to treat approximately 975 normalized games without an immediately
   available raw source; they remain legacy-unverified and ineligible for v2
   certification.

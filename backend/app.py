@@ -2146,15 +2146,12 @@ def api_model_research():
         # full evaluation or compete with collection workers for SQLite's
         # writer slot; background jobs own refreshes of these saved snapshots.
         performance, learning = cached_model_research_inputs(conn)
-        try:
-            collection = historical_backfill_status(conn, initialize=False)
-        except sqlite3.OperationalError as exc:
-            if "locked" not in str(exc).lower():
-                raise
-            collection = {
-                "status": "BUSY",
-                "current": {"detail": "Collection is writing; showing saved research evidence."},
-            }
+        source_ledger = (performance.get("historicalBacktest") or {}).get("sourceLedger") or {}
+        collection = {
+            "status": "RUNNING",
+            "current": {"detail": "Showing the latest persisted analysis snapshot."},
+            "ledger": source_ledger,
+        }
         return jsonify(model_research_report(performance, learning, collection))
 
 

@@ -113,6 +113,11 @@ CORS(app)
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
+_MODEL_RESEARCH_CACHE: dict[str, Any] | None = None
+_MODEL_RESEARCH_CACHE_AT = 0.0
+_MODEL_RESEARCH_REFRESHING = False
+_MODEL_RESEARCH_CACHE_LOCK = threading.Lock()
+
 SEASON_GATHER_PROGRESS: dict[str, dict[str, Any]] = {}
 SEASON_GATHER_RESULTS: dict[str, dict[str, Any]] = {}
 SEASON_GATHER_LOCK = threading.Lock()
@@ -2139,12 +2144,8 @@ def api_prediction_operations():
         return jsonify(prediction_operations_snapshot(conn))
 
 
-@app.route("/api/model-research")
-def api_model_research():
+def _build_model_research_snapshot() -> dict[str, Any]:
     with season_platform_db() as conn:
-        # This is a status/read endpoint. Never make the browser wait for a
-        # full evaluation or compete with collection workers for SQLite's
-        # writer slot; background jobs own refreshes of these saved snapshots.
         performance, learning = cached_model_research_inputs(conn)
         source_ledger = (performance.get("historicalBacktest") or {}).get("sourceLedger") or {}
         collection = {
@@ -2152,7 +2153,46 @@ def api_model_research():
             "current": {"detail": "Showing the latest persisted analysis snapshot."},
             "ledger": source_ledger,
         }
-        return jsonify(model_research_report(performance, learning, collection))
+        return model_research_report(performance, learning, collection)
+
+
+def _refresh_model_research_snapshot() -> None:
+    global _MODEL_RESEARCH_CACHE, _MODEL_RESEARCH_CACHE_AT, _MODEL_RESEARCH_REFRESHING
+    try:
+        snapshot = _build_model_research_snapshot()
+        with _MODEL_RESEARCH_CACHE_LOCK:
+            _MODEL_RESEARCH_CACHE = snapshot
+            _MODEL_RESEARCH_CACHE_AT = time.monotonic()
+    except Exception as exc:
+        print(f"Model research snapshot refresh failed: {exc}", flush=True)
+    finally:
+        with _MODEL_RESEARCH_CACHE_LOCK:
+            _MODEL_RESEARCH_REFRESHING = False
+
+
+@app.route("/api/model-research")
+def api_model_research():
+    global _MODEL_RESEARCH_CACHE, _MODEL_RESEARCH_CACHE_AT, _MODEL_RESEARCH_REFRESHING
+    with _MODEL_RESEARCH_CACHE_LOCK:
+        cached = _MODEL_RESEARCH_CACHE
+        stale = time.monotonic() - _MODEL_RESEARCH_CACHE_AT >= 15.0
+        if cached is not None and stale and not _MODEL_RESEARCH_REFRESHING:
+            _MODEL_RESEARCH_REFRESHING = True
+            threading.Thread(
+                target=_refresh_model_research_snapshot,
+                name="model-research-refresh",
+                daemon=True,
+            ).start()
+    if cached is not None:
+        return jsonify(cached)
+
+    # Only the first request after a process restart waits for the persisted
+    # snapshot. Deployment primes this before collection workers resume.
+    snapshot = _build_model_research_snapshot()
+    with _MODEL_RESEARCH_CACHE_LOCK:
+        _MODEL_RESEARCH_CACHE = snapshot
+        _MODEL_RESEARCH_CACHE_AT = time.monotonic()
+    return jsonify(snapshot)
 
 
 @app.route("/api/prediction-operations/live-validation")

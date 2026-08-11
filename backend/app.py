@@ -2147,7 +2147,7 @@ def api_model_research():
         # writer slot; background jobs own refreshes of these saved snapshots.
         performance, learning = cached_model_research_inputs(conn)
         try:
-            collection = historical_backfill_status(conn)
+            collection = historical_backfill_status(conn, initialize=False)
         except sqlite3.OperationalError as exc:
             if "locked" not in str(exc).lower():
                 raise

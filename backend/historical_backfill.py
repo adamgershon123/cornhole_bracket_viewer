@@ -285,8 +285,13 @@ def seed_known_players(conn: sqlite3.Connection) -> int:
     return inserted
 
 
-def status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
-    initialize_schema(conn)
+def status_snapshot(
+    conn: sqlite3.Connection,
+    *,
+    initialize: bool = True,
+) -> dict[str, Any]:
+    if initialize:
+        initialize_schema(conn)
     state = dict(conn.execute(
         "SELECT * FROM historical_backfill_state WHERE state_id=1"
     ).fetchone())
@@ -379,7 +384,7 @@ def status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
             },
         },
         "stateRetainedAtStartup": True,
-        "payloadArchive": payload_archive_health(conn),
+        "payloadArchive": payload_archive_health(conn, initialize=initialize),
         "throughput": throughput,
         "lanes": {
             lane: {

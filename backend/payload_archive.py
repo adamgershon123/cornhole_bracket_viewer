@@ -257,8 +257,13 @@ def load_source_payload(
     return payload
 
 
-def payload_archive_health(conn: sqlite3.Connection) -> dict[str, Any]:
-    initialize_payload_archive_schema(conn)
+def payload_archive_health(
+    conn: sqlite3.Connection,
+    *,
+    initialize: bool = True,
+) -> dict[str, Any]:
+    if initialize:
+        initialize_payload_archive_schema(conn)
     root = archive_root(conn)
     row = conn.execute(
         """

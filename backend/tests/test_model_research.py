@@ -1,9 +1,47 @@
+import json
+import sqlite3
 import unittest
 
-from model_research import model_research_report
+from model_research import cached_model_research_inputs, model_research_report
 
 
 class ModelResearchReportTests(unittest.TestCase):
+    def test_cached_inputs_recover_saved_evidence_without_schema_setup(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.executescript(
+            """
+            CREATE TABLE historical_backtest_snapshots(payload_json TEXT, generated_at TEXT);
+            CREATE TABLE historical_tournament_replay_state(
+              state_id INTEGER, status TEXT, candidates_remaining INTEGER,
+              created INTEGER, failed INTEGER, last_event_id INTEGER,
+              last_error TEXT, updated_at TEXT
+            );
+            CREATE TABLE bracket_prediction_snapshots(snapshot_type TEXT, payload_json TEXT);
+            CREATE TABLE prediction_learning_examples(id INTEGER);
+            """
+        )
+        conn.execute(
+            "INSERT INTO historical_backtest_snapshots VALUES(?, '2026-08-11')",
+            (json.dumps({"holdoutMatchups": 4590, "models": []}),),
+        )
+        conn.execute(
+            "INSERT INTO historical_tournament_replay_state VALUES(1,'RUNNING',12,345,0,99,NULL,'now')"
+        )
+        conn.execute(
+            "INSERT INTO bracket_prediction_snapshots VALUES('PREGAME', ?)",
+            (json.dumps({"snapshotOrigin": "HISTORICAL_REPLAY"}),),
+        )
+        conn.execute("INSERT INTO prediction_learning_examples VALUES(1)")
+
+        performance, learning = cached_model_research_inputs(conn)
+
+        self.assertEqual(performance["historicalBacktest"]["holdoutMatchups"], 4590)
+        self.assertEqual(
+            performance["historicalTournamentReplay"]["historicalReplaySnapshots"], 1
+        )
+        self.assertEqual(learning["promotionGate"]["currentExamples"], 1)
+
     def test_builds_findings_without_overstating_small_gain(self):
         performance = {
             "historicalBacktest": {

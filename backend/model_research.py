@@ -1,6 +1,68 @@
 from __future__ import annotations
 
+import json
+import sqlite3
 from typing import Any
+
+
+def cached_model_research_inputs(
+    conn: sqlite3.Connection,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read saved research evidence without attempting schema writes."""
+    backtest: dict[str, Any] = {}
+    try:
+        row = conn.execute(
+            "SELECT payload_json FROM historical_backtest_snapshots ORDER BY generated_at DESC LIMIT 1"
+        ).fetchone()
+        if row and row[0]:
+            backtest = json.loads(row[0])
+            backtest.setdefault("cacheStatus", "SAVED_SNAPSHOT")
+    except (sqlite3.Error, TypeError, ValueError, json.JSONDecodeError):
+        pass
+
+    replay: dict[str, Any] = {}
+    try:
+        row = conn.execute(
+            "SELECT * FROM historical_tournament_replay_state WHERE state_id=1"
+        ).fetchone()
+        if row:
+            replay = {
+                "status": row["status"],
+                "candidatesRemaining": int(row["candidates_remaining"] or 0),
+                "created": int(row["created"] or 0),
+                "failed": int(row["failed"] or 0),
+                "lastEventId": row["last_event_id"],
+                "lastError": row["last_error"],
+                "updatedAt": row["updated_at"],
+            }
+        origins = conn.execute(
+            """
+            SELECT
+              SUM(CASE WHEN json_extract(payload_json, '$.snapshotOrigin')='HISTORICAL_REPLAY' THEN 1 ELSE 0 END),
+              SUM(CASE WHEN COALESCE(json_extract(payload_json, '$.snapshotOrigin'),'LIVE_FROZEN')!='HISTORICAL_REPLAY' THEN 1 ELSE 0 END)
+            FROM bracket_prediction_snapshots WHERE snapshot_type='PREGAME'
+            """
+        ).fetchone()
+        replay["historicalReplaySnapshots"] = int((origins[0] if origins else 0) or 0)
+        replay["liveFrozenSnapshots"] = int((origins[1] if origins else 0) or 0)
+    except sqlite3.Error:
+        pass
+
+    total = 0
+    try:
+        total = int(conn.execute(
+            "SELECT COUNT(*) FROM prediction_learning_examples"
+        ).fetchone()[0])
+    except sqlite3.Error:
+        pass
+    learning = {
+        "promotionGate": {"currentExamples": total},
+        "learningPolicy": (
+            "Resolved frozen predictions enter the candidate pool. Model weights change "
+            "only in a batch retraining run that passes chronological validation and a later holdout."
+        ),
+    }
+    return {"historicalBacktest": backtest, "historicalTournamentReplay": replay}, learning
 
 
 def model_research_report(

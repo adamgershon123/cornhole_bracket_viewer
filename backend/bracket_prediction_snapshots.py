@@ -265,6 +265,11 @@ def _timeline_checkpoint_indexes(
     seen: dict[str, int] = {}
     checkpoints: set[int] = set()
     for index, match in enumerate(completed):
+        # A round page is a rolling forecast, not a round-end-only forecast.
+        # Persist every newly completed competitive game so probabilities can
+        # move while the other games in that round are still being played.
+        # The frontend collapses these into the latest state for the round.
+        checkpoints.add(index)
         key, _ = _round_identity(match.get("roundDescription"))
         seen[key] = seen.get(key, 0) + 1
         if seen[key] >= totals.get(key, 0) > 0:

@@ -18,7 +18,7 @@ from prediction_weighting import prediction_weighting_policy
 from swing_performance import swing_performance_ratings
 
 
-PROFILE_SNAPSHOT_VERSION = "predictive-profile-leaderboard-v1"
+PROFILE_SNAPSHOT_VERSION = "predictive-profile-leaderboard-v2-consistency-shrinkage"
 _PROFILE_WORKER_LOCK = threading.Lock()
 _PROFILE_WORKER_STARTED = False
 
@@ -570,7 +570,14 @@ def start_player_analytics_snapshot_worker(db_factory: Any) -> None:
                         conn.execute("SELECT COUNT(*) FROM player_rounds").fetchone()[0]
                     )
                     snapshot_rounds = int(state.get("ledger_rounds") or 0)
-                    if state.get("stage") != "FULL_READY":
+                    saved_version_row = conn.execute(
+                        "SELECT snapshot_version FROM player_analytics_snapshots LIMIT 1"
+                    ).fetchone()
+                    saved_version = saved_version_row[0] if saved_version_row else None
+                    if (
+                        state.get("stage") != "FULL_READY"
+                        or saved_version != PROFILE_SNAPSHOT_VERSION
+                    ):
                         refresh_full_player_analytics_snapshots(conn)
                     elif ledger_rounds - snapshot_rounds >= 5000:
                         refresh_base_player_analytics_snapshots(conn)

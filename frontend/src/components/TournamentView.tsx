@@ -189,16 +189,24 @@ function SwapSummaryStat({ label, value, tone }: { label: string; value: number;
 }
 
 function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: string; fallbackEvent: any; onOpenMatch: Props['onOpenMatch'] }) {
+  const SWAP_REFRESH_MS = 15_000;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const [autoRefreshActive, setAutoRefreshActive] = useState(true);
+  const [displayMode, setDisplayMode] = useState<'EVENT' | 'PLAYER'>('EVENT');
+  const [focusedPlayerId, setFocusedPlayerId] = useState(() => window.localStorage.getItem('cornhole.defaultPlayerId') || '');
+  const requestInFlight = useRef(false);
+  const shouldPoll = useRef(true);
   const [sortKey, setSortKey] = useState<SwapSortKey>(() => {
     const saved = window.localStorage.getItem('swapLeaderboardSort');
     return isSwapSortKey(saved) ? saved : 'ppr';
   });
 
   async function load(refresh = true) {
-    if (!eventId) return;
+    if (!eventId || requestInFlight.current) return;
+    requestInFlight.current = true;
     setLoading(true);
     setError(undefined);
     try {
@@ -208,16 +216,28 @@ function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: stri
       });
       const response = await fetch(`/api/swap-live/${eventId}?${query.toString()}`, { cache: 'no-store' });
       if (!response.ok) throw new Error(await response.text());
-      setData(await response.json());
+      const nextData = await response.json();
+      setData(nextData);
+      setLastRefreshedAt(new Date());
+      const status = String(nextData?.event?.status || nextData?.event?.leagueStatus || '').trim().toUpperCase();
+      shouldPoll.current = !['C', 'COMPLETE', 'COMPLETED'].includes(status) && !status.includes('COMPLETE');
+      setAutoRefreshActive(shouldPoll.current);
     } catch (e: any) {
       setError(e?.message || 'Unable to load swap live data.');
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    shouldPoll.current = true;
+    setAutoRefreshActive(true);
     load(true);
+    const timer = window.setInterval(() => {
+      if (shouldPoll.current) load(true);
+    }, SWAP_REFRESH_MS);
+    return () => window.clearInterval(timer);
   }, [eventId]);
 
   useEffect(() => {
@@ -247,6 +267,21 @@ function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: stri
   const nextMatches = data?.matches?.next || [];
   const completedMatches = data?.matches?.completed || [];
   const upNextPlayers = data?.upNextPlayers || [];
+  const playerOptions = useMemo(() => [...leaderboard].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))), [leaderboard]);
+  const focusedPlayer = leaderboard.find((player: any) => String(player.playerId) === String(focusedPlayerId));
+  const playerMatches = (rows: any[]) => rows.filter((match: any) => (
+    [...(match.homeTeam?.players || []), ...(match.awayTeam?.players || [])]
+      .some((player: any) => String(player.playerId || player.id) === String(focusedPlayerId))
+  ));
+  const focusedCurrentMatches = playerMatches([...liveMatches, ...nextMatches]);
+  const focusedPastMatches = playerMatches(completedMatches).sort((a: any, b: any) => Number(b.matchId || 0) - Number(a.matchId || 0));
+
+  useEffect(() => {
+    if (!leaderboard.length) return;
+    if (!leaderboard.some((player: any) => String(player.playerId) === String(focusedPlayerId))) {
+      setFocusedPlayerId(String(leaderboard[0].playerId));
+    }
+  }, [leaderboard, focusedPlayerId]);
 
   return (
     <section className="mt-4 space-y-4">
@@ -268,16 +303,56 @@ function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: stri
             {loading ? 'Loading' : 'Refresh'}
           </button>
         </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold">
+          <span className={autoRefreshActive ? 'text-green-300' : 'text-blue-300'}>
+            {autoRefreshActive ? 'Auto-refreshing every 15 seconds' : 'Auto-refresh off: Event complete'}
+          </span>
+          {lastRefreshedAt && (
+            <span className="text-zinc-500">
+              Last refreshed {lastRefreshedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+            </span>
+          )}
+        </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <SwapSummaryStat label="Live" value={liveMatches.length} tone="text-green-400" />
-          <SwapSummaryStat label="Next" value={nextMatches.length} tone="text-yellow-300" />
+          <SwapSummaryStat label="Remaining" value={data?.counts?.remainingGames || 0} tone="text-yellow-300" />
           <SwapSummaryStat label="Done" value={completedMatches.length} tone="text-blue-300" />
           <SwapSummaryStat label="Players" value={data?.counts?.leaderboard || 0} tone="text-amber-300" />
+        </div>
+        <div className="mt-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-300">
+          <span className="font-black text-white">{data?.counts?.plannedGames || '-'} planned games</span>
+          {' · '}{data?.counts?.gamesPerPlayer || 4} games per player
+          {nextMatches.length > 0 && <>{' · '}{nextMatches.length} currently available next</>}
         </div>
         {error && <div className="mt-3 rounded-xl border border-red-400/30 bg-red-950/30 p-3 text-sm text-red-100">{error}</div>}
       </section>
 
-      {formatLabel === 'Swap' && <section className="rounded-2xl border border-sky-400/25 bg-sky-400/10 p-4">
+      <section className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-zinc-950 p-2">
+        {(['EVENT', 'PLAYER'] as const).map(mode => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setDisplayMode(mode)}
+            className={`min-h-[52px] rounded-xl border px-3 font-black transition active:translate-y-0.5 ${displayMode === mode ? 'border-sky-300 bg-sky-400 text-black' : 'border-white/10 bg-zinc-900 text-zinc-200'}`}
+          >
+            {mode === 'EVENT' ? 'Event Overview' : 'Player Mode'}
+          </button>
+        ))}
+      </section>
+
+      {displayMode === 'PLAYER' && (
+        <SwapPlayerMode
+          players={playerOptions}
+          player={focusedPlayer}
+          playerId={focusedPlayerId}
+          onPlayerChange={setFocusedPlayerId}
+          currentMatches={focusedCurrentMatches}
+          pastMatches={focusedPastMatches}
+          onOpenMatch={onOpenMatch}
+        />
+      )}
+
+      {displayMode === 'EVENT' && formatLabel === 'Swap' && <section className="rounded-2xl border border-sky-400/25 bg-sky-400/10 p-4">
         <div className="text-xs font-black uppercase tracking-[.2em] text-sky-300">Swap Seeding Phase</div>
         <div className="mt-2 text-sm leading-6 text-zinc-200">
           Each player completes four games with four different partners. Individual PPR performance establishes the seeding order:
@@ -288,19 +363,19 @@ function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: stri
         </div>
       </section>}
 
-      <SwapMatchSection
+      {displayMode === 'EVENT' && <SwapMatchSection
         title="Current Games"
         matches={liveMatches}
         onOpenMatch={onOpenMatch}
         upNextPlayers={upNextPlayers}
-      />
-      <SwapMatchSection
+      />}
+      {displayMode === 'EVENT' && <SwapMatchSection
         title="Next Up Games"
         matches={nextMatches}
         onOpenMatch={onOpenMatch}
-      />
+      />}
 
-      <section className="rounded-[28px] border border-white/10 bg-zinc-950 p-4">
+      {displayMode === 'EVENT' && <section className="rounded-[28px] border border-white/10 bg-zinc-950 p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h3 className="text-lg font-black">{formatLabel} Leaderboard</h3>
           <select
@@ -350,8 +425,78 @@ function SwapLiveMobile({ eventId, fallbackEvent, onOpenMatch }: { eventId: stri
             );
           })}
         </div>
+      </section>}
+
+    </section>
+  );
+}
+
+function SwapPlayerMode({
+  players,
+  player,
+  playerId,
+  onPlayerChange,
+  currentMatches,
+  pastMatches,
+  onOpenMatch,
+}: {
+  players: any[];
+  player: any;
+  playerId: string;
+  onPlayerChange: (value: string) => void;
+  currentMatches: any[];
+  pastMatches: any[];
+  onOpenMatch: Props['onOpenMatch'];
+}) {
+  return (
+    <section className="space-y-4">
+      <section className="rounded-[28px] border border-sky-400/30 bg-sky-950/20 p-4">
+        <div className="text-xs font-black uppercase tracking-[.22em] text-sky-300">Player Mode</div>
+        <label className="mt-3 block text-xs font-bold uppercase tracking-widest text-zinc-500">Player</label>
+        <select
+          value={playerId}
+          onChange={event => onPlayerChange(event.target.value)}
+          className="mt-1 min-h-[52px] w-full rounded-xl border border-white/15 bg-zinc-950 px-3 text-base font-black text-white"
+        >
+          {players.map(option => <option key={option.playerId} value={option.playerId}>{option.name}</option>)}
+        </select>
+
+        {player && <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <PrimaryMetric label="Event PPR" value={num(swapPpr(player), 2)} tone="text-amber-300" />
+          <PrimaryMetric label="Record" value={`${player.wins || 0}-${player.losses || 0}`} tone="text-white" />
+          <PrimaryMetric label="W/L Rank" value={player.rank ? `#${player.rank}` : '-'} tone="text-sky-300" />
+          <PrimaryMetric label="PPR Rank" value={player.pprRank ? `#${player.pprRank}` : '-'} tone="text-amber-300" />
+          <PrimaryMetric label="Rounds" value={player.swapStats?.rounds || 0} tone="text-white" />
+          <PrimaryMetric label="DPR / +/-" value={`${num(player.swapStats?.dpr, 2)} / ${player.differential ?? '-'}`} tone="text-white" />
+          <PrimaryMetric label="4 Baggers" value={`${player.swapStats?.fourBaggers || 0} / ${num(player.swapStats?.fourBaggerPct, 1)}%`} tone="text-white" />
+          <PrimaryMetric label="Season PPR" value={num(player.season?.ppr, 2)} tone="text-zinc-200" />
+          <PrimaryMetric label="Vs Season" value={delta(numDelta(swapPpr(player), player.season?.ppr))} tone={deltaTone(numDelta(swapPpr(player), player.season?.ppr))} />
+        </div>}
       </section>
 
+      <SwapMatchSection
+        title={currentMatches.length ? 'Current / Upcoming Game' : 'No Current Game'}
+        matches={currentMatches}
+        onOpenMatch={onOpenMatch}
+      />
+
+      <section className="rounded-[28px] border border-white/10 bg-zinc-950 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-lg font-black">Past Games</h3>
+          <span className="text-sm font-bold text-zinc-500">{pastMatches.length} completed</span>
+        </div>
+        {pastMatches.length ? (
+          <div className="space-y-3">
+            {pastMatches.map(match => (
+              <SwapMatchCard
+                key={`${match.matchId}:${match.gameId || 1}`}
+                match={match}
+                onOpen={() => onOpenMatch(convertSwapMatchToStandardMatch(match))}
+              />
+            ))}
+          </div>
+        ) : <div className="rounded-xl bg-zinc-900 p-4 text-sm text-zinc-400">No completed games have been captured for this player yet.</div>}
+      </section>
     </section>
   );
 }
@@ -400,6 +545,7 @@ function SwapMatchSection({
 }
 
 function SwapMatchCard({ match, onOpen }: { match: any; onOpen: () => void }) {
+  const statusLabel = match.status === 'completed' ? 'Final' : match.status === 'live' ? 'In progress' : 'Up next';
   return (
     <button
       type="button"
@@ -408,7 +554,7 @@ function SwapMatchCard({ match, onOpen }: { match: any; onOpen: () => void }) {
     >
       <div className="mb-2 flex items-center justify-between text-xs text-zinc-400">
         <span>Court {match.courtId || '-'} / Match {match.matchId}</span>
-        <span className="font-black text-amber-200">Open game</span>
+        <span className={`font-black ${match.status === 'completed' ? 'text-blue-300' : match.status === 'live' ? 'text-green-300' : 'text-amber-200'}`}>{statusLabel}</span>
       </div>
       <SwapTeamLine team={match.homeTeam} score={match.homeScore} tone="text-blue-300" />
       <div className="my-2 border-t border-white/10" />

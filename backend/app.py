@@ -24,7 +24,7 @@ from flask_cors import CORS
 from consolidate_tournament_stats import consolidate_tournament_stats
 from match_stats_downloader import fetch_and_save_match_stats
 from season_platform import DB_PATH as SEASON_PLATFORM_DB_PATH
-from season_platform import gather_player_focused_season, leaderboard_from_db, parse_player_ids, player_season_options
+from season_platform import gather_player_focused_season, leaderboard_from_db, normalize_match_stats_to_rounds, parse_player_ids, player_season_options
 from season_platform import db as season_platform_db
 from lifecycle_runner import (
     monitor_event,
@@ -69,6 +69,7 @@ from scoring_distribution_challenger import (
     score_scoring_distribution_challenger,
 )
 from match_profile_trajectory import match_profile_trajectories
+from tournament_report_cards import build_tournament_report_cards
 from standings import compute_standings
 from season_standings import SeasonConfig, build_consolidated_standings
 from historical_backfill import (
@@ -179,35 +180,50 @@ def start_bracket_prediction_build(
         BRACKET_PREDICTION_BUILDS.add(event_id)
 
     def worker() -> None:
+        last_error: Exception | None = None
         try:
-            with season_platform_db() as conn:
-                player_ids = bracket_player_ids(bracket)
-                event_info = bracket.get("eventInfo") or {}
-                event_date = (
-                    event_info.get("startdate")
-                    or event_info.get("leagueStartDate")
-                    or event_info.get("leaguestartdate")
-                )
-                enqueue_players(
-                    conn,
-                    player_ids=player_ids,
-                    reason={
-                        "source": "bracket-roster",
-                        "eventId": str(event_id),
-                        "purpose": "frozen-bracket-prediction",
-                    },
-                    priority=0,
-                )
-                # Freeze against the information that actually existed when
-                # the final roster became known. Deep history gathering stays
-                # queued independently and must never hold the first forecast
-                # open or retrospectively rewrite it.
-                bracket_prediction_timeline(
-                    conn,
-                    bracket,
-                    simulations=simulations,
-                    data_dir=DATA_DIR,
-                )
+            # Live forecasts are time-sensitive. Background archive/backfill
+            # writers share this SQLite database and can temporarily hold its
+            # single write lock. Keep this build alive through contention
+            # instead of dropping it and making every UI poll start over.
+            for attempt in range(1, 9):
+                try:
+                    with season_platform_db() as conn:
+                        player_ids = bracket_player_ids(bracket)
+                        enqueue_players(
+                            conn,
+                            player_ids=player_ids,
+                            reason={
+                                "source": "bracket-roster",
+                                "eventId": str(event_id),
+                                "purpose": "frozen-bracket-prediction",
+                            },
+                            priority=0,
+                        )
+                        # End the queue write before simulation and snapshot
+                        # work. This minimizes how long the live build itself
+                        # owns SQLite's write lock.
+                        conn.commit()
+                        bracket_prediction_timeline(
+                            conn,
+                            bracket,
+                            simulations=simulations,
+                            data_dir=DATA_DIR,
+                        )
+                    last_error = None
+                    break
+                except sqlite3.OperationalError as exc:
+                    last_error = exc
+                    if "locked" not in str(exc).lower() or attempt >= 8:
+                        raise
+                    delay = min(2 * attempt, 10)
+                    print(
+                        f"Bracket prediction {event_id} waiting for database "
+                        f"lock (attempt {attempt}/8; retry in {delay}s)"
+                    )
+                    time.sleep(delay)
+            if last_error is not None:
+                raise last_error
         except Exception as exc:
             print(f"Bracket prediction initialization failed for {event_id}: {exc}")
         finally:
@@ -383,10 +399,10 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
     result_status = row.get("resultGameStatus")
     match_status = str(row.get("matchStatus") or "").lower()
     match_status_id = str(row.get("matchStatusID") or "")
-    if "progress" in match_status or match_status_id in {"1", "2"}:
-        status = "live"
-    elif result_status == 5 or match_status_id == "5" or "completed" in match_status or row.get("matchEndTime"):
+    if str(result_status) == "5" or match_status_id == "5" or "completed" in match_status or row.get("matchEndTime"):
         status = "completed"
+    elif "progress" in match_status or match_status_id in {"1", "2"}:
+        status = "live"
     elif row.get("matchStartTime"):
         status = "live"
     else:
@@ -1278,7 +1294,13 @@ def normalize_match(
         "activeGame": active_game,
         "raw": {"top": top, "bottom": bottom},
     }
-    attach_live_win_probability(normalized_match, event_date=event_date)
+    # Tournament and bracket indexes request include_stats=False and only need
+    # structure, teams, scores, and status. Building historical matchup features
+    # for every bracket slot made those lightweight requests take tens of seconds.
+    # The selected-match endpoint uses include_stats=True and retains the full
+    # pregame/live probability calculation.
+    if include_stats:
+        attach_live_win_probability(normalized_match, event_date=event_date)
     return normalized_match
 
 
@@ -1781,6 +1803,65 @@ def api_tournament_stats(event_id: str):
         "matchStats": fetch_summary,
     })
 
+
+@app.route("/api/events/<event_id>/report-cards", methods=["GET", "POST"])
+def api_tournament_report_cards(event_id: str):
+    output_path = os.path.join(DATA_DIR, f"event_{event_id}_report_cards.json")
+    if request.method == "GET":
+        saved = read_json(output_path, None)
+        if saved:
+            return jsonify(saved)
+        return jsonify({
+            "status": "NOT_GENERATED",
+            "eventId": int(event_id),
+            "message": "Generate report cards to analyze this event.",
+        })
+
+    data = load_bracket(event_id, refresh=request.args.get("refresh", "1") == "1")
+    conn = season_platform_db()
+    try:
+        normalized = 0
+        deferred_locked_games = []
+        for match_id, game_id, is_live in played_game_stat_targets(data):
+            if is_live and request.args.get("refresh_live", "1") == "1":
+                maybe_fetch_match_stats(event_id, match_id, game_id, force=True)
+            payload = load_game_stats(event_id, match_id, game_id)
+            if not isinstance(payload, dict):
+                maybe_fetch_match_stats(event_id, match_id, game_id, force=False)
+                payload = load_game_stats(event_id, match_id, game_id)
+            if isinstance(payload, dict):
+                try:
+                    normalized += normalize_match_stats_to_rounds(
+                        conn, int(event_id), str(match_id), int(game_id), payload
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as exc:
+                    conn.rollback()
+                    if "locked" not in str(exc).lower():
+                        raise
+                    # The historical collector and report generation share the
+                    # same SQLite ledger. A completed game's existing rows are
+                    # still safe to report while this missing game is retried on
+                    # the next explicit recalculation.
+                    deferred_locked_games.append({"matchId": str(match_id), "gameId": int(game_id)})
+        report = build_tournament_report_cards(conn, int(event_id))
+        report["normalizedPlayerRounds"] = normalized
+        report["deferredLockedGames"] = deferred_locked_games
+        if deferred_locked_games:
+            report["dataPreparationNote"] = (
+                f"{len(deferred_locked_games)} game(s) were temporarily busy while background collection was writing. "
+                "The report uses all rows already available; recalculate to include deferred games."
+            )
+    finally:
+        conn.close()
+    event_summary = normalize_tournament(event_id, data, include_stats=False).get("event", {})
+    report["event"] = {**(report.get("event") or {}), **event_summary}
+    if str(event_summary.get("leagueStatus") or event_summary.get("status") or "").upper() in {"C", "COMPLETE", "COMPLETED"}:
+        report["status"] = "COMPLETE"
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=2)
+    return jsonify(report)
+
 def consolidated_standings_response():
     player_id = int(request.args.get("playerId", "0"))
     seed_event_id = int(request.args.get("seedEventId", "0"))
@@ -2039,11 +2120,44 @@ def api_player_analytics_leaderboard():
             row for row in rows
             if str(row.get("membershipName") or "").strip().upper() == membership
         ]
+    # Older saved snapshots can remain visible while a revised analytics
+    # snapshot is rebuilding. Enforce the current evidence rule at read time
+    # so a stale label can never present a sub-100-round sample as Elite.
+    for row in rows:
+        rounds = int(row.get("rounds") or 0)
+        profile = row.setdefault("profileRatings", {})
+        reliability = float(
+            row.get("reliability")
+            if row.get("reliability") is not None
+            else profile.get("consistencyReliability") or 0
+        )
+        provisional = bool(
+            profile.get("consistencyProvisional", False)
+            or rounds < 100
+            or reliability < 0.5
+        )
+        profile["consistencyProvisional"] = provisional
+        row["consistencyProvisional"] = provisional
+        if provisional and row.get("consistencyRating") is not None:
+            row["consistencyLabel"] = "Provisional"
     sort_key = request.args.get("sort", "currentFormRating")
     allowed = {"currentFormRating", "consistencyRating", "clutchRating", "carryRating", "competitionStrengthRating", "calculatedPpr", "calculatedDpr", "rounds"}
     if sort_key not in allowed:
         sort_key = "currentFormRating"
-    rows.sort(key=lambda row: (row.get(sort_key) is not None, row.get(sort_key) or -999), reverse=True)
+    if sort_key == "consistencyRating":
+        # Provisional (<100 round) samples remain visible, but cannot outrank
+        # players whose consistency has enough evidence to be leaderboard-safe.
+        rows.sort(
+            key=lambda row: (
+                not bool((row.get("profileRatings") or {}).get("consistencyProvisional")),
+                row.get(sort_key) is not None,
+                row.get(sort_key) or -999,
+                row.get("rounds") or 0,
+            ),
+            reverse=True,
+        )
+    else:
+        rows.sort(key=lambda row: (row.get(sort_key) is not None, row.get(sort_key) or -999), reverse=True)
     limit = min(max(int(request.args.get("limit", 100)), 1), 500)
     return jsonify({
         "sort": sort_key,
@@ -2490,7 +2604,10 @@ def api_swap_live(event_id: str):
         standings_payload = get_part("swiss_standings", "swiss-pairing-standings?roundID=0")
         up_next_payload = get_part("swiss_up_next", "swiss-pairing-up-next-players-list?roundID=0")
     else:
-        schedule_payload = get_part("schedule", "swap-schedule-breakdown")
+        # The breakdown endpoint only exposes the current wave and drops prior
+        # games. The full schedule is required for accurate completed totals and
+        # player-specific event history.
+        schedule_payload = get_part("schedule", "swap-schedule-all")
         standings_payload = get_part("standings", "swap-standings")
         up_next_payload = get_part("up_next", "swap-up-next-players-list")
     event_stats_payload = get_part("event_stats", "event-player-stats")
@@ -2531,7 +2648,7 @@ def api_swap_live(event_id: str):
         if str(stat.get("playerId") or "").isdigit()
     }
     schedule_rows = []
-    for key in ("overAllSchedule", "inProgressMatchList", "availableMatchList"):
+    for key in ("schedule", "overAllSchedule", "inProgressMatchList", "availableMatchList"):
         schedule_rows.extend(row for row in schedule_data.get(key, []) or [] if isinstance(row, dict))
     seen_matches: set[tuple[str, str]] = set()
     matches = []
@@ -2580,6 +2697,7 @@ def api_swap_live(event_id: str):
             errors.append({"endpoint": "match-stats", "matchId": match_id, "message": str(e)})
 
     player_totals: dict[int, dict[str, Any]] = defaultdict(empty_swap_player_totals)
+    archived_completed: list[dict[str, Any]] = []
     stats_prefix = f"event_{event_id}_match_"
     stats_suffix = "_game_1_stats.json"
     for filename in os.listdir(DATA_DIR):
@@ -2589,6 +2707,31 @@ def api_swap_live(event_id: str):
         if not isinstance(stats, dict):
             continue
         safe_stats = safe_swap_match_stats(stats)
+        if stats.get("matchStatus") == 5 or is_complete_status(stats.get("matchStatusDesc")):
+            def archived_team(side: str) -> Dict[str, Any]:
+                rows = [
+                    player for player in safe_stats.get("players", []) or []
+                    if str(player.get("side") or "").upper() == side
+                ]
+                return {
+                    "players": rows,
+                    "name": " / ".join(player.get("name") or f"Player {player.get('playerId')}" for player in rows),
+                    "avgPpr": round(sum(float(player.get("ppr") or 0) for player in rows) / len(rows), 2) if rows else None,
+                }
+
+            archived_completed.append({
+                "eventId": event_id,
+                "matchId": safe_stats.get("matchId"),
+                "gameId": safe_stats.get("gameId") or 1,
+                "courtId": stats.get("courtID"),
+                "status": "completed",
+                "statusText": safe_stats.get("status") or "Match Completed",
+                "homeTeam": archived_team("HOME"),
+                "awayTeam": archived_team("AWAY"),
+                "homeScore": safe_stats.get("homeScore"),
+                "awayScore": safe_stats.get("awayScore"),
+                "stats": safe_stats,
+            })
         for player_stat in safe_stats.get("players", []) or []:
             player_id = player_stat.get("playerId")
             if not str(player_id or "").isdigit():
@@ -2648,9 +2791,32 @@ def api_swap_live(event_id: str):
             "bagsThrown": totals["bagsThrown"],
         }
 
+    def event_ppr(player: Dict[str, Any]) -> float:
+        swap_stats = player.get("swapStats") or {}
+        value = swap_stats.get("ppr")
+        if value in (None, ""):
+            value = player.get("ppr")
+        return as_float(value)
+
+    for ppr_rank, player in enumerate(
+        sorted(leaderboard, key=lambda row: (-event_ppr(row), str(row.get("name") or ""))),
+        start=1,
+    ):
+        player["pprRank"] = ppr_rank
+
     live = [match for match in matches if match["status"] == "live"]
     next_matches = [match for match in matches if match["status"] == "next"]
-    completed = [match for match in matches if match["status"] == "completed"]
+    completed_by_id = {
+        str(match.get("matchId")): match
+        for match in archived_completed
+        if match.get("matchId") not in (None, "")
+    }
+    for match in matches:
+        if match["status"] == "completed":
+            completed_by_id[str(match.get("matchId"))] = match
+    completed = sorted(completed_by_id.values(), key=lambda match: int(match.get("matchId") or 0))
+    games_per_player = max(1, int(event_data.get("roundLimitBracket") or 4))
+    planned_games = (len(leaderboard) * games_per_player + 3) // 4
     return jsonify({
         "event": safe_swap_event(event_data),
         "leaderboard": leaderboard,
@@ -2668,13 +2834,16 @@ def api_swap_live(event_id: str):
             "live": len(live),
             "next": len(next_matches),
             "completed": len(completed),
+            "gamesPerPlayer": games_per_player,
+            "plannedGames": planned_games,
+            "remainingGames": max(0, planned_games - len(completed)),
         },
         "meta": {
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "errors": errors,
             "sources": {
                 "event": "events",
-                "schedule": "swiss-pairing-schedule-breakdown" if use_swiss else "swap-schedule-breakdown",
+                "schedule": "swiss-pairing-schedule-breakdown" if use_swiss else "swap-schedule-all",
                 "standings": "swiss-pairing-standings" if use_swiss else "swap-standings",
                 "upNext": "swiss-pairing-up-next-players-list" if use_swiss else "swap-up-next-players-list",
                 "eventStats": "event-player-stats",
@@ -2696,7 +2865,14 @@ def serve_frontend(path: str):
         return send_from_directory(app.static_folder, path)
     index_path = os.path.join(app.static_folder, "index.html")
     if os.path.exists(index_path):
-        return send_from_directory(app.static_folder, "index.html")
+        response = send_from_directory(app.static_folder, "index.html")
+        # The JavaScript and CSS filenames are content-hashed and may be cached,
+        # but the SPA shell must be revalidated so mobile browsers discover the
+        # newest asset filenames immediately after a deployment.
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     return jsonify({"message": "Frontend not built. Run npm install && npm run build in frontend/.", "api": "/api/events/<event_id>/matches"})
 
 @app.route("/api/player/<int:player_id>/compare")

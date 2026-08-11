@@ -56,6 +56,20 @@ export async function fetchTournamentStats(
   return r.json();
 }
 
+export async function fetchTournamentReportCards(eventId: string): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/events/${eventId}/report-cards`);
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
+export async function generateTournamentReportCards(eventId: string): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/events/${eventId}/report-cards?refresh=1&refresh_live=1`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
 export type SeasonStatsParams = {
   playerId:string;
   seedEventId:string;

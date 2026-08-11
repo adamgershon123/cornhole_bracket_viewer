@@ -8,6 +8,7 @@ from typing import Any, Iterable
 
 
 CONTACT_SOURCE_DIRS = ("schedules", "swap_standings", "swap_up_next")
+REDACTED_CONTACT_VALUES = {"[redacted_personal_data]"}
 
 
 def utc_now() -> str:
@@ -42,12 +43,14 @@ def initialize_player_contact_schema(conn: sqlite3.Connection) -> None:
         );
         """
     )
+    conn.execute("UPDATE player_contacts SET email=NULL WHERE LOWER(TRIM(COALESCE(email,'')))='[redacted_personal_data]'")
+    conn.execute("UPDATE player_contacts SET phone=NULL WHERE LOWER(TRIM(COALESCE(phone,'')))='[redacted_personal_data]'")
     conn.commit()
 
 
 def _clean(value: Any) -> str | None:
     text = str(value or "").strip()
-    if not text or text.lower() in {"null", "none", "undefined", "n/a", "na", "-"}:
+    if not text or text.lower() in {"null", "none", "undefined", "n/a", "na", "-", *REDACTED_CONTACT_VALUES}:
         return None
     return text
 

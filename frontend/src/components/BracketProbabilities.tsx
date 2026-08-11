@@ -8,6 +8,7 @@ import { ShareBracketSnapshotButton } from './ShareSnapshotButton';
 export function BracketProbabilities({ eventId, event }: { eventId: string; event?: any }) {
   const [data, setData] = useState<any>();
   const [error, setError] = useState('');
+  const buildPollInFlight = useRef(false);
 
   useEffect(() => {
     setData(undefined);
@@ -22,15 +23,31 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
 
   useEffect(() => {
     if (data?.timelineBuildStatus !== 'BUILDING') return;
-    const timer = window.setInterval(() => {
-      fetchBracketProbabilities(eventId)
-        .then(result => {
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const poll = async () => {
+      if (cancelled || buildPollInFlight.current) return;
+      buildPollInFlight.current = true;
+      try {
+        const result = await fetchBracketProbabilities(eventId);
+        if (!cancelled) {
           setData(result);
           setError('');
-        })
-        .catch(error => setError(error.message));
-    }, 2000);
-    return () => window.clearInterval(timer);
+        }
+      } catch (error: any) {
+        if (!cancelled) setError(error.message);
+      } finally {
+        buildPollInFlight.current = false;
+        if (!cancelled) timer = window.setTimeout(poll, 15_000);
+      }
+    };
+
+    timer = window.setTimeout(poll, 15_000);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [data?.timelineBuildStatus, eventId]);
 
   if (error) {

@@ -31,6 +31,7 @@ from upcoming_matchups import (
 )
 from event_discovery import initialize_event_discovery_schema, redact_discovery_payload
 from outcome_ingestion import initialize_outcome_schema, ingest_completed_outcomes
+from player_contact_directory import index_contact_payload
 
 
 ACL_BASE = "https://api.iplayacl.com/api/v1"
@@ -510,6 +511,7 @@ def cached_get(
     reuse_if_cached: bool = False,
     completion_checker=None,
     payload_sanitizer=None,
+    payload_before_sanitize=None,
 ) -> tuple[Any, dict[str, Any]]:
     cached = read_json(local_path)
     cached_payload = (cached or {}).get("payload") if isinstance(cached, dict) else None
@@ -549,7 +551,7 @@ def cached_get(
         return cached_payload, {"source": "cache", **cached_meta}
 
     request_headers = dict(headers or FANZONE_HEADERS)
-    if cached_meta.get("etag"):
+    if cached_meta.get("etag") and not force:
         request_headers["if-none-match"] = cached_meta["etag"]
 
     try:
@@ -623,6 +625,8 @@ def cached_get(
         )
         response.raise_for_status()
     payload = response.json()
+    if payload_before_sanitize:
+        payload_before_sanitize(payload)
     if payload_sanitizer:
         payload = payload_sanitizer(payload)
     completion_status = "complete" if completion_checker and completion_checker(payload) else "incomplete"
@@ -1056,6 +1060,16 @@ def fetch_bracket(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     path = cache_path("brackets", f"event_{event_id}.json")
     url = f"{ACL_BASE}/bracket-data/{event_id}"
+
+    def capture_private_director_fields(raw_payload: Any) -> None:
+        try:
+            from director_directory import index_director_event_payload
+
+            index_director_event_payload(conn, raw_payload, fallback_event_id=event_id)
+        except Exception:
+            # Private contact capture must never block bracket ingestion.
+            pass
+
     payload, meta = cached_get(
         conn,
         cache_key=f"bracket:{event_id}",
@@ -1070,6 +1084,7 @@ def fetch_bracket(
             if preserve_contact_data
             else lambda value: redact_discovery_payload(value)[0]
         ),
+        payload_before_sanitize=capture_private_director_fields,
     )
     event = event_from_bracket(payload, fallback_event_id=event_id)
     upsert_event(conn, event, bracket_downloaded=True, bracket_is_complete=bracket_completed(payload))
@@ -1130,6 +1145,22 @@ def fetch_and_index_upcoming_schedule(
         raise ValueError("schedule_format must be SWISS or SWAP")
     path = cache_path("schedules", f"{endpoint}_{event_id}.json")
     url = f"{ACL_BASE}/{endpoint}/{event_id}"
+
+    def capture_private_player_fields(raw_payload: Any) -> None:
+        try:
+            from player_contact_directory import index_contact_payload
+
+            index_contact_payload(
+                conn,
+                raw_payload,
+                source_endpoint=endpoint,
+                source_event_id=event_id,
+                source_file=str(path),
+            )
+        except Exception:
+            # Private contact capture must never block schedule ingestion.
+            pass
+
     payload, meta = cached_get(
         conn,
         cache_key=f"schedule:{endpoint}:{event_id}",
@@ -1140,6 +1171,7 @@ def fetch_and_index_upcoming_schedule(
         force=force,
         completion_checker=schedule_completed,
         payload_sanitizer=lambda value: redact_discovery_payload(value)[0],
+        payload_before_sanitize=capture_private_player_fields,
     )
     # Contact fields are private, but the same schedule response can enrich the
     # admin-only directory without another ACL request.
@@ -1458,6 +1490,21 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
             rows_by_round[int(row.get("inningno"))].append(row)
         except Exception:
             continue
+
+    # Live match-stat responses are incremental. Once ACL marks a game final,
+    # its inning history is the authoritative snapshot and must replace any
+    # partial rows saved while the game was underway. Without this replacement,
+    # an early one- or two-inning snapshot can remain in the analytics ledger
+    # forever even though the cached ACL response later contains the full game.
+    if rows_by_round and match_stats_completed(payload):
+        conn.execute(
+            "DELETE FROM player_rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
+        conn.execute(
+            "DELETE FROM rounds WHERE event_id=? AND match_id=? AND game_id=?",
+            (event_id, str(match_id), game_id),
+        )
 
     saved = 0
     for round_no, rows in rows_by_round.items():
@@ -1852,6 +1899,10 @@ def fetch_swap_standings(conn: sqlite3.Connection, event_id: int, *, force: bool
             headers=FANZONE_HEADERS,
             force=force,
             reuse_if_cached=True,
+            payload_before_sanitize=lambda raw_payload: index_contact_payload(
+                conn, raw_payload, source_endpoint="swap-standings",
+                source_event_id=event_id, source_file=str(path),
+            ),
         )
     except requests.HTTPError:
         return 0
@@ -1932,6 +1983,10 @@ def fetch_swap_up_next(conn: sqlite3.Connection, event_id: int, *, force: bool =
             headers=FANZONE_HEADERS,
             force=force,
             reuse_if_cached=True,
+            payload_before_sanitize=lambda raw_payload: index_contact_payload(
+                conn, raw_payload, source_endpoint="swap-up-next-players-list",
+                source_event_id=event_id, source_file=str(path),
+            ),
         )
     except requests.HTTPError:
         return 0

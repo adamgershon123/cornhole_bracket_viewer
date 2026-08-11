@@ -26,7 +26,7 @@ FIELD_SIZE_BUCKETS = (
 )
 _REPORT_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _REPORT_CACHE_LOCK = threading.Lock()
-_REPORT_CACHE_SECONDS = 30.0
+_REPORT_CACHE_SECONDS = 300.0
 
 
 def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -47,14 +47,17 @@ def prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
 
 
 def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, Any]:
-    match_rows = prediction_evaluation_report(conn, limit=250)["evaluations"]
+    match_evaluation = prediction_evaluation_report(conn, limit=None)
+    match_rows = match_evaluation["evaluations"]
+    historical_backtest = historical_backtest_report(conn)
     replay_status = historical_tournament_replay_status(conn)
     tournament_rows = _tournament_evaluations(conn)
     return {
-        "historicalBacktest": historical_backtest_report(conn),
+        "historicalBacktest": historical_backtest,
         "historicalTournamentReplay": replay_status,
         "matchPerformance": {
             "overall": _binary_summary(match_rows),
+            "population": "FORWARD_FROZEN",
             "byConfidence": _grouped_binary_summary(
                 match_rows,
                 lambda row: _confidence_bucket(
@@ -66,6 +69,7 @@ def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, 
                 lambda row: _margin_bucket(int(row["actualMargin"])),
             ),
         },
+        "historicalMatchPerformance": _historical_match_summary(historical_backtest),
         "tournamentPerformance": {
             "overall": _tournament_summary(tournament_rows),
             "byBracketSize": _grouped_tournament_summary(
@@ -103,6 +107,30 @@ def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, 
     }
 
 
+def _historical_match_summary(backtest: dict[str, Any]) -> dict[str, Any]:
+    """Expose the chronological PPR control as a distinct headline population."""
+    models = backtest.get("models") or []
+    ppr = next((row for row in models if row.get("model") == "PPR only"), None)
+    if not ppr:
+        return {
+            "population": "HISTORICAL_CUTOFF_SAFE_HOLDOUT",
+            "resolvedMatches": 0,
+            "accuracy": None,
+            "coverageRate": None,
+            "holdoutMatchups": int(backtest.get("holdoutMatchups") or 0),
+        }
+    return {
+        "population": "HISTORICAL_CUTOFF_SAFE_HOLDOUT",
+        "resolvedMatches": int(ppr.get("evaluatedMatchups") or 0),
+        "accuracy": ppr.get("accuracy"),
+        "brierScore": ppr.get("brierScore"),
+        "logLoss": ppr.get("logLoss"),
+        "coverageRate": ppr.get("coverageRate"),
+        "holdoutMatchups": int(backtest.get("holdoutMatchups") or 0),
+        "generatedAt": backtest.get("generatedAt"),
+    }
+
+
 def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     initialize_bracket_snapshot_schema(conn)
     conn.execute(
@@ -120,7 +148,15 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     # JSON strings at once can exhaust the web worker before scoring begins.
     snapshots = conn.execute(
         """
-        SELECT s.event_id, s.payload_json, s.created_at,
+        SELECT s.event_id,
+               CASE
+                 WHEN o.champion_player_ids_json IS NOT NULL
+                  AND c.snapshot_created_at=s.created_at
+                  AND c.evaluation_json IS NOT NULL
+                 THEN NULL
+                 ELSE s.payload_json
+               END AS payload_json,
+               s.created_at,
                o.champion_player_ids_json AS replay_champion_player_ids_json,
                c.snapshot_created_at AS cached_snapshot_created_at,
                c.evaluation_json AS cached_evaluation_json,

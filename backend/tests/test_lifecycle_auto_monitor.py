@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from lifecycle_runner import auto_monitor_discovered_events
+from lifecycle_runner import auto_monitor_discovered_events, classify_no_activity_events
 
 
 class LifecycleAutoMonitorTests(unittest.TestCase):
@@ -83,6 +83,33 @@ class LifecycleAutoMonitorTests(unittest.TestCase):
             self.conn.execute("SELECT enabled FROM monitored_events WHERE event_id='201'").fetchone()[0],
             0,
         )
+
+    def test_classifies_expired_event_without_competitive_data(self) -> None:
+        for statement in (
+            "CREATE TABLE upcoming_matchup_candidates(event_id TEXT, home_player_ids_json TEXT, away_player_ids_json TEXT)",
+            "CREATE TABLE matches(event_id INTEGER)",
+            "CREATE TABLE player_rounds(event_id INTEGER)",
+            "CREATE TABLE swap_standings(event_id INTEGER)",
+            "CREATE TABLE event_results(event_id INTEGER)",
+            "CREATE TABLE team_members(event_id INTEGER)",
+            "CREATE TABLE bracket_prediction_snapshots(event_id INTEGER)",
+            "CREATE TABLE shadow_prediction_runs(event_id TEXT)",
+        ):
+            self.conn.execute(statement)
+        self.conn.execute(
+            "INSERT INTO discovered_events VALUES (301, '2026-07-25', '6:00 PM', 'A', 'SWAP_CANDIDATE', 26.7, -80.0)"
+        )
+        auto_monitor_discovered_events(
+            self.conn,
+            as_of="2026-07-25T12:00:00+00:00",
+        )
+        self.assertEqual(classify_no_activity_events(self.conn, as_of_date="2026-07-26"), 1)
+        row = self.conn.execute(
+            "SELECT enabled, last_poll_status, last_poll_message FROM monitored_events WHERE event_id='301'"
+        ).fetchone()
+        self.assertEqual(row["enabled"], 0)
+        self.assertEqual(row["last_poll_status"], "NO_ACTIVITY")
+        self.assertIn("No roster", row["last_poll_message"])
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ def utc_now() -> str:
 
 def _clean(value: Any) -> str | None:
     text = str(value or "").strip()
-    return None if not text or text.lower() in {"null", "none", "undefined", "n/a", "-"} else text
+    return None if not text or text.lower() in {"null", "none", "undefined", "n/a", "-", "[redacted_personal_data]"} else text
 
 
 def initialize_director_schema(conn: sqlite3.Connection) -> None:
@@ -62,6 +62,8 @@ def initialize_director_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_director_events_location ON director_events(state,city,event_date);
         """
     )
+    conn.execute("UPDATE directors SET email=NULL WHERE LOWER(TRIM(COALESCE(email,'')))='[redacted_personal_data]'")
+    conn.execute("UPDATE directors SET phone=NULL WHERE LOWER(TRIM(COALESCE(phone,'')))='[redacted_personal_data]'")
     conn.commit()
 
 

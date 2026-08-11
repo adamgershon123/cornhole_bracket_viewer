@@ -60,7 +60,11 @@ export default function PlayerAnalyticsLeaderboardView() {
           {(data.membershipOptions || []).map((name:string)=><option key={name} value={name.toUpperCase()}>{name}</option>)}
           <option value="UNKNOWN">Membership unknown</option>
         </select>
-        <select value={sort} onChange={e=>setSort(e.target.value)} className="rounded-xl bg-zinc-900 px-3 text-sm">{Object.entries(metrics).map(([key,label]:any)=><option key={key} value={key}>{label}</option>)}</select>
+        <select value={sort} onChange={e=>{
+          const nextSort = e.target.value;
+          setSort(nextSort);
+          if (nextSort === 'consistencyRating' && minimumRounds < 100) setMinimumRounds(100);
+        }} className="rounded-xl bg-zinc-900 px-3 text-sm">{Object.entries(metrics).map(([key,label]:any)=><option key={key} value={key}>{label}</option>)}</select>
         <input type="number" min="0" value={minimumRounds} onChange={e=>setMinimumRounds(Number(e.target.value))} title="Minimum rounds" className="rounded-xl bg-zinc-900 px-3 text-sm" placeholder="Min rounds"/>
         <input type="number" min="0" value={minimumClutch} onChange={e=>setMinimumClutch(Number(e.target.value))} title="Minimum clutch opportunities" className="rounded-xl bg-zinc-900 px-3 text-sm" placeholder="Min clutch"/>
       </div>

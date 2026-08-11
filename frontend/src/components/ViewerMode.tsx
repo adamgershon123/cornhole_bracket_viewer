@@ -1,7 +1,7 @@
 import { Brackets, Check, ChevronRight, Eye, Flag, Share2, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Match, PlayerStat, RoundRow, TournamentStatsPlayer, TournamentStatsResponse } from '../lib/api';
-import { fetchBracketProbabilities, fetchTournamentStats } from '../lib/api';
+import { fetchBracketProbabilities, fetchTournamentReportCards, fetchTournamentStats, generateTournamentReportCards } from '../lib/api';
 import { SharePlayerStatusSnapshotButton } from './ShareSnapshotButton';
 
 export function ViewerMode({
@@ -27,6 +27,8 @@ export function ViewerMode({
   const [bracketProjection, setBracketProjection] = useState<any>();
   const [tournamentStats, setTournamentStats] = useState<TournamentStatsResponse | null>(null);
   const [tournamentStatsLoading, setTournamentStatsLoading] = useState(true);
+  const [reportCards, setReportCards] = useState<any>();
+  const [reportCardsUpdating, setReportCardsUpdating] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(
     String(subjectTeamId || new URLSearchParams(window.location.search).get('teamId') || '')
   );
@@ -38,6 +40,13 @@ export function ViewerMode({
     fetchBracketProbabilities(String(match.eventId))
       .then(result => { if (!cancelled) setBracketProjection(result); })
       .catch(() => { if (!cancelled) setBracketProjection(null); });
+    return () => { cancelled = true; };
+  }, [match.eventId]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchTournamentReportCards(String(match.eventId))
+      .then(result => { if (!cancelled) setReportCards(result); })
+      .catch(() => { if (!cancelled) setReportCards(null); });
     return () => { cancelled = true; };
   }, [match.eventId]);
   const requestedPlayer = players.find(player => String(player.id) === String(playerId));
@@ -122,6 +131,8 @@ export function ViewerMode({
   );
   const showCurrentGameStats = displayedMatchStatus === 'live';
   const initialTournamentChance = projectedTeam?.winEventProbability == null ? undefined : Number(projectedTeam.winEventProbability) * 100;
+  const currentProjectedTeam = findProjectedTeam(bracketProjection?.teams || [], playerId, myTeamId, myTeam.name);
+  const currentTournamentChance = eliminated ? 0 : currentProjectedTeam?.winEventProbability == null ? undefined : Number(currentProjectedTeam.winEventProbability) * 100;
   const futureGameChance = averageProjectedGameChance(bracketProjection, projectedTeam?.teamId || myTeamId);
   const gameHistory = [...appearances].sort((a, b) => Number(a.matchId || 0) - Number(b.matchId || 0));
   const opponentOutlook = upcomingOpponentOutlook(
@@ -131,6 +142,12 @@ export function ViewerMode({
     myTeamId,
     myTeam.name,
   );
+  const focusPlayer = teamPlayers.find(player => String(player.id) === String(playerId)) || teamPlayers[0];
+  const playerReport = (reportCards?.players || []).find((player: any) => String(player.playerId) === String(focusPlayer?.id));
+  const teamReport = (reportCards?.teams || []).find((team: any) => String(team.teamId) === String(projectedTeam?.teamId || myTeamId));
+  const dayScore = playerReport?.overallScore == null ? teamReport?.overallScore : Number(playerReport.overallScore);
+  const dayGrade = playerReport?.grade || teamReport?.grade;
+  const performanceSummary = playerReport ? performanceSentence(playerReport) : 'Create the tournament report card to grade today\'s performance against this player\'s established baseline.';
 
   return (
     <section className={`space-y-3 ${standalone ? 'mx-auto w-full max-w-3xl py-3' : 'lg:hidden'}`}>
@@ -276,6 +293,30 @@ export function ViewerMode({
         <StatusStat label="Position" value={standing} />
       </div>
 
+      <div className="overflow-hidden rounded-2xl border border-violet-300/30 bg-gradient-to-br from-violet-300/[.10] to-sky-300/[.05]">
+        <div className="p-4">
+          <div className="text-xs font-black uppercase tracking-[.18em] text-violet-300">My tournament update</div>
+          <div className="mt-2 text-2xl font-black leading-tight text-white">
+            {eliminated ? `${myTeam.name}'s tournament run is complete.` : `${myTeam.name} is ${standing.toLowerCase()} with up to ${path.gamesLeft} game${path.gamesLeft === 1 ? '' : 's'} left.`}
+          </div>
+          <div className="mt-2 text-sm leading-6 text-zinc-300">{performanceSummary}</div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Mini label="Day grade" value={dayGrade || 'Not graded'} />
+            <Mini label="Day score" value={dayScore == null ? '—' : `${Number(dayScore).toFixed(1)}/100`} />
+            <Mini label="Games left" value={String(path.gamesLeft)} />
+            <Mini label="Title chance" value={(currentTournamentChance ?? initialTournamentChance) == null ? 'Unavailable' : `${Number(currentTournamentChance ?? initialTournamentChance).toFixed(1)}%${currentTournamentChance == null ? ' pregame' : ' now'}`} />
+          </div>
+          <div className="mt-3 text-xs leading-5 text-zinc-500">The grade combines performance, results versus expectation, consistency, clutch play and resilience. It grades the day—not the player.</div>
+        </div>
+        <button type="button" disabled={reportCardsUpdating} onClick={async () => {
+          setReportCardsUpdating(true);
+          try { setReportCards(await generateTournamentReportCards(String(match.eventId))); }
+          finally { setReportCardsUpdating(false); }
+        }} className="min-h-12 w-full border-t border-violet-300/20 bg-violet-300/10 px-4 font-black text-violet-100 active:bg-violet-300/20 disabled:opacity-60">
+          {reportCardsUpdating ? 'Updating performance grade…' : playerReport ? 'Update performance grade' : 'Create performance grade'}
+        </button>
+      </div>
+
       <div className="rounded-2xl border border-sky-300/25 bg-sky-300/[.05] p-4">
         <div className="text-xs font-black uppercase tracking-[.18em] text-sky-300">Initial tournament projection</div>
         <div className="mt-2 text-4xl font-black text-white">
@@ -398,15 +439,32 @@ export function ViewerMode({
         gamesPlayed: completed.length,
         gamesLeft: path.gamesLeft,
         initialTournamentChance,
+        currentTournamentChance,
         currentOpponent: opponent.name,
         currentScore: `${myScore}–${opponentScore}`,
         currentWinChance: match.status === 'completed' ? undefined : displayedProbability,
         path: path.steps,
+        dayGrade,
+        dayScore: dayScore == null ? undefined : Number(dayScore),
+        dayPpr: playerReport?.ppr == null ? undefined : Number(playerReport.ppr),
+        expectedPpr: playerReport?.expectedPpr == null ? undefined : Number(playerReport.expectedPpr),
+        performanceSummary,
       }}/>
       </div>
       {shareNotice && <div className="flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-sm font-bold text-emerald-100"><Check size={17}/>{shareNotice}</div>}
     </section>
   );
+}
+
+function performanceSentence(player: any) {
+  const ppr = Number(player?.ppr);
+  const expected = Number(player?.expectedPpr);
+  const difference = Number(player?.pprVsExpected);
+  const name = player?.playerName || 'This player';
+  if (![ppr, expected, difference].every(Number.isFinite)) return `${name} has a ${player?.grade || 'current'} day grade based on the tournament data available so far.`;
+  if (difference >= 0.25) return `${name} is playing above their usual level: ${ppr.toFixed(2)} PPR today versus ${expected.toFixed(2)} expected.`;
+  if (difference <= -0.25) return `${name} is playing below their usual level: ${ppr.toFixed(2)} PPR today versus ${expected.toFixed(2)} expected.`;
+  return `${name} is playing close to their usual level: ${ppr.toFixed(2)} PPR today versus ${expected.toFixed(2)} expected.`;
 }
 
 function findProjectedTeam(teams: any[], playerId: string, teamId: string, teamName: string) {

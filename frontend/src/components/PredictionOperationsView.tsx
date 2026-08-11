@@ -1,5 +1,5 @@
 import { Activity, AlertTriangle, BrainCircuit, CheckCircle2, Database, Download, MapPinned, Pause, Play, RefreshCw, Radar } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   controlHistoricalBackfill,
   downloadHistoricalVenueCsv,
@@ -78,6 +78,8 @@ export default function PredictionOperationsView() {
   const [venueExporting, setVenueExporting] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState<'PREDICTED' | 'ALL' | 'ABSTAINED'>('PREDICTED');
   const [eventGroupFilter, setEventGroupFilter] = useState<'ALL'|'SIT_AND_GO'|'STANDARD'>('ALL');
+  const [eventActivityFilter, setEventActivityFilter] = useState<'RECORDED'|'NO_ACTIVITY'|'ALL'>('RECORDED');
+  const refreshInFlight = useRef(false);
   const geography = backfill?.geography || {};
   const regions = geography?.regions || [];
   const maxRegionVenues = Math.max(1, ...regions.map((region: any) => Number(region.venues || 0)));
@@ -88,17 +90,21 @@ export default function PredictionOperationsView() {
   );
 
   async function refresh() {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     try {
       setError('');
-      const [operations, historical] = await Promise.all([
-        fetchPredictionOperations(),
-        fetchHistoricalBackfill(),
-      ]);
+      const historicalRequest = fetchHistoricalBackfill();
+      const operations = await fetchPredictionOperations();
       setData(operations);
-      setBackfill(historical);
+      setLoading(false);
+      historicalRequest
+        .then(setBackfill)
+        .catch((err: any) => setError(err?.message || 'Historical collection could not be loaded.'));
     } catch (err: any) {
       setError(err?.message || 'Prediction operations could not be loaded.');
     } finally {
+      refreshInFlight.current = false;
       setLoading(false);
     }
   }
@@ -151,7 +157,7 @@ export default function PredictionOperationsView() {
 
   useEffect(() => {
     refresh();
-    const timer = window.setInterval(refresh, 30000);
+    const timer = window.setInterval(refresh, 60000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -179,6 +185,7 @@ export default function PredictionOperationsView() {
   const learning = data?.predictionLearning || {};
   const performance = data?.predictionPerformance || {};
   const historicalBacktest = performance?.historicalBacktest || {};
+  const historicalMatchPerformance = performance?.historicalMatchPerformance || {};
   const hourlyThroughput = backfill?.throughput?.lastHour || {};
   const dailyThroughput = backfill?.throughput?.last24Hours || {};
   const matchPerformance = performance?.matchPerformance || {};
@@ -188,9 +195,13 @@ export default function PredictionOperationsView() {
   const commonSample = shadow?.commonSample || {};
   const baselineModel = commonSample?.baseline || {};
   const challengerModel = commonSample?.challenger || {};
-  const monitoredEvents = (data?.monitoredEvents || []).filter((event: any) => (
-    eventGroupFilter === 'ALL' || event.event_group === eventGroupFilter
-  ));
+  const monitoredEvents = (data?.monitoredEvents || []).filter((event: any) => {
+    const groupMatches = eventGroupFilter === 'ALL' || event.event_group === eventGroupFilter;
+    const noActivity = event.tracking_status === 'NO_ACTIVITY' || event.last_poll_status === 'NO_ACTIVITY';
+    const activityMatches = eventActivityFilter === 'ALL'
+      || (eventActivityFilter === 'NO_ACTIVITY' ? noActivity : !noActivity);
+    return groupMatches && activityMatches;
+  });
 
   return (
     <section className="mt-4 space-y-4">
@@ -226,6 +237,19 @@ export default function PredictionOperationsView() {
       {error && (
         <div className="flex items-center gap-2 rounded-2xl border border-red-400/30 bg-red-950/40 p-4 text-sm font-bold text-red-200">
           <AlertTriangle size={17} /> {error}
+        </div>
+      )}
+
+      {data?.snapshot && (
+        <div className="rounded-2xl border border-sky-400/25 bg-sky-950/30 p-4 text-sm text-sky-100">
+          <span className="font-black">
+            {data.snapshot.prepared ? 'Prepared prediction snapshot' : 'Preparing prediction snapshot'}
+          </span>
+          {data.snapshot.generatedAt
+            ? ` · displaying results prepared ${new Date(data.snapshot.generatedAt).toLocaleString()}`
+            : ' · the page will populate after the background worker completes its first preparation.'}
+          {data.snapshot.status === 'REFRESHING' && ' A newer snapshot is being calculated in the background.'}
+          {data.snapshot.status === 'ERROR' && ' The last prepared results remain available while refresh is retried.'}
         </div>
       )}
 
@@ -514,17 +538,23 @@ export default function PredictionOperationsView() {
           <div>
             <div className="text-xs font-black uppercase tracking-[.22em] text-violet-300">Model learning</div>
             <h3 className="mt-2 text-2xl font-black text-white">Feedback and retraining readiness</h3>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-500">Every resolved frozen prediction becomes an auditable learning example. Collection is automatic; weight changes require a controlled batch validation.</p>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-500">Historical matches fit and challenge the model with strict pre-event cutoffs. Forward-frozen predictions provide a separate real-world confirmation sample before weight changes are promoted.</p>
           </div>
           <div className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider ${learning?.promotionGate?.eligibleForRetrainingReview ? 'bg-emerald-400/10 text-emerald-300' : 'bg-amber-300/10 text-amber-200'}`}>
             {learning?.promotionGate?.eligibleForRetrainingReview ? 'Ready for retraining review' : 'Collecting evidence'}
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="Learning examples" value={learning.learningExamples || 0} detail="Frozen and resolved" tone="blue" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Metric label="Historical eligible" value={Number(historicalBacktest.eligibleMatchups || 0).toLocaleString()} detail={`${Number(historicalBacktest.archiveMatchups || 0).toLocaleString()} resolved archive matchups`} tone="blue" />
+          <Metric label="Development examples" value={Number(historicalBacktest.developmentMatchups || 0).toLocaleString()} detail="Used to fit candidate models" tone="blue" />
+          <Metric label="Validation examples" value={Number(historicalBacktest.validationMatchups || 0).toLocaleString()} detail="Used to compare candidates" tone="blue" />
+          <Metric label="Historical holdout" value={Number(historicalBacktest.holdoutMatchups || 0).toLocaleString()} detail="Untouched final historical test" tone="green" />
+          <Metric label="Prospective confirmations" value={Number(learning.learningExamples || 0).toLocaleString()} detail="Forward-frozen and resolved" tone="green" />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Metric label="Correct predictions" value={learning.correctPredictions || 0} detail={pct(learning.learningExamples ? learning.correctPredictions / learning.learningExamples : null)} tone="green" />
           <Metric label="Model misses" value={learning.incorrectPredictions || 0} detail={`${pct(learning.missRate)} miss rate`} tone="amber" />
-          <Metric label="Until review gate" value={learning?.promotionGate?.remaining ?? '—'} detail={`${learning?.promotionGate?.minimumCommonResolvedMatches || 500} required`} tone="zinc" />
+          <Metric label="Prospective until review gate" value={learning?.promotionGate?.remaining ?? '—'} detail={`${learning?.promotionGate?.minimumCommonResolvedMatches || 500} live confirmations required`} tone="zinc" />
         </div>
         <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
           <div className="border-b border-white/10 bg-white/[.03] px-4 py-3 font-black text-white">Post-match findings</div>
@@ -542,7 +572,7 @@ export default function PredictionOperationsView() {
           <div className="mt-2 grid gap-2 text-sm text-zinc-400 sm:grid-cols-2 lg:grid-cols-4">
             <div>✓ 500 common resolved matches</div><div>✓ Better winner accuracy</div><div>✓ Better Brier and log loss</div><div>✓ Stable across time periods</div>
           </div>
-          <div className="mt-3 text-xs leading-5 text-zinc-500">{learning.learningPolicy}</div>
+          <div className="mt-3 text-xs leading-5 text-zinc-500">{learning.learningPolicy} Historical development, validation, and holdout samples remain separate from this prospective promotion gate.</div>
         </div>
       </div>
 
@@ -573,7 +603,7 @@ export default function PredictionOperationsView() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[650px] text-sm">
               <thead className="text-left text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                <tr><th className="p-4">Model</th><th>Validation</th><th>Final accuracy</th><th>Vs PPR</th><th>Brier</th><th>Log loss</th><th>Coverage</th></tr>
+                <tr><th className="p-4">Model</th><th>Validation</th><th>Final accuracy</th><th>Paired vs PPR</th><th>Brier</th><th>Log loss</th><th>Coverage</th></tr>
               </thead>
               <tbody>
                 {(historicalBacktest.models || []).map((row: any) => (
@@ -581,10 +611,26 @@ export default function PredictionOperationsView() {
                     <td className="p-4 font-black text-white">{row.model}</td>
                     <td>{pct(row.validationMetrics?.accuracy)}</td>
                     <td className="font-black text-emerald-300">{pct(row.accuracy)}</td>
-                    <td className="text-xs text-zinc-400">
-                      {row.pairedVsPpr?.finalTest
-                        ? `${Number(row.pairedVsPpr.finalTest.netAdditionalCorrect) >= 0 ? '+' : ''}${row.pairedVsPpr.finalTest.netAdditionalCorrect} calls · p ${Number(row.pairedVsPpr.finalTest.mcnemarPValueApprox).toFixed(3)}`
-                        : 'baseline'}
+                    <td className="min-w-[220px] py-3 pr-4 text-xs text-zinc-400">
+                      {row.pairedVsPpr?.finalTest ? (() => {
+                        const comparison = row.pairedVsPpr.finalTest;
+                        const net = Number(comparison.netAdditionalCorrect || 0);
+                        const pValue = Number(comparison.mcnemarPValueApprox);
+                        return (
+                          <div className="space-y-1">
+                            <div className={`font-black ${net > 0 ? 'text-emerald-300' : net < 0 ? 'text-red-300' : 'text-zinc-300'}`}>
+                              {net >= 0 ? '+' : ''}{net} net correct
+                            </div>
+                            <div>{Number(comparison.disagreements || 0).toLocaleString()} changed decisions</div>
+                            <div className="text-[11px] text-zinc-500">
+                              Challenger won {Number(comparison.challengerOnlyCorrect || 0).toLocaleString()} · PPR won {Number(comparison.pprOnlyCorrect || 0).toLocaleString()}
+                            </div>
+                            <div className={`text-[11px] font-bold ${comparison.statisticallyClearAt95 ? 'text-emerald-300' : 'text-amber-200'}`}>
+                              p {pValue.toFixed(3)} · {comparison.statisticallyClearAt95 ? 'clear at 95%' : 'not yet conclusive'}
+                            </div>
+                          </div>
+                        );
+                      })() : <span className="font-bold text-zinc-500">PPR baseline</span>}
                     </td>
                     <td>{row.brierScore == null ? '—' : Number(row.brierScore).toFixed(3)}</td>
                     <td>{row.logLoss == null ? '—' : Number(row.logLoss).toFixed(3)}</td>
@@ -608,8 +654,9 @@ export default function PredictionOperationsView() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="Match accuracy" value={pct(matchPerformance?.overall?.accuracy)} detail={`${matchPerformance?.overall?.resolvedMatches || 0} resolved matches`} tone="green" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Metric label="Historical match accuracy" value={pct(historicalMatchPerformance?.accuracy)} detail={`${Number(historicalMatchPerformance?.resolvedMatches || 0).toLocaleString()} cutoff-safe holdout matches`} tone="green" />
+          <Metric label="Forward frozen accuracy" value={pct(matchPerformance?.overall?.accuracy)} detail={`${Number(matchPerformance?.overall?.resolvedMatches || 0).toLocaleString()} live predictions resolved`} tone="green" />
           <Metric label="Tournament favorite won" value={pct(tournamentOverall?.favoriteAccuracy)} detail={`${tournamentOverall?.resolvedTournaments || 0} resolved tournaments`} tone="amber" />
           <Metric label="Champion in top 3" value={pct(tournamentOverall?.topThreeHitRate)} detail="Pregame forecast ranking" tone="blue" />
           <Metric label="Average champion rank" value={tournamentOverall?.averageChampionRank ?? '—'} detail={`Average field ${tournamentOverall?.averageFieldSize ?? '—'} teams`} tone="zinc" />
@@ -1044,15 +1091,26 @@ export default function PredictionOperationsView() {
               <h3 className="font-black text-white">Monitoring and tracking</h3>
               <p className="mt-1 text-xs text-zinc-500">Active polling plus recently archived tournament records.</p>
             </div>
-            <select
-              value={eventGroupFilter}
-              onChange={event => setEventGroupFilter(event.target.value as any)}
-              className="ml-auto rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-xs font-bold text-white"
-            >
-              <option value="ALL">All event groups</option>
-              <option value="SIT_AND_GO">Sit &amp; Go</option>
-              <option value="STANDARD">Standard events</option>
-            </select>
+            <div className="ml-auto flex flex-wrap justify-end gap-2">
+              <select
+                value={eventActivityFilter}
+                onChange={event => setEventActivityFilter(event.target.value as any)}
+                className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-xs font-bold text-white"
+              >
+                <option value="RECORDED">Events with activity</option>
+                <option value="NO_ACTIVITY">No activity recorded</option>
+                <option value="ALL">All scheduled events</option>
+              </select>
+              <select
+                value={eventGroupFilter}
+                onChange={event => setEventGroupFilter(event.target.value as any)}
+                className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-xs font-bold text-white"
+              >
+                <option value="ALL">All event groups</option>
+                <option value="SIT_AND_GO">Sit &amp; Go</option>
+                <option value="STANDARD">Standard events</option>
+              </select>
+            </div>
           </div>
           <div className="mt-4 space-y-2">
             {(data?.monitoredEvents || []).length === 0 && (
@@ -1077,7 +1135,9 @@ export default function PredictionOperationsView() {
                   )}
                   <span className="rounded-full bg-sky-400/10 px-2.5 py-1 text-sky-300">{event.schedule_format}</span>
                   <span className={`rounded-full px-2.5 py-1 ${
-                    event.tracking_status === 'ACTIVE'
+                    event.tracking_status === 'NO_ACTIVITY'
+                      ? 'bg-amber-400/10 text-amber-200'
+                      : event.tracking_status === 'ACTIVE'
                       ? 'bg-emerald-400/10 text-emerald-300'
                       : event.last_poll_status === 'ERROR'
                         ? 'bg-red-400/10 text-red-300'
@@ -1085,7 +1145,9 @@ export default function PredictionOperationsView() {
                   }`}>
                     {event.tracking_status === 'ACTIVE'
                       ? (event.last_poll_status || 'WAITING')
-                      : (event.tracking_status || event.last_poll_status || 'ARCHIVED')}
+                      : event.tracking_status === 'NO_ACTIVITY'
+                        ? 'NO ACTIVITY RECORDED'
+                        : (event.tracking_status || event.last_poll_status || 'ARCHIVED')}
                   </span>
                 </div>
               </a>

@@ -14,6 +14,7 @@ from double_dip_analysis import start_double_dip_history_worker
 from historical_backfill import start_worker as start_historical_backfill_worker
 from historical_archive_backtest import auto_refresh_backtest
 from historical_tournament_replay import start_historical_tournament_replay_worker
+from lifecycle_runner import start_prediction_operations_snapshot_worker
 from payload_archive import start_payload_archive_worker
 from predictive_player_profile import start_player_analytics_snapshot_worker
 from season_platform import db as season_platform_db
@@ -64,5 +65,6 @@ if __name__ == "__main__":
     start_double_dip_history_worker(season_platform_db, data_dir=DATA_DIR)
     start_historical_tournament_replay_worker(season_platform_db, data_dir=DATA_DIR)
     start_backtest_refresh_worker()
+    start_prediction_operations_snapshot_worker(season_platform_db)
     while running:
         time.sleep(5)

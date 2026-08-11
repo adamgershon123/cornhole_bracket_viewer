@@ -91,6 +91,28 @@ class PlayerContactDirectoryTests(unittest.TestCase):
         self.assertEqual(row["email"], "twenty@example.com")
         self.assertEqual(row["source_event_id"], "99")
 
+    def test_redaction_marker_is_never_treated_as_private_contact_data(self):
+        index_contact_payload(
+            self.conn,
+            {"players": [{
+                "playerID": 10,
+                "playerEmail": "[REDACTED_PERSONAL_DATA]",
+                "playerPhoneNo": "[REDACTED_PERSONAL_DATA]",
+            }]},
+            source_endpoint="schedule",
+        )
+        self.assertIsNone(self.conn.execute(
+            "SELECT email FROM player_contacts WHERE player_id=10"
+        ).fetchone())
+
+        self.conn.execute(
+            "INSERT INTO player_contacts VALUES(10,'[REDACTED_PERSONAL_DATA]','[REDACTED_PERSONAL_DATA]','old',NULL,'old',NULL,'now','now')"
+        )
+        directory = player_contact_directory(self.conn)
+        player = next(row for row in directory["players"] if row["playerId"] == 10)
+        self.assertIsNone(player["email"])
+        self.assertIsNone(player["phone"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -909,15 +909,6 @@ def _process_item(
             ),
         }
     if item["item_type"] == "GAME":
-        existing = conn.execute(
-            """
-            SELECT completed, stats_downloaded FROM games
-            WHERE event_id=? AND match_id=? AND game_id=?
-            """,
-            (item["event_id"], item["match_id"], item["game_id"]),
-        ).fetchone()
-        if existing and existing["completed"] and existing["stats_downloaded"]:
-            return _empty_result()
         stats, meta = fetch_match_stats(
             conn,
             int(item["event_id"]),

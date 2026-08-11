@@ -4,6 +4,7 @@ import math
 import sqlite3
 from collections import defaultdict
 from datetime import date, timedelta
+from statistics import median
 from typing import Any
 
 
@@ -45,11 +46,14 @@ def profile_ratings(
             + 0.2 * 4 * (recent_stats["winRate"] - base_stats["winRate"])
         ) * reliability
         consistency_reliability = len(history) / (len(history) + 100)
-        consistency_signal = -_stddev([float(row["gross_points"] or 0) for row in history]) * consistency_reliability
+        raw_consistency_stddev = _stddev(
+            [float(row["gross_points"] or 0) for row in history]
+        )
         ratings.append({
             "playerId": player_id,
             "recentRounds": len(recent),
             "baselineRounds": len(baseline),
+            "consistencyRounds": len(history),
             "recentPpr": round(recent_stats["ppr"], 4),
             "baselinePpr": round(base_stats["ppr"], 4),
             "recentDpr": round(recent_stats["dpr"], 4),
@@ -58,16 +62,38 @@ def profile_ratings(
             "baselineRoundWinRate": round(base_stats["winRate"], 4),
             "formReliability": round(reliability, 4),
             "formSignal": form_signal,
-            "roundPprStdDev": round(-consistency_signal / consistency_reliability, 4),
+            "roundPprStdDev": round(raw_consistency_stddev, 4),
             "consistencyReliability": round(consistency_reliability, 4),
-            "consistencySignal": consistency_signal,
+            "rawConsistencyVariance": raw_consistency_stddev ** 2,
             "recentWindow": "LAST_100_ROUNDS_WITHIN_365_DAYS",
         })
+    # A small sample can look artificially stable by chance. Shrink every
+    # player's observed variance toward the population's typical variance;
+    # additional rounds progressively earn the right to move away from that
+    # prior. The former formula multiplied -stddev by reliability, which
+    # mistakenly rewarded low-confidence samples by pulling them toward zero.
+    prior_variance = median(
+        [float(row["rawConsistencyVariance"]) for row in ratings]
+    ) if ratings else 0.0
+    for row in ratings:
+        reliability = float(row["consistencyReliability"])
+        adjusted_variance = (
+            reliability * float(row["rawConsistencyVariance"])
+            + (1 - reliability) * prior_variance
+        )
+        row["adjustedRoundPprStdDev"] = round(math.sqrt(adjusted_variance), 4)
+        row["consistencySignal"] = -math.sqrt(adjusted_variance)
+        row["consistencyProvisional"] = int(row["consistencyRounds"]) < 100
+        row.pop("rawConsistencyVariance", None)
     _assign_percentile(ratings, "formSignal", "currentFormRating")
     _assign_percentile(ratings, "consistencySignal", "consistencyRating")
     for row in ratings:
         row["currentFormLabel"] = _form_label(row["currentFormRating"])
-        row["consistencyLabel"] = _standard_label(row["consistencyRating"])
+        row["consistencyLabel"] = (
+            "Provisional"
+            if row["consistencyProvisional"]
+            else _standard_label(row["consistencyRating"])
+        )
         row["ratedPlayers"] = len(ratings)
     return {int(row["playerId"]): row for row in ratings}
 

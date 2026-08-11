@@ -2126,6 +2126,7 @@ async function loadPlayerEvents(
 )}
 {view === 'STATISTICS' && (
   <TournamentStatsView
+    eventId={eventId}
     statsData={tournamentStatsData}
     loading={tournamentStatsLoading}
   />

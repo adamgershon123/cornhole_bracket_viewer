@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { TournamentStatsResponse, TournamentStatsPlayer } from '../lib/api';
+import TournamentReportCards from './TournamentReportCards';
 
 type Row = TournamentStatsPlayer & { id: string };
 type SortDirection = 'asc' | 'desc';
@@ -137,9 +138,11 @@ function PrimaryMetric({ label, value, tone, emphasized = false }: { label: stri
 }
 
 export default function TournamentStatsView({
+  eventId,
   statsData,
   loading,
 }: {
+  eventId: string;
   statsData: TournamentStatsResponse | null;
   loading?: boolean;
 }) {
@@ -161,7 +164,7 @@ export default function TournamentStatsView({
     });
   }, [baseRows, sortKey, sortDirection]);
 
-  return (
+  return (<>
     <section className="glass rounded-[28px] p-4 mt-4">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
@@ -241,5 +244,6 @@ export default function TournamentStatsView({
         </div>
       )}
     </section>
-  );
+    <TournamentReportCards eventId={eventId}/>
+  </>);
 }

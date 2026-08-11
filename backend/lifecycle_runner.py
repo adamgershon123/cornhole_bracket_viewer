@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 import requests
@@ -73,6 +75,46 @@ def initialize_lifecycle_schema(conn: sqlite3.Connection) -> None:
     if "priority_label" not in columns:
         conn.execute("ALTER TABLE monitored_events ADD COLUMN priority_label TEXT")
     conn.commit()
+
+
+def classify_no_activity_events(
+    conn: sqlite3.Connection,
+    *,
+    as_of_date: str | None = None,
+) -> int:
+    """Archive past scheduled events that never produced competitive data."""
+    initialize_lifecycle_schema(conn)
+    cutoff = as_of_date or datetime.now(timezone.utc).date().isoformat()
+    updated = conn.execute(
+        """
+        UPDATE monitored_events
+        SET enabled=0,
+            last_poll_status='NO_ACTIVITY',
+            last_poll_message='No roster, matchup, match, standings, results, or round data was recorded before the monitoring window closed.'
+        WHERE event_id IN (
+            SELECT CAST(d.event_id AS TEXT)
+            FROM discovered_events d
+            WHERE d.event_date IS NOT NULL AND d.event_date < ?
+        )
+          AND COALESCE(last_poll_status, '') != 'NO_ACTIVITY'
+          AND NOT EXISTS (
+              SELECT 1 FROM upcoming_matchup_candidates c
+              WHERE c.event_id=monitored_events.event_id
+                AND (c.home_player_ids_json NOT IN ('', '[]')
+                     OR c.away_player_ids_json NOT IN ('', '[]'))
+          )
+          AND NOT EXISTS (SELECT 1 FROM matches x WHERE CAST(x.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM player_rounds r WHERE CAST(r.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM swap_standings s WHERE CAST(s.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM event_results er WHERE CAST(er.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM team_members tm WHERE CAST(tm.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM bracket_prediction_snapshots b WHERE CAST(b.event_id AS TEXT)=monitored_events.event_id)
+          AND NOT EXISTS (SELECT 1 FROM shadow_prediction_runs p WHERE p.event_id=monitored_events.event_id)
+        """,
+        (cutoff,),
+    ).rowcount
+    conn.commit()
+    return int(updated or 0)
 
 
 def monitor_event(
@@ -315,7 +357,124 @@ def prioritize_acl_worlds_events(
     }
 
 
+def initialize_prediction_operations_snapshot_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS prediction_operations_snapshots (
+            snapshot_id INTEGER PRIMARY KEY CHECK(snapshot_id = 1),
+            payload_json TEXT,
+            generated_at TEXT,
+            refresh_started_at TEXT,
+            refresh_finished_at TEXT,
+            status TEXT NOT NULL DEFAULT 'PREPARING',
+            error_message TEXT
+        )
+        """
+    )
+    conn.commit()
+
+
 def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Return the last prepared dashboard without running analytics in the request."""
+    initialize_prediction_operations_snapshot_schema(conn)
+    row = conn.execute(
+        "SELECT * FROM prediction_operations_snapshots WHERE snapshot_id=1"
+    ).fetchone()
+    if row and row["payload_json"]:
+        try:
+            payload = json.loads(row["payload_json"])
+        except (TypeError, json.JSONDecodeError):
+            payload = {}
+        payload["snapshot"] = {
+            "status": row["status"],
+            "generatedAt": row["generated_at"],
+            "refreshStartedAt": row["refresh_started_at"],
+            "refreshFinishedAt": row["refresh_finished_at"],
+            "error": row["error_message"],
+            "prepared": True,
+        }
+        return payload
+    return {
+        "generatedAt": utc_now(),
+        "snapshot": {
+            "status": row["status"] if row else "PREPARING",
+            "generatedAt": None,
+            "refreshStartedAt": row["refresh_started_at"] if row else None,
+            "refreshFinishedAt": None,
+            "error": row["error_message"] if row else None,
+            "prepared": False,
+        },
+        "discoveredEvents": {"total": 0, "byFormat": []},
+        "monitoredEvents": [],
+        "recentPredictions": [],
+        "recentLifecycleRuns": [],
+        "todayMonitoring": {"status": "PREPARING", "eventCount": 0, "events": []},
+    }
+
+
+def refresh_prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Prepare and atomically replace the durable operations-dashboard snapshot."""
+    initialize_prediction_operations_snapshot_schema(conn)
+    started_at = utc_now()
+    conn.execute(
+        """
+        INSERT INTO prediction_operations_snapshots(snapshot_id, refresh_started_at, status)
+        VALUES(1, ?, 'REFRESHING')
+        ON CONFLICT(snapshot_id) DO UPDATE SET
+            refresh_started_at=excluded.refresh_started_at,
+            status='REFRESHING',
+            error_message=NULL
+        """,
+        (started_at,),
+    )
+    conn.commit()
+    try:
+        payload = _build_prediction_operations_snapshot(conn)
+        finished_at = utc_now()
+        conn.execute(
+            """
+            UPDATE prediction_operations_snapshots
+            SET payload_json=?, generated_at=?, refresh_finished_at=?,
+                status='READY', error_message=NULL
+            WHERE snapshot_id=1
+            """,
+            (json.dumps(payload, separators=(",", ":")), payload["generatedAt"], finished_at),
+        )
+        conn.commit()
+        return payload
+    except Exception as exc:
+        conn.execute(
+            """
+            UPDATE prediction_operations_snapshots
+            SET refresh_finished_at=?, status='ERROR', error_message=?
+            WHERE snapshot_id=1
+            """,
+            (utc_now(), str(exc)[:1000]),
+        )
+        conn.commit()
+        raise
+
+
+def start_prediction_operations_snapshot_worker(db_factory: Any) -> None:
+    def worker() -> None:
+        time.sleep(10)
+        while True:
+            try:
+                with db_factory() as worker_conn:
+                    refresh_prediction_operations_snapshot(worker_conn)
+                print("Prediction operations snapshot refreshed", flush=True)
+            except Exception as exc:
+                print(f"Prediction operations snapshot refresh failed: {exc}", flush=True)
+            time.sleep(600)
+
+    threading.Thread(
+        target=worker,
+        daemon=True,
+        name="prediction-operations-snapshot",
+    ).start()
+
+
+def _build_prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
     initialize_lifecycle_schema(conn)
     discovered = conn.execute(
         """
@@ -330,6 +489,7 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
         SELECT m.*, d.event_name, d.event_date, d.advertised_time,
                d.location_city, d.location_state, d.location_country,
                CASE
+                 WHEN m.last_poll_status='NO_ACTIVITY' THEN 'NO_ACTIVITY'
                  WHEN m.enabled=1 THEN 'ACTIVE'
                  WHEN m.last_poll_status='COMPLETE' THEN 'COMPLETE'
                  ELSE 'ARCHIVED'
@@ -338,6 +498,7 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
         LEFT JOIN discovered_events d ON CAST(d.event_id AS TEXT)=m.event_id
         WHERE m.enabled=1
            OR m.last_poll_status='COMPLETE'
+           OR m.last_poll_status='NO_ACTIVITY'
            OR d.event_date BETWEEN date('now', '-7 days') AND date('now')
         ORDER BY d.event_date DESC, d.advertised_time DESC, m.event_id
         """
@@ -474,6 +635,7 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
         if int(row["enabled"] or 0) == 1
         and row["event_date"] == datetime.now(timezone.utc).date().isoformat()
     ]
+    performance = prediction_performance_report(conn)
     return {
         "generatedAt": utc_now(),
         "discoveredEvents": {
@@ -488,7 +650,7 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
         "experimentalPerformance": experimental_performance_report(conn),
         "predictionEvaluations": prediction_evaluation_report(conn),
         "predictionLearning": prediction_learning_report(conn),
-        "predictionPerformance": prediction_performance_report(conn),
+        "predictionPerformance": performance,
         "recentPredictions": prediction_rows,
         "recentLifecycleRuns": [dict(row) for row in recent_runs],
         "lifecycleActivity": _lifecycle_activity(recent_runs),
@@ -514,7 +676,7 @@ def prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
             },
         },
         "historicalReference": _historical_reference(
-            prediction_performance_report(conn).get("historicalBacktest") or {}
+            performance.get("historicalBacktest") or {}
         ),
     }
 
@@ -685,6 +847,10 @@ def run_lifecycle_cycle(
               )
             """,
             (today_utc,),
+        )
+        summary["noActivityArchived"] = classify_no_activity_events(
+            conn,
+            as_of_date=today_utc,
         )
         conn.commit()
         monitored = conn.execute(

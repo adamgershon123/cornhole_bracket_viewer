@@ -72,10 +72,16 @@ export type PlayerStatusSnapshotInput = {
   gamesPlayed: number;
   gamesLeft: number;
   initialTournamentChance?: number;
+  currentTournamentChance?: number;
   currentOpponent: string;
   currentScore: string;
   currentWinChance?: number;
   path: string[];
+  dayGrade?: string;
+  dayScore?: number;
+  dayPpr?: number;
+  expectedPpr?: number;
+  performanceSummary?: string;
 };
 
 const WIDTH = 1080;
@@ -327,13 +333,24 @@ export async function createPlayerStatusSnapshot(input: PlayerStatusSnapshotInpu
   text(ctx, chance, 98, 797, 17, 800, '#a1a1aa');
   text(ctx, 'TOURNAMENT OUTLOOK', 72, 891, 20, 900, '#7dd3fc', 'left', 3);
   roundedFill(ctx, 70, 916, WIDTH - 140, 128, 22, '#0d1118', '#26303d');
-  text(ctx, 'INITIAL TITLE CHANCE', 98, 957, 15, 850, '#71717a');
-  text(ctx, input.initialTournamentChance == null ? 'Unavailable' : `${input.initialTournamentChance.toFixed(1)}%`, 98, 1005, 34, 900, '#7dd3fc');
+  text(ctx, input.currentTournamentChance == null ? 'INITIAL TITLE CHANCE' : 'CURRENT TITLE CHANCE', 98, 957, 15, 850, '#71717a');
+  const titleChance = input.currentTournamentChance ?? input.initialTournamentChance;
+  text(ctx, titleChance == null ? 'Unavailable' : `${titleChance.toFixed(1)}%`, 98, 1005, 34, 900, '#7dd3fc');
   text(ctx, 'POTENTIAL GAMES LEFT', 560, 957, 15, 850, '#71717a');
   text(ctx, String(input.gamesLeft), 560, 1005, 34, 900, input.gamesLeft ? '#facc15' : '#fb7185');
-  text(ctx, 'PATH', 72, 1094, 18, 900, '#facc15', 'left', 3);
+  if (input.dayGrade || input.dayScore != null) {
+    roundedFill(ctx, 70, 1066, WIDTH - 140, 116, 22, '#13101a', '#4c3761');
+    text(ctx, 'TODAY\'S PERFORMANCE', 98, 1105, 15, 850, '#c4b5fd', 'left', 2);
+    text(ctx, input.dayGrade || '—', 98, 1153, 37, 900, '#facc15');
+    text(ctx, input.dayScore == null ? '' : `${input.dayScore.toFixed(1)} / 100`, 270, 1153, 27, 900, '#ffffff');
+    const comparison = input.dayPpr == null || input.expectedPpr == null
+      ? (input.performanceSummary || '')
+      : `${input.dayPpr.toFixed(2)} PPR today vs ${input.expectedPpr.toFixed(2)} expected`;
+    text(ctx, truncate(comparison, 54), WIDTH - 98, 1151, 18, 750, '#a1a1aa', 'right');
+  }
+  text(ctx, 'PATH', 72, input.dayGrade || input.dayScore != null ? 1218 : 1094, 18, 900, '#facc15', 'left', 3);
   const pathText = input.path.length ? input.path.join('  →  ') : 'No games remaining';
-  wrap(ctx, pathText, 21, 900, 3).forEach((line, index) => text(ctx, line, 72, 1136 + index * 30, 20, 750, '#e4e4e7'));
+  wrap(ctx, pathText, 21, 900, 2).forEach((line, index) => text(ctx, line, 72, (input.dayGrade || input.dayScore != null ? 1255 : 1136) + index * 30, 20, 750, '#e4e4e7'));
   text(ctx, `live.cheesebaggers.com/status/${input.eventId}/${input.playerId}`, 72, 1307, 17, 800, '#7dd3fc');
   return await canvasBlob(canvas);
 }

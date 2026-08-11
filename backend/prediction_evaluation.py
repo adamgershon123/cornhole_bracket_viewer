@@ -13,15 +13,24 @@ from prediction_feedback import backfill_prediction_feedback, initialize_feedbac
 def prediction_evaluation_report(
     conn: sqlite3.Connection,
     *,
-    limit: int = 50,
+    limit: int | None = 50,
 ) -> dict[str, Any]:
     """Return auditable, per-match evaluations for frozen pre-match forecasts."""
     initialize_shadow_schema(conn)
     initialize_outcome_schema(conn)
     initialize_feedback_schema(conn)
     backfill_prediction_feedback(conn, limit=250)
-    rows = conn.execute(
+    total_resolved = int(conn.execute(
         """
+        SELECT COUNT(*)
+        FROM shadow_prediction_runs r
+        JOIN prediction_records p ON p.prediction_id=r.prediction_id
+        JOIN normalized_match_outcomes n
+          ON n.event_id=r.event_id AND n.match_id=r.match_id
+        WHERE r.status='PREDICTED'
+        """
+    ).fetchone()[0])
+    query = """
         SELECT r.shadow_run_id, r.event_id, r.match_id, r.recorded_at,
                r.scheduled_start_at, r.timing_basis,
                p.side_a_probability, p.side_b_probability, p.evidence_tier,
@@ -41,13 +50,16 @@ def prediction_evaluation_report(
         LEFT JOIN prediction_postmortems pm ON pm.shadow_run_id=r.shadow_run_id
         WHERE r.status='PREDICTED'
         ORDER BY n.resolved_at DESC, r.shadow_run_id DESC
-        LIMIT ?
-        """,
-        (max(1, min(int(limit), 250)),),
-    ).fetchall()
+        """
+    params: tuple[Any, ...] = ()
+    if limit is not None:
+        query += " LIMIT ?"
+        params = (max(1, int(limit)),)
+    rows = conn.execute(query, params).fetchall()
     evaluations = [_evaluation(dict(row)) for row in rows]
     return {
-        "resolvedPredictions": len(evaluations),
+        "resolvedPredictions": total_resolved,
+        "returnedEvaluations": len(evaluations),
         "evaluations": evaluations,
         "methodology": {
             "probabilityError": (

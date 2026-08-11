@@ -139,7 +139,21 @@ def audit_cached_match_stats(
         "remaining": 0,
         "games": [],
     }
-    pending: list[tuple[tuple[int, str, int], str, dict[str, Any], str]] = []
+    # Keep only lightweight references between discovery and processing. Some
+    # ACL payloads are large; retaining every decoded response here exceeded
+    # the production worker memory limit before the first game could commit.
+    pending: list[tuple[tuple[int, str, int], str, str]] = []
+
+    def load_source(key: tuple[int, str, int]) -> tuple[dict[str, Any], str]:
+        # Loose files represent the latest operational cache and override an
+        # older archived observation for the same game.
+        if key in files:
+            return _payload(files[key]), str(files[key])
+        return (
+            _archived_payload(archives[key], archive_root),
+            f"source_payload:{archives[key]['source_payload_id']}",
+        )
+
     event_match_types = {
         int(row[0]): row[1]
         for row in conn.execute("SELECT event_id,match_type FROM events").fetchall()
@@ -148,14 +162,7 @@ def audit_cached_match_stats(
         if event_id is not None and key[0] != int(event_id):
             continue
         try:
-            # Loose files represent the latest operational cache and override
-            # an older archived observation for the same game.
-            if key in files:
-                payload = _payload(files[key])
-                source = str(files[key])
-            else:
-                payload = _archived_payload(archives[key], archive_root)
-                source = f"source_payload:{archives[key]['source_payload_id']}"
+            payload, source = load_source(key)
         except Exception as exc:
             result["quarantined"] += 1
             result["games"].append({"eventId": key[0], "matchId": key[1], "gameId": key[2], "status": "UNREADABLE", "error": str(exc)})
@@ -174,11 +181,30 @@ def audit_cached_match_stats(
         if existing and existing["integrity_version"] == INTEGRITY_VERSION and existing["source_payload_hash"] == fingerprint and not force:
             result["alreadyCurrent"] += 1
             continue
-        pending.append((key, source, payload, fingerprint))
+        pending.append((key, source, fingerprint))
 
     selected = pending[: max(0, int(limit))] if limit is not None else pending
     result["remaining"] = max(0, len(pending) - len(selected))
-    for key, source, payload, fingerprint in selected:
+    for key, source, fingerprint in selected:
+        try:
+            payload, reloaded_source = load_source(key)
+            reloaded_fingerprint = _hash(payload)
+        except Exception as exc:
+            result["quarantined"] += 1
+            result["games"].append({
+                "eventId": key[0], "matchId": key[1], "gameId": key[2],
+                "status": "UNREADABLE", "error": str(exc), "source": source,
+            })
+            continue
+        if reloaded_source != source or reloaded_fingerprint != fingerprint:
+            # Never certify a source that changed between discovery and use.
+            result["quarantined"] += 1
+            result["games"].append({
+                "eventId": key[0], "matchId": key[1], "gameId": key[2],
+                "status": "UNSTABLE_SOURCE", "source": source,
+                "error": "Source changed during integrity audit",
+            })
+            continue
         completed = match_stats_completed(payload)
         inspection = inspect_match_payload(
             payload,

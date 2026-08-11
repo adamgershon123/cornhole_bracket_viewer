@@ -897,6 +897,13 @@ def played_game_stat_targets(
         if not top or not bottom:
             continue
 
+        # ACL materializes bracket byes as completed 21-10 games even though
+        # no bags were thrown and no match-stat payload exists. A bye is a
+        # routing instruction, never a statistics target, regardless of
+        # whether this request is filtered to one team.
+        if is_bye_entry(top) or is_bye_entry(bottom):
+            continue
+
         if team_id is not None:
             team_ids = {
                 str(team_from_entry(top).get("id") or ""),
@@ -904,11 +911,6 @@ def played_game_stat_targets(
             }
             if str(team_id) not in team_ids:
                 continue
-            # A bye is bracket movement, not a played game, and must not affect
-            # the viewed team's tournament performance totals.
-            if is_bye_entry(top) or is_bye_entry(bottom):
-                continue
-
         if not team_from_entry(top).get("id") or not team_from_entry(bottom).get("id"):
             continue
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app import derive_tournament_match_results
+from app import derive_tournament_match_results, played_game_stat_targets
 from season_platform import match_is_bye
 
 
@@ -89,6 +89,42 @@ class ByeHandlingTests(unittest.TestCase):
 
         self.assertNotIn("100", results)
         self.assertNotIn("101", results)
+
+    def test_completed_bye_is_not_a_global_stats_target(self) -> None:
+        real = bracket_entry(
+            match_id=1,
+            position="T",
+            team_id=10,
+            team_name="Real Team",
+            player_id=100,
+            first_name="Real",
+            last_name="Player",
+            home_score=21,
+            away_score=10,
+        )
+        bye = bracket_entry(
+            match_id=1,
+            position="B",
+            team_id=11,
+            team_name="Team 11",
+            player_id=101,
+            first_name="Bye",
+            last_name="User 121",
+            home_score=21,
+            away_score=10,
+        )
+        for entry in (real, bye):
+            entry["gameResults"] = [{
+                "gameID": 1,
+                "matchStatusID": 5,
+                "scoreHome": 21,
+                "scoreAway": 10,
+            }]
+
+        self.assertEqual(
+            played_game_stat_targets({"bracketDetails": [real, bye]}),
+            [],
+        )
 
     def test_real_completed_match_still_counts(self) -> None:
         top = bracket_entry(

@@ -1493,9 +1493,14 @@ def event_context(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
 
 def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, match_id: str, game_id: int, payload: dict[str, Any]) -> int:
     context = event_context(conn, event_id)
+    singles = str(context.get("match_type") or "").upper() == "S"
     court_id = str(payload.get("courtid") or "")
     completed = match_stats_completed(payload)
-    raw_check = inspect_match_payload(payload, completed=completed)
+    raw_check = inspect_match_payload(
+        payload,
+        completed=completed,
+        match_type=context.get("match_type"),
+    )
     rows_by_round: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for row in payload.get("event_match_inning_history", []) or []:
         try:
@@ -1571,7 +1576,11 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
         if len(rows) == 2:
             a, b = rows
             net = int(a.get("totalpoints", 0) or 0) - int(b.get("totalpoints", 0) or 0)
-            scoring_team = a.get("teamid") if net > 0 else b.get("teamid") if net < 0 else None
+            scoring_team = (
+                (a.get("playerid") if singles else a.get("teamid")) if net > 0
+                else (b.get("playerid") if singles else b.get("teamid")) if net < 0
+                else None
+            )
             round_net = abs(net)
         else:
             scoring_team = None
@@ -1650,9 +1659,11 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
                     round_no,
                     int(player_id),
                     display_name(first, last),
-                    team_id(event_id, row.get("teamid")) if row.get("teamid") is not None else None,
+                    team_id(event_id, row.get("playerid") if singles else row.get("teamid"))
+                    if (row.get("playerid") if singles else row.get("teamid")) is not None else None,
                     int(opponent.get("playerid")) if opponent.get("playerid") else None,
-                    team_id(event_id, opponent.get("teamid")) if opponent.get("teamid") is not None else None,
+                    team_id(event_id, opponent.get("playerid") if singles else opponent.get("teamid"))
+                    if (opponent.get("playerid") if singles else opponent.get("teamid")) is not None else None,
                     str(row.get("teamhomeaway") or "").upper() or None,
                     court_id,
                     gross,

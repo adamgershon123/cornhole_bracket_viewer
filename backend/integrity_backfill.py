@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
+import os
 import re
 import sqlite3
 from pathlib import Path
@@ -12,6 +14,7 @@ from data_integrity import INTEGRITY_VERSION, inspect_match_payload
 
 
 MATCH_FILE = re.compile(r"event_(\d+)_match_(.+)_game_(\d+)_stats\.json$")
+MATCH_ENTITY = re.compile(r"^match-stats:(\d+):(.+):(\d+)$")
 
 
 def _payload(path: Path) -> dict[str, Any]:
@@ -26,6 +29,18 @@ def _hash(payload: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _archive_hash(payload: Any) -> str:
+    """Match the canonical hash used by provenance/payload_archive."""
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def cached_match_files(data_dir: str | Path) -> dict[tuple[int, str, int], Path]:
     selected: dict[tuple[int, str, int], Path] = {}
     for path in Path(data_dir).rglob("event_*_match_*_game_*_stats.json"):
@@ -37,6 +52,59 @@ def cached_match_files(data_dir: str | Path) -> dict[tuple[int, str, int], Path]
         if current is None or path.stat().st_mtime > current.stat().st_mtime:
             selected[key] = path
     return selected
+
+
+def archived_match_sources(conn: sqlite3.Connection) -> dict[tuple[int, str, int], dict[str, Any]]:
+    """Return the newest hash-verified archive record for each ACL game."""
+    available = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='source_payloads'"
+    ).fetchone()
+    if not available:
+        return {}
+    selected: dict[tuple[int, str, int], dict[str, Any]] = {}
+    rows = conn.execute(
+        """
+        SELECT source_payload_id,entity_key,payload_hash,payload_json,archive_path,
+               archive_codec,retrieved_at
+        FROM source_payloads
+        WHERE source_endpoint='match-stats'
+        ORDER BY retrieved_at DESC, source_payload_id DESC
+        """
+    ).fetchall()
+    for row in rows:
+        match = MATCH_ENTITY.match(str(row["entity_key"] or ""))
+        if not match:
+            continue
+        key = (int(match.group(1)), match.group(2), int(match.group(3)))
+        if key not in selected:
+            selected[key] = dict(row)
+    return selected
+
+
+def _archive_root(conn: sqlite3.Connection, data_dir: str | Path) -> Path:
+    configured = os.environ.get("PAYLOAD_ARCHIVE_DIR")
+    if configured:
+        return Path(configured)
+    candidate = Path(data_dir) / "season_platform" / "payload_archive"
+    if candidate.exists():
+        return candidate
+    database = conn.execute("PRAGMA database_list").fetchone()
+    return Path(database[2]).resolve().parent / "payload_archive"
+
+
+def _archived_payload(record: dict[str, Any], root: Path) -> dict[str, Any]:
+    if record.get("payload_json"):
+        value = json.loads(str(record["payload_json"]))
+    else:
+        if record.get("archive_codec") != "gzip-json-v1" or not record.get("archive_path"):
+            raise ValueError("Archived payload has no supported readable representation")
+        with gzip.open(root / str(record["archive_path"]), "rt", encoding="utf-8") as handle:
+            value = json.load(handle)
+    if _archive_hash(value) != str(record.get("payload_hash") or ""):
+        raise ValueError("Archived payload hash verification failed")
+    if isinstance(value, dict) and isinstance(value.get("payload"), dict):
+        value = value["payload"]
+    return value if isinstance(value, dict) else {}
 
 
 def audit_cached_match_stats(
@@ -54,10 +122,15 @@ def audit_cached_match_stats(
 
     conn.row_factory = sqlite3.Row
     files = cached_match_files(data_dir)
+    archives = archived_match_sources(conn)
+    archive_root = _archive_root(conn, data_dir)
+    source_keys = set(archives) | set(files)
     result: dict[str, Any] = {
         "integrityVersion": INTEGRITY_VERSION,
         "mode": "APPLY" if apply else "DRY_RUN",
         "filesDiscovered": len(files),
+        "archivePayloadsDiscovered": len(archives),
+        "sourcesDiscovered": len(source_keys),
         "eligibleFinalGames": 0,
         "partialGames": 0,
         "alreadyCurrent": 0,
@@ -66,12 +139,23 @@ def audit_cached_match_stats(
         "remaining": 0,
         "games": [],
     }
-    pending: list[tuple[tuple[int, str, int], Path, dict[str, Any], str]] = []
-    for key, path in sorted(files.items()):
+    pending: list[tuple[tuple[int, str, int], str, dict[str, Any], str]] = []
+    event_match_types = {
+        int(row[0]): row[1]
+        for row in conn.execute("SELECT event_id,match_type FROM events").fetchall()
+    }
+    for key in sorted(source_keys):
         if event_id is not None and key[0] != int(event_id):
             continue
         try:
-            payload = _payload(path)
+            # Loose files represent the latest operational cache and override
+            # an older archived observation for the same game.
+            if key in files:
+                payload = _payload(files[key])
+                source = str(files[key])
+            else:
+                payload = _archived_payload(archives[key], archive_root)
+                source = f"source_payload:{archives[key]['source_payload_id']}"
         except Exception as exc:
             result["quarantined"] += 1
             result["games"].append({"eventId": key[0], "matchId": key[1], "gameId": key[2], "status": "UNREADABLE", "error": str(exc)})
@@ -90,13 +174,17 @@ def audit_cached_match_stats(
         if existing and existing["integrity_version"] == INTEGRITY_VERSION and existing["source_payload_hash"] == fingerprint and not force:
             result["alreadyCurrent"] += 1
             continue
-        pending.append((key, path, payload, fingerprint))
+        pending.append((key, source, payload, fingerprint))
 
     selected = pending[: max(0, int(limit))] if limit is not None else pending
     result["remaining"] = max(0, len(pending) - len(selected))
-    for key, path, payload, fingerprint in selected:
+    for key, source, payload, fingerprint in selected:
         completed = match_stats_completed(payload)
-        inspection = inspect_match_payload(payload, completed=completed)
+        inspection = inspect_match_payload(
+            payload,
+            completed=completed,
+            match_type=event_match_types.get(key[0]),
+        )
         status = ("WOULD_VERIFY" if inspection["passed"] else "WOULD_QUARANTINE") if completed else "WOULD_RETAIN_RAW_ONLY"
         if apply:
             normalize_match_stats_to_rounds(conn, key[0], key[1], key[2], payload)
@@ -114,7 +202,7 @@ def audit_cached_match_stats(
             result["quarantined"] += 1
         result["games"].append({
             "eventId": key[0], "matchId": key[1], "gameId": key[2],
-            "status": status, "source": str(path), "checks": inspection,
+            "status": status, "source": source, "checks": inspection,
             "sourcePayloadHash": fingerprint,
         })
     return result

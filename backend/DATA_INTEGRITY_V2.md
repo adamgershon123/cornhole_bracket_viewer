@@ -43,3 +43,7 @@ The migration is idempotent. A game is skipped when its payload hash and
 integrity version already match. Derived v2 artifacts record their calculation
 and integrity versions; stale v1 report cards are withheld until regenerated
 from certified sources.
+
+Migration discovers sources from both loose match-stat files and the verified
+`source_payloads` gzip archive. Archive contents are decompressed and checked
+against their stored SHA-256 hash before any game validation occurs.

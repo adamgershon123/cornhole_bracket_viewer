@@ -107,6 +107,23 @@ class MatchStatsNormalizationTests(unittest.TestCase):
         }
         self.assertIn("ROUND_PLAYER_COUNT", issues)
 
+    def test_singles_placeholder_team_is_normalized_to_player_teams(self) -> None:
+        self.conn.execute("INSERT INTO events(event_id,match_type) VALUES (200,'S')")
+        payload = {
+            "matchStatus": 5,
+            "event_match_inning_history": [
+                {**inning(1, 10, -1, 8), "teamhomeaway": "H"},
+                {**inning(1, 20, -1, 7), "teamhomeaway": "A"},
+            ],
+        }
+        saved = normalize_match_stats_to_rounds(self.conn, 200, "3", 1, payload)
+        self.assertEqual(saved, 2)
+        rows = self.conn.execute(
+            "SELECT player_id,team_id,opponent_team_id FROM player_rounds ORDER BY player_id"
+        ).fetchall()
+        self.assertEqual(tuple(rows[0]), (10, "200:10", "200:20"))
+        self.assertEqual(tuple(rows[1]), (20, "200:20", "200:10"))
+
 
 if __name__ == "__main__":
     unittest.main()

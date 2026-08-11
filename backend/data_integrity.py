@@ -88,7 +88,13 @@ def _value(row: dict[str, Any], *keys: str) -> Any:
     return None
 
 
-def inspect_match_payload(payload: dict[str, Any], *, completed: bool) -> dict[str, Any]:
+def inspect_match_payload(
+    payload: dict[str, Any],
+    *,
+    completed: bool,
+    match_type: str | None = None,
+) -> dict[str, Any]:
+    singles = str(match_type or "").upper() == "S"
     history = payload.get("event_match_inning_history", []) or []
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
@@ -133,7 +139,7 @@ def inspect_match_payload(payload: dict[str, Any], *, completed: bool) -> dict[s
     for round_no, rows in sorted(by_round.items()):
         if len(rows) != 2:
             errors.append({"code": "ROUND_PLAYER_COUNT", "round": round_no, "count": len(rows), "expected": 2})
-        elif str(rows[0].get("teamid")) == str(rows[1].get("teamid")):
+        elif not singles and str(rows[0].get("teamid")) == str(rows[1].get("teamid")):
             errors.append({"code": "ROUND_SAME_TEAM", "round": round_no})
 
     if completed and by_round:
@@ -141,10 +147,10 @@ def inspect_match_payload(payload: dict[str, Any], *, completed: bool) -> dict[s
         actual_sequence = sorted(by_round)
         if actual_sequence != expected_sequence:
             errors.append({"code": "ROUND_SEQUENCE_GAP", "expected": expected_sequence, "actual": actual_sequence})
-        if len(teams) != 2:
+        if not singles and len(teams) != 2:
             errors.append({"code": "GAME_TEAM_COUNT", "count": len(teams), "expected": 2, "teams": sorted(teams)})
         for player_id, assigned_teams in sorted(player_teams.items()):
-            if len(assigned_teams) > 1:
+            if not singles and len(assigned_teams) > 1:
                 errors.append({"code": "PLAYER_TEAM_CHANGED", "playerId": player_id, "teams": sorted(assigned_teams)})
 
     details = payload.get("event_match_details", []) or []

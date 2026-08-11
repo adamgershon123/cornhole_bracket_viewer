@@ -8,6 +8,7 @@ from pathlib import Path
 
 from data_integrity import inspect_match_payload, integrity_summary
 from integrity_backfill import audit_cached_match_stats
+from provenance import record_source_payload
 from season_platform import init_db
 
 
@@ -52,6 +53,16 @@ class DataIntegrityTests(unittest.TestCase):
         self.assertIn("ROUND_SEQUENCE_GAP", codes)
         self.assertIn("PLAYER_TEAM_CHANGED", codes)
 
+    def test_singles_allows_acl_placeholder_team_ids(self) -> None:
+        payload = {
+            "event_match_inning_history": [
+                {"inningno": 1, "playerid": 10, "teamid": -1, "totalpoints": 8},
+                {"inningno": 1, "playerid": 20, "teamid": -1, "totalpoints": 7},
+            ]
+        }
+        result = inspect_match_payload(payload, completed=True, match_type="S")
+        self.assertTrue(result["passed"])
+
     def test_empty_database_has_versioned_integrity_status(self) -> None:
         status = integrity_summary(self.conn)
         self.assertEqual(status["integrityVersion"], "data-integrity-v2.0")
@@ -81,6 +92,29 @@ class DataIntegrityTests(unittest.TestCase):
             repeated = audit_cached_match_stats(self.conn, directory, apply=True)
             self.assertEqual(repeated["alreadyCurrent"], 1)
             self.assertEqual(repeated["validated"], 0)
+
+    def test_backfill_uses_verified_payload_archive_when_loose_file_is_absent(self) -> None:
+        payload = {
+            "matchStatus": 5,
+            "event_match_inning_history": [
+                {"inningno": 1, "playerid": 10, "teamid": 1, "totalpoints": 8, "playerfirstname": "José"},
+                {"inningno": 1, "playerid": 20, "teamid": 2, "totalpoints": 7},
+            ],
+        }
+        record_source_payload(
+            self.conn,
+            source_endpoint="match-stats",
+            entity_key="match-stats:91:7:1",
+            request_url=None,
+            payload=payload,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            result = audit_cached_match_stats(self.conn, directory)
+        self.assertEqual(result["filesDiscovered"], 0)
+        self.assertEqual(result["archivePayloadsDiscovered"], 1)
+        self.assertEqual(result["sourcesDiscovered"], 1)
+        self.assertEqual(result["validated"], 1)
+        self.assertEqual(result["games"][0]["source"], "source_payload:1")
 
     def test_status_exposes_legacy_rows_until_their_raw_source_is_certified(self) -> None:
         self.conn.execute(

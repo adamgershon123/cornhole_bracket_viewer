@@ -1948,6 +1948,10 @@ def api_single_game_report_card(event_id: str, match_id: str, game_id: int):
         }), 404
 
     _, _, is_live = target
+    if not is_live:
+        with season_platform_db() as conn:
+            if game_is_analytics_ready(conn, int(event_id), str(match_id), int(game_id)):
+                return jsonify(build_game_report_card(conn, int(event_id), str(match_id), int(game_id)))
     if is_live and request.args.get("refresh_live", "1") == "1":
         maybe_fetch_match_stats(event_id, match_id, game_id, force=True)
     payload = load_game_stats(event_id, match_id, game_id)

@@ -83,6 +83,7 @@ from data_integrity import (
 from standings import compute_standings
 from season_standings import SeasonConfig, build_consolidated_standings
 from historical_backfill import (
+    cached_status_snapshot as cached_historical_backfill_status,
     prioritize_events,
     set_lane_paused as set_historical_backfill_lane_paused,
     set_paused as set_historical_backfill_paused,
@@ -2147,12 +2148,7 @@ def api_prediction_operations():
 def _build_model_research_snapshot() -> dict[str, Any]:
     with season_platform_db() as conn:
         performance, learning = cached_model_research_inputs(conn)
-        source_ledger = (performance.get("historicalBacktest") or {}).get("sourceLedger") or {}
-        collection = {
-            "status": "RUNNING",
-            "current": {"detail": "Showing the latest persisted analysis snapshot."},
-            "ledger": source_ledger,
-        }
+        collection = cached_historical_backfill_status(conn)
         return model_research_report(performance, learning, collection)
 
 
@@ -2500,7 +2496,7 @@ def api_prediction_weighting_policy():
 @app.route("/api/historical-backfill")
 def api_historical_backfill():
     with season_platform_db() as conn:
-        return jsonify(historical_backfill_status(conn))
+        return jsonify(cached_historical_backfill_status(conn))
 
 
 @app.route("/api/payload-archive")

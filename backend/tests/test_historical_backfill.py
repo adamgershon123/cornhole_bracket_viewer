@@ -5,13 +5,16 @@ from unittest.mock import patch
 import requests
 
 from historical_backfill import (
+    cached_status_snapshot,
     initialize_schema,
+    refresh_status_snapshot,
     run_one,
     seed_contact_backfill,
     seed_known_players,
     set_lane_paused,
     set_paused,
     status_snapshot,
+    utc_now,
     venue_export_rows,
 )
 from season_platform import init_db
@@ -34,6 +37,25 @@ class HistoricalBackfillTests(unittest.TestCase):
 
         resumed = set_paused(self.conn, False)
         self.assertFalse(resumed["paused"])
+
+    def test_prepared_status_snapshot_preserves_real_activity(self):
+        self.conn.execute(
+            """
+            INSERT INTO historical_backfill_activity(
+              collection_lane, item_type, item_key, outcome, productive,
+              games_downloaded, rounds_added, occurred_at
+            ) VALUES('PREDICTION','GAME','1:2:1','COMPLETE',1,1,24,?)
+            """,
+            (utc_now(),),
+        )
+        self.conn.commit()
+
+        prepared = refresh_status_snapshot(self.conn)
+        cached = cached_status_snapshot(self.conn)
+
+        self.assertEqual(prepared["throughput"]["lastHour"]["games_downloaded"], 1)
+        self.assertEqual(cached["throughput"]["lastHour"]["rounds_added"], 24)
+        self.assertTrue(cached["snapshot"]["prepared"])
 
     @patch("historical_backfill._process_item")
     def test_collection_lanes_pause_and_flow_independently(self, process_item):
@@ -316,3 +338,4 @@ class HistoricalBackfillTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    refresh_status_snapshot,

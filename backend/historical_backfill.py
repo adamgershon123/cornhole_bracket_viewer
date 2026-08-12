@@ -149,6 +149,14 @@ def initialize_schema(conn: sqlite3.Connection) -> None:
             occurred_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS historical_backfill_status_snapshots (
+            snapshot_id INTEGER PRIMARY KEY CHECK(snapshot_id=1),
+            payload_json TEXT NOT NULL,
+            generated_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'READY',
+            error_message TEXT
+        );
+
         CREATE INDEX IF NOT EXISTS idx_historical_backfill_next
             ON historical_backfill_queue(status, not_before, priority DESC, queue_id);
         CREATE INDEX IF NOT EXISTS idx_historical_backfill_activity_time
@@ -470,6 +478,58 @@ def status_snapshot(
     }
 
 
+def refresh_status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Prepare the expensive collection dashboard once for all web readers."""
+    snapshot = status_snapshot(conn, initialize=False)
+    generated_at = utc_now()
+    snapshot["snapshot"] = {
+        "status": "READY",
+        "generatedAt": generated_at,
+        "prepared": True,
+    }
+    conn.execute(
+        """
+        INSERT INTO historical_backfill_status_snapshots(
+          snapshot_id, payload_json, generated_at, status, error_message
+        ) VALUES(1, ?, ?, 'READY', NULL)
+        ON CONFLICT(snapshot_id) DO UPDATE SET
+          payload_json=excluded.payload_json,
+          generated_at=excluded.generated_at,
+          status='READY', error_message=NULL
+        """,
+        (json.dumps(snapshot, separators=(",", ":")), generated_at),
+    )
+    conn.commit()
+    return snapshot
+
+
+def cached_status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Return the durable worker-produced status without scanning large tables."""
+    row = conn.execute(
+        "SELECT payload_json, generated_at, status, error_message "
+        "FROM historical_backfill_status_snapshots WHERE snapshot_id=1"
+    ).fetchone()
+    if row and row["payload_json"]:
+        try:
+            payload = json.loads(row["payload_json"])
+        except (TypeError, json.JSONDecodeError):
+            payload = {}
+        payload["snapshot"] = {
+            "status": row["status"],
+            "generatedAt": row["generated_at"],
+            "prepared": True,
+            "error": row["error_message"],
+        }
+        return payload
+    return {
+        "status": "PREPARING",
+        "queue": {},
+        "ledger": {},
+        "throughput": {},
+        "snapshot": {"status": "PREPARING", "generatedAt": None, "prepared": False},
+    }
+
+
 def set_paused(conn: sqlite3.Connection, paused: bool) -> dict[str, Any]:
     initialize_schema(conn)
     conn.execute(
@@ -651,6 +711,22 @@ def start_worker() -> None:
             daemon=True,
             name=f"historical-backfill-{lane.lower()}",
         ).start()
+
+    def status_worker() -> None:
+        time.sleep(20)
+        while True:
+            try:
+                with db() as conn:
+                    refresh_status_snapshot(conn)
+            except Exception as exc:
+                print(f"Historical backfill status refresh failed: {exc}", flush=True)
+            time.sleep(30)
+
+    threading.Thread(
+        target=status_worker,
+        daemon=True,
+        name="historical-backfill-status",
+    ).start()
 
 
 def run_one(

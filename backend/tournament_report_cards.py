@@ -126,6 +126,77 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
     }
 
 
+def build_game_report_card(
+    conn: sqlite3.Connection,
+    event_id: int,
+    match_id: str,
+    game_id: int,
+) -> dict[str, Any]:
+    """Grade one game without calculating or persisting the tournament report."""
+    conn.row_factory = sqlite3.Row
+    event = conn.execute(
+        "SELECT event_id,event_name,event_date,status,match_type,bracket_type,blind_draw,location_name FROM events WHERE event_id=?",
+        (int(event_id),),
+    ).fetchone()
+    rows = conn.execute(
+        """
+        SELECT * FROM player_rounds
+        WHERE event_id=? AND CAST(match_id AS TEXT)=? AND game_id=?
+        ORDER BY round_no,player_id
+        """,
+        (int(event_id), str(match_id), int(game_id)),
+    ).fetchall()
+    if not rows:
+        return {
+            "status": "AWAITING_ROUND_DATA",
+            "eventId": int(event_id),
+            "matchId": str(match_id),
+            "gameId": int(game_id),
+            "generatedAt": _now(),
+            "message": "No verified player rounds are available for this game yet.",
+            "players": [],
+            "highlights": [],
+        }
+
+    event_data = dict(event) if event else {"event_id": int(event_id)}
+    event_date = str(event_data.get("event_date") or "9999-12-31")
+    player_ids = sorted({int(row["player_id"]) for row in rows})
+    cards, highlights = _game_cards(
+        (str(match_id), int(game_id)),
+        rows,
+        _baselines(conn, player_ids, event_date),
+        _historical_game_calibration(conn),
+    )
+    cards.sort(key=lambda row: (-float(row.get("overallScore") or 0), row["playerName"]))
+    for rank, card in enumerate(cards, 1):
+        card["rank"] = rank
+    metadata = _match_metadata(conn, int(event_id)).get((str(match_id), int(game_id)), {})
+    return {
+        "status": "COMPLETE",
+        "scope": "SINGLE_GAME",
+        "eventId": int(event_id),
+        "event": event_data,
+        "matchId": str(match_id),
+        "gameId": int(game_id),
+        "generatedAt": _now(),
+        "calculationMode": "USER_INITIATED_SINGLE_GAME",
+        "game": {
+            "matchId": str(match_id),
+            "gameId": int(game_id),
+            "courtId": next((str(row["court_id"]) for row in rows if row["court_id"]), None),
+            **metadata,
+            "winnerTeamId": _winning_team(cards),
+            "players": cards,
+        },
+        "players": cards,
+        "highlights": highlights,
+        "scoringPolicy": {
+            "gameGradePriorRounds": GAME_GRADE_PRIOR_ROUNDS,
+            "note": "This calculation grades only the selected game and does not create or replace the tournament report.",
+        },
+    }
+
+
 def _baselines(conn: sqlite3.Connection, player_ids: list[int], event_date: str) -> dict[int, dict[str, float]]:
     if not player_ids:
         return {}

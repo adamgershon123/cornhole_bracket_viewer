@@ -72,7 +72,7 @@ from scoring_distribution_challenger import (
     score_scoring_distribution_challenger,
 )
 from match_profile_trajectory import match_profile_trajectories
-from tournament_report_cards import build_tournament_report_cards
+from tournament_report_cards import build_game_report_card, build_tournament_report_cards
 from data_integrity import (
     INTEGRITY_VERSION,
     READY as INTEGRITY_READY,
@@ -1926,6 +1926,61 @@ def api_tournament_report_cards(event_id: str):
         lineage_conn.commit()
     with open(output_path, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
+    return jsonify(report)
+
+
+@app.post("/api/events/<event_id>/report-cards/games/<match_id>/<int:game_id>")
+def api_single_game_report_card(event_id: str, match_id: str, game_id: int):
+    data = load_bracket(event_id, refresh=request.args.get("refresh", "1") == "1")
+    target = next(
+        (
+            (candidate_match_id, candidate_game_id, is_live)
+            for candidate_match_id, candidate_game_id, is_live in played_game_stat_targets(data)
+            if str(candidate_match_id) == str(match_id) and int(candidate_game_id) == int(game_id)
+        ),
+        None,
+    )
+    if target is None:
+        return jsonify({
+            "status": "GAME_NOT_FOUND",
+            "message": "The selected game is not available in the event bracket.",
+            "eventId": int(event_id), "matchId": str(match_id), "gameId": int(game_id),
+        }), 404
+
+    _, _, is_live = target
+    if is_live and request.args.get("refresh_live", "1") == "1":
+        maybe_fetch_match_stats(event_id, match_id, game_id, force=True)
+    payload = load_game_stats(event_id, match_id, game_id)
+    if not isinstance(payload, dict):
+        maybe_fetch_match_stats(event_id, match_id, game_id, force=False)
+        payload = load_game_stats(event_id, match_id, game_id)
+    if not isinstance(payload, dict):
+        return jsonify({
+            "status": "AWAITING_ROUND_DATA",
+            "message": "ACL has not published readable round data for this game yet.",
+            "eventId": int(event_id), "matchId": str(match_id), "gameId": int(game_id),
+        }), 409
+
+    try:
+        with season_platform_db() as conn:
+            normalize_match_stats_to_rounds(conn, int(event_id), str(match_id), int(game_id), payload)
+            conn.commit()
+            if not is_live and not game_is_analytics_ready(conn, int(event_id), str(match_id), int(game_id)):
+                return jsonify({
+                    "status": "DATA_INTEGRITY_BLOCKED",
+                    "message": "This completed game cannot be graded until its round data passes integrity checks.",
+                    "dataIntegrity": integrity_summary(conn, int(event_id)),
+                    "eventId": int(event_id), "matchId": str(match_id), "gameId": int(game_id),
+                }), 409
+            report = build_game_report_card(conn, int(event_id), str(match_id), int(game_id))
+    except sqlite3.OperationalError as exc:
+        if "locked" not in str(exc).lower():
+            raise
+        return jsonify({
+            "status": "TEMPORARILY_BUSY",
+            "message": "The grading ledger is briefly busy. No data was changed; try this game again in a few seconds.",
+            "eventId": int(event_id), "matchId": str(match_id), "gameId": int(game_id),
+        }), 503
     return jsonify(report)
 
 

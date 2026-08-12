@@ -1,6 +1,6 @@
 import { Award, ChevronDown, RefreshCw, Sparkles, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchTournamentReportCards, generateTournamentReportCards } from '../lib/api';
+import { fetchEvent, fetchTournamentReportCards, generateSingleGameReportCard, generateTournamentReportCards } from '../lib/api';
 
 const categoryLabels: Record<string, string> = {
   performance: 'Performance', expectation: 'Vs Expectation', consistency: 'Consistency',
@@ -11,6 +11,11 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const [data, setData] = useState<any>();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [gameOptions, setGameOptions] = useState<{ matchId: string; gameId: number; label: string }[]>([]);
+  const [selectedGame, setSelectedGame] = useState('');
+  const [gameGenerating, setGameGenerating] = useState(false);
+  const [gameReport, setGameReport] = useState<any>();
+  const [gameError, setGameError] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -19,6 +24,15 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       .then(setData)
       .catch(error => setError(error.message))
       .finally(() => setLoading(false));
+    fetchEvent(eventId, false).then(event => {
+      const options = event.matches.flatMap(match => (match.games || []).map(game => ({
+        matchId: String(match.matchId),
+        gameId: Number(game.gameId || 1),
+        label: `${match.roundDescription || `Match ${match.matchId}`} · Match ${match.matchId} · Game ${game.gameId || 1}${match.courtId ? ` · Court ${match.courtId}` : ''}`,
+      })));
+      setGameOptions(options);
+      setSelectedGame(options.length ? `${options[0].matchId}:${options[0].gameId}` : '');
+    }).catch(() => setGameOptions([]));
   }, [eventId]);
 
   async function generate() {
@@ -27,6 +41,16 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     try { setData(await generateTournamentReportCards(eventId)); }
     catch (error: any) { setError(error.message || 'Report cards could not be generated.'); }
     finally { setGenerating(false); }
+  }
+
+  async function gradeOneGame() {
+    const option = gameOptions.find(item => `${item.matchId}:${item.gameId}` === selectedGame);
+    if (!option) return;
+    setGameGenerating(true);
+    setGameError('');
+    try { setGameReport(await generateSingleGameReportCard(eventId, option.matchId, option.gameId)); }
+    catch (error: any) { setGameError(error.message || 'This game could not be graded.'); }
+    finally { setGameGenerating(false); }
   }
 
   const ready = data?.status === 'COMPLETE' || data?.status === 'LIVE';
@@ -40,6 +64,21 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       <button onClick={generate} disabled={generating} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-violet-300 bg-violet-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-60">
         <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{ready ? 'Recalculate report cards' : 'Generate report cards'}
       </button>
+    </div>
+    <div className="border-b border-white/10 bg-violet-300/[.035] p-5">
+      <div className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Grade one game only</div>
+      <p className="mt-1 text-sm leading-6 text-zinc-400">Calculates the selected game without grading or replacing the tournament as a whole.</p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+        <select value={selectedGame} onChange={event => setSelectedGame(event.target.value)} disabled={!gameOptions.length || gameGenerating} className="min-h-12 min-w-0 flex-1 rounded-xl border border-white/15 bg-zinc-900 px-4 font-bold text-white">
+          {!gameOptions.length && <option value="">No games published yet</option>}
+          {gameOptions.map(option => <option key={`${option.matchId}:${option.gameId}`} value={`${option.matchId}:${option.gameId}`}>{option.label}</option>)}
+        </select>
+        <button onClick={gradeOneGame} disabled={!selectedGame || gameGenerating} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-300 bg-cyan-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-50">
+          <RefreshCw className={gameGenerating ? 'animate-spin' : ''} size={18}/>{gameGenerating ? 'Grading selected game…' : 'Grade selected game'}
+        </button>
+      </div>
+      {gameError && <div className="mt-3 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{gameError}</div>}
+      {gameReport?.status === 'COMPLETE' && <SingleGameReport report={gameReport}/>}
     </div>
     {error && <div className="m-5 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{error}</div>}
     {data?.dataPreparationNote && <div className="mx-5 mt-5 rounded-xl border border-amber-300/25 bg-amber-300/[.08] p-4 text-sm leading-6 text-amber-100">{data.dataPreparationNote}</div>}
@@ -73,6 +112,21 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       </div>
     </div>}
   </section>;
+}
+
+function SingleGameReport({ report }: { report: any }) {
+  return <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-black/30 p-4">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div><div className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Single-game report</div><div className="mt-1 text-lg font-black text-white">Match {report.matchId} · Game {report.gameId}</div></div>
+      <div className="rounded-lg bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-cyan-200">Tournament report unchanged</div>
+    </div>
+    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {(report.players || []).map((player: any) => <div key={player.playerId} className="rounded-xl bg-white/[.05] p-3">
+        <div className="flex items-start justify-between gap-2"><div><div className="font-black text-white">#{player.rank} {player.playerName}</div><div className="text-xs text-zinc-500">{player.rounds} rounds · {number(player.ppr, 2)} PPR</div></div><div className="text-2xl font-black text-amber-300">{number(player.overallScore, 1)}</div></div>
+        <div className="mt-2 text-xs font-semibold text-zinc-400">Throwing {number(player.throwingPerformanceGrade, 1)} · Impact {number(player.competitiveImpactGrade, 1)} · {percent(player.sampleConfidence)} evidence</div>
+      </div>)}
+    </div>
+  </div>;
 }
 
 function MvpCard({ title, icon, subject, player = false }: { title: string; icon: any; subject: any; player?: boolean }) {

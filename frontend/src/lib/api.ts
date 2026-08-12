@@ -70,6 +70,15 @@ export async function generateTournamentReportCards(eventId: string): Promise<an
   return response.json();
 }
 
+export async function generateSingleGameReportCard(eventId: string, matchId: string, gameId: number): Promise<any> {
+  const response = await fetch(
+    `${API_BASE}/api/events/${encodeURIComponent(eventId)}/report-cards/games/${encodeURIComponent(matchId)}/${gameId}?refresh=1&refresh_live=1`,
+    { method: 'POST' },
+  );
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
 export type SeasonStatsParams = {
   playerId:string;
   seedEventId:string;

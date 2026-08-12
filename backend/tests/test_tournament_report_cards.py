@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from tournament_report_cards import _apply_game_scores, _apply_tournament_resume_scores, build_tournament_report_cards
+from tournament_report_cards import _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
 
 
 class TournamentReportCardsTests(unittest.TestCase):
@@ -37,6 +37,16 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
+
+    def test_single_game_grade_does_not_build_tournament_resume(self):
+        result = build_game_report_card(self.conn, 99, "1", 1)
+        self.assertEqual(result["scope"], "SINGLE_GAME")
+        self.assertEqual(result["matchId"], "1")
+        self.assertEqual(result["gameId"], 1)
+        self.assertEqual(len(result["players"]), 4)
+        self.assertNotIn("playerMvp", result)
+        self.assertNotIn("teams", result)
+        self.assertEqual(result["calculationMode"], "USER_INITIATED_SINGLE_GAME")
 
     def test_match_awards_identify_the_opponent(self):
         result = build_tournament_report_cards(self.conn, 99)

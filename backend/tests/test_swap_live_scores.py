@@ -1,6 +1,6 @@
 import unittest
 
-from app import safe_swap_match, safe_swap_match_stats
+from app import safe_swap_match, safe_swap_match_stats, should_apply_match_stats_score
 
 
 class SwapLiveScoreTests(unittest.TestCase):
@@ -44,6 +44,26 @@ class SwapLiveScoreTests(unittest.TestCase):
         })
         self.assertFalse(stats["scoresheet"])
         self.assertFalse(stats["hasPublishedRounds"])
+
+    def test_round_feed_cannot_replace_published_schedule_score(self):
+        match = {"homeScore": 21, "awayScore": 2}
+        stats = {
+            "scoresheet": True,
+            "hasPublishedRounds": True,
+            "homeScore": 0,
+            "awayScore": 2,
+        }
+        self.assertFalse(should_apply_match_stats_score(match, stats))
+
+    def test_round_feed_can_fill_schedule_while_it_is_still_zero(self):
+        match = {"homeScore": 0, "awayScore": 0}
+        stats = {
+            "scoresheet": True,
+            "hasPublishedRounds": True,
+            "homeScore": 15,
+            "awayScore": 9,
+        }
+        self.assertTrue(should_apply_match_stats_score(match, stats))
 
 
 if __name__ == "__main__":

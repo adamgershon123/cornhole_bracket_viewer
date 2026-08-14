@@ -507,6 +507,24 @@ def safe_swap_match_stats(data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def should_apply_match_stats_score(match: Dict[str, Any], stats: Dict[str, Any]) -> bool:
+    """Use round-feed scores only while the schedule has not published one."""
+    if not (stats.get("scoresheet") or stats.get("hasPublishedRounds")):
+        return False
+    schedule_home = match.get("homeScore")
+    schedule_away = match.get("awayScore")
+    schedule_has_score = (
+        schedule_home is not None
+        and schedule_away is not None
+        and (as_float(schedule_home) != 0 or as_float(schedule_away) != 0)
+    )
+    stats_has_score = (
+        as_float(stats.get("homeScore")) != 0
+        or as_float(stats.get("awayScore")) != 0
+    )
+    return not schedule_has_score and stats_has_score
+
+
 def safe_swap_event_player_stat(row: Dict[str, Any]) -> Dict[str, Any]:
     rounds = int(row.get("rounds") or 0)
     points = int(row.get("totalPts") or row.get("totalPoints") or 0)
@@ -2996,7 +3014,7 @@ def api_swap_live(event_id: str):
             # (scoresheet=false, round 0, 0-0) after the schedule endpoint has
             # already published live scores. Never let that empty shell erase
             # the fresher schedule score.
-            if safe_stats.get("scoresheet") or safe_stats.get("hasPublishedRounds"):
+            if should_apply_match_stats_score(match, safe_stats):
                 match["homeScore"] = safe_stats.get("homeScore", match.get("homeScore"))
                 match["awayScore"] = safe_stats.get("awayScore", match.get("awayScore"))
         except Exception as e:

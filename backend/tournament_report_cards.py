@@ -16,7 +16,7 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
-GRADING_MODEL_VERSION = "tournament-report-cards-v4-category-weighted"
+GRADING_MODEL_VERSION = "tournament-report-cards-v5-academic-letter-scale"
 
 
 def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
@@ -107,6 +107,7 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
             "expectationScore": round(mean(float(member["categoryScores"]["expectation"]) for member in members), 1),
             "performanceScore": round(mean(float(member["categoryScores"]["performance"]) for member in members), 1),
         })
+        teams[-1]["grade"] = _grade(float(teams[-1]["overallScore"]))
     teams.sort(key=lambda row: (-row["overallScore"], row["teamName"]))
     for rank, team in enumerate(teams, 1):
         team["rank"] = rank
@@ -131,6 +132,7 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
             "clutch": 0.15, "resilience": 0.10,
             "finalTournamentGrade": {"performanceGrade": 0.75, "depth": 0.15, "sustainedEvidence": 0.10},
             "gameGradePriorRounds": GAME_GRADE_PRIOR_ROUNDS,
+            "letterGradeScale": "academic-plus-minus-v1",
             "note": "Performance grade measures how well a player performed. The final tournament/MVP grade adds tournament depth and sustained evidence, so equally strong play over a deeper run earns greater MVP credibility without changing the underlying performance grade.",
         },
     }
@@ -414,6 +416,7 @@ def _apply_game_scores(cards: list[dict[str, Any]], calibration: dict[str, list[
             + (1 - evidence_weight) * GAME_GRADE_PRIOR_SCORE,
             1,
         )
+        row["grade"] = _grade(row["overallScore"])
         row["sampleConfidence"] = round(evidence_weight, 3)
         row["sampleRounds"] = rounds
 
@@ -868,14 +871,37 @@ def _slope(values: list[float]) -> float:
 
 
 def _grade(score: float) -> str:
-    if score >= 93: return "A+"
-    if score >= 85: return "A"
-    if score >= 77: return "B+"
-    if score >= 69: return "B"
-    if score >= 60: return "C+"
-    if score >= 50: return "C"
-    if score >= 40: return "D"
+    if score >= 97: return "A+"
+    if score >= 93: return "A"
+    if score >= 90: return "A-"
+    if score >= 87: return "B+"
+    if score >= 80: return "B"
+    if score >= 77: return "C+"
+    if score >= 73: return "C"
+    if score >= 70: return "C-"
+    if score >= 67: return "D+"
+    if score >= 63: return "D"
+    if score >= 60: return "D-"
     return "F"
+
+
+def apply_current_grade_labels(report: dict[str, Any]) -> dict[str, Any]:
+    """Remap presentation labels without recalculating immutable numeric scores."""
+    if not isinstance(report, dict):
+        return report
+    for collection_key in ("players", "teams"):
+        for row in report.get(collection_key) or []:
+            if row.get("overallScore") is not None:
+                row["grade"] = _grade(float(row["overallScore"]))
+            for card in row.get("matchReportCards") or []:
+                if card.get("overallScore") is not None:
+                    card["grade"] = _grade(float(card["overallScore"]))
+    for subject_key in ("playerMvp", "teamMvp"):
+        subject = report.get(subject_key)
+        if isinstance(subject, dict) and subject.get("overallScore") is not None:
+            subject["grade"] = _grade(float(subject["overallScore"]))
+    report["letterGradeScaleVersion"] = "academic-plus-minus-v1"
+    return report
 
 
 def _event_complete(conn: sqlite3.Connection, event_id: int) -> bool:

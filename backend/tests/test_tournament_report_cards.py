@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from tournament_report_cards import _GAME_CALIBRATION_CACHE, _apply_event_relative_scores, _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
+from tournament_report_cards import _GAME_CALIBRATION_CACHE, _apply_event_relative_scores, _apply_game_scores, _apply_tournament_resume_scores, _grade, apply_current_grade_labels, build_game_report_card, build_tournament_report_cards
 
 
 class TournamentReportCardsTests(unittest.TestCase):
@@ -38,7 +38,24 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
-        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v4-category-weighted")
+        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v5-academic-letter-scale")
+
+    def test_letter_grades_use_familiar_academic_thresholds(self):
+        self.assertEqual(_grade(100), "A+")
+        self.assertEqual(_grade(93), "A")
+        self.assertEqual(_grade(81.6), "B")
+        self.assertEqual(_grade(78), "C+")
+        self.assertEqual(_grade(59.9), "F")
+
+    def test_saved_numeric_scores_can_be_relabelled_without_recalculation(self):
+        report = {
+            "players": [{"overallScore": 78, "grade": "B+"}],
+            "playerMvp": {"overallScore": 81.6, "grade": "B+"},
+        }
+        relabelled = apply_current_grade_labels(report)
+        self.assertEqual(relabelled["players"][0]["overallScore"], 78)
+        self.assertEqual(relabelled["players"][0]["grade"], "C+")
+        self.assertEqual(relabelled["playerMvp"]["grade"], "B")
 
     def test_expectation_category_materially_affects_performance_grade(self):
         players = [

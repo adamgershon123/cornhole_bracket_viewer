@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChevronDown, RefreshCw, Star, Trash2 } from 'lucide-react';
+import { ChartNoAxesCombined, Check, ChevronDown, Eye, RefreshCw, Star, Trash2, UserRound } from 'lucide-react';
 import './index.css';
 import { fetchEvent, fetchIndividualSeasonStats, fetchMatchGameStats, fetchPlayerSeasonOptions, fetchSeasonProgress, fetchTournamentStats, type Match, type PlayerSeasonOption, type PlayerStat, type RoundRow } from './lib/api';
 import { ScoreHero } from './components/ScoreHero';
@@ -2161,18 +2161,24 @@ async function loadPlayerEvents(
 )}
      {view === 'GAME' && match && (
   <div className="mt-3 space-y-3">
-    {!statusRoute && <div className="sticky top-[92px] z-10 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/90 p-2 backdrop-blur lg:hidden">
+    {!statusRoute && <div className="sticky top-[92px] z-10 grid grid-cols-3 gap-2 rounded-2xl border border-white/15 bg-black/95 p-2 shadow-2xl backdrop-blur lg:hidden" role="tablist" aria-label="Game view mode">
       <button type="button" onClick={() => { setGameMobileMode('PLAYER'); updateQueryParams({ mode: 'player', playerId: selectedPlayerId || defaultPlayerId || undefined }); }} aria-pressed={gameMobileMode === 'PLAYER'}
-        className={`min-h-12 rounded-xl text-base font-black transition active:translate-y-px ${gameMobileMode === 'PLAYER' ? 'bg-amber-400 text-black' : 'bg-zinc-900 text-zinc-300'}`}>
-        Player Mode
+        role="tab" aria-selected={gameMobileMode === 'PLAYER'}
+        className={`flex min-h-16 flex-col items-center justify-center rounded-xl border px-1 text-sm font-black transition-all duration-150 active:scale-95 ${gameMobileMode === 'PLAYER' ? 'border-amber-200 bg-amber-400 text-black shadow-[0_0_22px_rgba(251,191,36,.35)] ring-2 ring-amber-300/70' : 'border-white/10 bg-zinc-900 text-zinc-400'}`}>
+        <span className="flex items-center gap-1.5"><UserRound size={17}/>Player</span>
+        <span className={`mt-1 text-[9px] font-black uppercase tracking-[.16em] ${gameMobileMode === 'PLAYER' ? 'text-black/70' : 'text-zinc-600'}`}>{gameMobileMode === 'PLAYER' ? <span className="flex items-center gap-1"><Check size={10}/>Selected</span> : 'Select'}</span>
       </button>
       <button type="button" onClick={() => { setGameMobileMode('VIEWER'); updateQueryParams({ mode: 'viewer', playerId: selectedPlayerId || defaultPlayerId || undefined }); }} aria-pressed={gameMobileMode === 'VIEWER'}
-        className={`min-h-12 rounded-xl text-sm font-black transition active:translate-y-px ${gameMobileMode === 'VIEWER' ? 'bg-violet-400 text-black' : 'bg-zinc-900 text-zinc-300'}`}>
-        Viewer Mode
+        role="tab" aria-selected={gameMobileMode === 'VIEWER'}
+        className={`flex min-h-16 flex-col items-center justify-center rounded-xl border px-1 text-sm font-black transition-all duration-150 active:scale-95 ${gameMobileMode === 'VIEWER' ? 'border-violet-200 bg-violet-400 text-black shadow-[0_0_22px_rgba(167,139,250,.35)] ring-2 ring-violet-300/70' : 'border-white/10 bg-zinc-900 text-zinc-400'}`}>
+        <span className="flex items-center gap-1.5"><Eye size={17}/>Viewer</span>
+        <span className={`mt-1 text-[9px] font-black uppercase tracking-[.16em] ${gameMobileMode === 'VIEWER' ? 'text-black/70' : 'text-zinc-600'}`}>{gameMobileMode === 'VIEWER' ? <span className="flex items-center gap-1"><Check size={10}/>Selected</span> : 'Select'}</span>
       </button>
       <button type="button" onClick={() => { setGameMobileMode('ANALYSIS'); updateQueryParams({ mode: 'analysis', playerId: selectedPlayerId || defaultPlayerId || undefined }); }} aria-pressed={gameMobileMode === 'ANALYSIS'}
-        className={`min-h-12 rounded-xl text-sm font-black transition active:translate-y-px ${gameMobileMode === 'ANALYSIS' ? 'bg-sky-400 text-black' : 'bg-zinc-900 text-zinc-300'}`}>
-        Analysis
+        role="tab" aria-selected={gameMobileMode === 'ANALYSIS'}
+        className={`flex min-h-16 flex-col items-center justify-center rounded-xl border px-1 text-sm font-black transition-all duration-150 active:scale-95 ${gameMobileMode === 'ANALYSIS' ? 'border-sky-200 bg-sky-400 text-black shadow-[0_0_22px_rgba(56,189,248,.35)] ring-2 ring-sky-300/70' : 'border-white/10 bg-zinc-900 text-zinc-400'}`}>
+        <span className="flex items-center gap-1.5"><ChartNoAxesCombined size={17}/>Analysis</span>
+        <span className={`mt-1 text-[9px] font-black uppercase tracking-[.16em] ${gameMobileMode === 'ANALYSIS' ? 'text-black/70' : 'text-zinc-600'}`}>{gameMobileMode === 'ANALYSIS' ? <span className="flex items-center gap-1"><Check size={10}/>Selected</span> : 'Select'}</span>
       </button>
       </div>}
 

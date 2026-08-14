@@ -136,7 +136,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-xs leading-5 text-zinc-500">
-        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Final tournament grade is 75% performance grade, 15% tournament depth and 10% sustained evidence. The performance grade evaluates performance, expectation, consistency, clutch and resilience.
+        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Letter grades use the familiar academic scale (97+ A+, 93+ A, 90+ A−, 87+ B+, 80+ B, 77+ C+). Final tournament grade is 75% performance grade, 15% tournament depth and 10% sustained evidence. The performance grade evaluates performance, expectation, consistency, clutch and resilience.
       </div>
     </div>}
   </section>;

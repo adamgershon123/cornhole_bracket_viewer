@@ -11,6 +11,7 @@ services:
       - ./cloud-data:/data
     expose:
       - "5173"
+    cpu_shares: 1024
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://127.0.0.1:5173/api/health"]
       interval: 30s
@@ -25,7 +26,9 @@ services:
   workers:
     build: .
     restart: unless-stopped
-    command: ["python", "cloud_worker.py"]
+    command: ["nice", "-n", "10", "python", "cloud_worker.py"]
+    cpus: "1.50"
+    cpu_shares: 128
     healthcheck:
       disable: true
     environment:

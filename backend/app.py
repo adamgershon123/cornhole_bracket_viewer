@@ -73,7 +73,7 @@ from scoring_distribution_challenger import (
     score_scoring_distribution_challenger,
 )
 from match_profile_trajectory import match_profile_trajectories
-from tournament_report_cards import GRADING_MODEL_VERSION, build_game_report_card, build_tournament_report_cards
+from tournament_report_cards import GRADING_MODEL_VERSION, apply_current_grade_labels, build_game_report_card, build_tournament_report_cards
 from data_integrity import (
     INTEGRITY_VERSION,
     READY as INTEGRITY_READY,
@@ -1263,6 +1263,7 @@ def normalize_match(
     pair: List[Dict[str, Any]],
     include_stats: bool = True,
     event_date: Optional[str] = None,
+    refresh_live_stats: bool = True,
 ) -> Optional[Dict[str, Any]]:
     top, bottom = split_top_bottom(pair)
     if not top or not bottom:
@@ -1276,7 +1277,7 @@ def normalize_match(
         gid = int(g.get("gameID") or 1)
         stats = load_game_stats(event_id, match_id, gid) if include_stats else None
         stats_fetch_result: Dict[str, Any] = {}
-        if include_stats and (g.get("matchStatusID") == 0 or not stats):
+        if include_stats and (not stats or (refresh_live_stats and g.get("matchStatusID") == 0)):
             try:
                 stats_fetch_result = maybe_fetch_match_stats(event_id, match_id, gid, force=(g.get("matchStatusID") == 0))
                 stats = load_game_stats(event_id, match_id, gid)
@@ -1758,6 +1759,7 @@ def api_match_game_stats(event_id: str, match_id: str, game_id: int):
         pair,
         include_stats=True,
         event_date=prediction_event_date(event_id, data),
+        refresh_live_stats=False,
     )
     if not item:
         return jsonify({"error": "match not found"}), 404
@@ -1844,6 +1846,7 @@ def api_tournament_report_cards(event_id: str):
     if request.method == "GET":
         saved = read_json(output_path, None)
         if saved:
+            saved = apply_current_grade_labels(saved)
             with season_platform_db() as conn:
                 state = integrity_summary(conn, int(event_id))
                 lineage = conn.execute(
@@ -1890,6 +1893,8 @@ def api_tournament_report_cards(event_id: str):
         })
 
     saved = read_json(output_path, None)
+    if isinstance(saved, dict):
+        saved = apply_current_grade_labels(saved)
     force_new_version = (
         request.args.get("new_version", "0") == "1"
         or request.args.get("force", "0") == "1"
@@ -1961,6 +1966,7 @@ def api_tournament_report_cards(event_id: str):
                 "dataIntegrity": integrity_summary(conn, int(event_id)),
             }), 409
         report = build_tournament_report_cards(conn, int(event_id))
+        report = apply_current_grade_labels(report)
         report["normalizedPlayerRounds"] = normalized
         report["deferredLockedGames"] = deferred_locked_games
         if deferred_locked_games:

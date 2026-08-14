@@ -145,7 +145,7 @@ export function ViewerMode({
   const focusPlayer = teamPlayers.find(player => String(player.id) === String(playerId)) || teamPlayers[0];
   const playerReport = (reportCards?.players || []).find((player: any) => String(player.playerId) === String(focusPlayer?.id));
   const teamReport = (reportCards?.teams || []).find((team: any) => String(team.teamId) === String(projectedTeam?.teamId || myTeamId));
-  const dayScore = playerReport?.overallScore == null ? teamReport?.overallScore : Number(playerReport.overallScore);
+  const dayScore = playerReport?.performanceGrade == null ? teamReport?.performanceGrade : Number(playerReport.performanceGrade);
   const dayGrade = playerReport?.grade || teamReport?.grade;
   const performanceSummary = playerReport ? performanceSentence(playerReport) : 'Create the tournament report card to grade today\'s performance against this player\'s established baseline.';
 

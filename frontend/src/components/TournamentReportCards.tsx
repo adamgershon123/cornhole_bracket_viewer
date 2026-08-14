@@ -76,7 +76,8 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
 
   const ready = data?.status === 'COMPLETE' || data?.status === 'LIVE';
   const updateAvailable = Boolean(data?.updateAvailable);
-  const showPrimaryAction = !ready || updateAvailable;
+  const gradingUpdateAvailable = Boolean(data?.gradingUpdateAvailable);
+  const showPrimaryAction = !ready || updateAvailable || gradingUpdateAvailable;
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-5">
       <div>
@@ -86,9 +87,9 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       </div>
       <div className="flex flex-col items-end gap-2">
         {showPrimaryAction && <button onClick={() => generate(false)} disabled={generating} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-violet-300 bg-violet-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-60">
-          <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{updateAvailable ? `Include ${data.newCompletedGameCount} new completed game${data.newCompletedGameCount === 1 ? '' : 's'}` : 'Generate report cards'}
+          <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{updateAvailable ? `Include ${data.newCompletedGameCount} new completed game${data.newCompletedGameCount === 1 ? '' : 's'}` : gradingUpdateAvailable ? 'Apply corrected grading model' : 'Generate report cards'}
         </button>}
-        {ready && !updateAvailable && <div className="text-sm font-bold text-emerald-300">Up to date · {data.incorporatedGameCount || data.matches?.length || 0} games incorporated</div>}
+        {ready && !updateAvailable && !gradingUpdateAvailable && <div className="text-sm font-bold text-emerald-300">Up to date · {data.incorporatedGameCount || data.matches?.length || 0} games incorporated</div>}
         {ready && <details className="text-right"><summary className="cursor-pointer text-xs font-bold text-zinc-500">Advanced</summary><button onClick={() => generate(true)} disabled={generating} className="mt-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-black text-zinc-300 disabled:opacity-50">Force a new report version</button></details>}
       </div>
     </div>
@@ -136,7 +137,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-xs leading-5 text-zinc-500">
-        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Letter grades use the familiar academic scale (97+ A+, 93+ A, 90+ A−, 87+ B+, 80+ B, 77+ C+). Final tournament grade is 75% performance grade, 15% tournament depth and 10% sustained evidence. The performance grade evaluates performance, expectation, consistency, clutch and resilience.
+        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Letter grades use the familiar academic scale and measure individual play only. MVP score is separate: 75% player performance, 15% tournament depth and 10% sustained evidence. Winning and advancement do not change the player letter grade.
       </div>
     </div>}
   </section>;
@@ -163,9 +164,9 @@ function MvpCard({ title, icon, subject, player = false }: { title: string; icon
   return <div className="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-300/10 to-violet-300/[.06] p-5">
     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-amber-300">{icon}{title}</div>
     <div className="mt-3 text-2xl font-black text-white">{name}</div>
-    <div className="mt-3 flex items-end gap-3"><div className="text-5xl font-black text-amber-300">{number(subject.overallScore, 1)}</div>{subject.grade && <div className="pb-1 text-2xl font-black text-violet-300">{subject.grade}</div>}</div>
-    <div className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">Final tournament / MVP grade</div>
-    {subject.performanceGrade != null && <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-zinc-400"><span>Performance {number(subject.performanceGrade, 1)}</span><span>Depth {number(subject.depthScore, 1)}</span><span>Sustained evidence {number(subject.sustainedEvidenceScore, 1)}</span></div>}
+    <div className="mt-3 flex items-end gap-3"><div className="text-5xl font-black text-amber-300">{number(subject.mvpScore ?? subject.overallScore, 1)}</div></div>
+    <div className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">MVP score</div>
+    {subject.performanceGrade != null && <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-zinc-400"><span>Player grade {number(subject.performanceGrade, 1)} {subject.grade}</span><span>Depth {number(subject.depthScore, 1)}</span><span>Sustained evidence {number(subject.sustainedEvidenceScore, 1)}</span></div>}
   </div>;
 }
 
@@ -174,12 +175,12 @@ function PlayerCard({ player }: { player: any }) {
     <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
       <div className="w-9 text-xl font-black text-cyan-300">#{player.rank}</div>
       <div className="min-w-0 flex-1"><div className="truncate text-lg font-black text-white">{player.playerName}</div><div className="text-xs text-zinc-500">{player.games} games · {player.rounds} rounds · {number(player.ppr, 2)} PPR · {signed(player.pprVsExpected)} vs expected</div></div>
-      <div className="text-right"><div className="text-2xl font-black text-amber-300">{number(player.overallScore, 1)}</div><div className="text-xs font-black text-violet-300">{player.grade}</div></div>
+      <div className="text-right"><div className="text-2xl font-black text-amber-300">{number(player.performanceGrade ?? player.overallScore, 1)}</div><div className="text-xs font-black text-violet-300">{player.grade} player grade</div><div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">MVP {number(player.mvpScore ?? player.overallScore, 1)}</div></div>
       <ChevronDown className="text-zinc-500" size={18}/>
     </summary>
     <div className="border-t border-white/10 p-4">
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Metric label="Performance grade" value={number(player.performanceGrade, 1)}/><Metric label="Tournament depth" value={number(player.depthScore, 1)}/><Metric label="Sustained evidence" value={number(player.sustainedEvidenceScore, 1)}/>
+        <Metric label="Player performance grade" value={`${number(player.performanceGrade, 1)} ${player.performanceGradeLetter || player.grade || ''}`}/><Metric label="MVP score" value={number(player.mvpScore ?? player.overallScore, 1)}/><Metric label="Tournament depth" value={number(player.depthScore, 1)}/><Metric label="Sustained evidence" value={number(player.sustainedEvidenceScore, 1)}/>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{Object.entries(player.categoryScores || {}).map(([key, value]) => <Metric key={key} label={categoryLabels[key] || key} value={number(value, 1)}/>)}</div>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">

@@ -16,7 +16,7 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
-GRADING_MODEL_VERSION = "tournament-report-cards-v5-academic-letter-scale"
+GRADING_MODEL_VERSION = "tournament-report-cards-v7-academic-performance-and-mvp"
 
 
 def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
@@ -85,7 +85,7 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
         event_complete=event_complete,
         bracket_type=str(event_data.get("bracket_type") or ""),
     )
-    players.sort(key=lambda row: (-float(row["overallScore"]), row["playerName"]))
+    players.sort(key=lambda row: (-float(row["mvpScore"]), row["playerName"]))
     for rank, player in enumerate(players, 1):
         player["rank"] = rank
 
@@ -100,15 +100,16 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
             "teamId": team_id,
             "teamName": " / ".join(member["playerName"] for member in members),
             "players": [{"playerId": member["playerId"], "playerName": member["playerName"]} for member in members],
-            "overallScore": round(mean(float(member["overallScore"]) for member in members), 1),
+            "overallScore": round(mean(float(member["performanceGrade"]) for member in members), 1),
+            "mvpScore": round(mean(float(member["mvpScore"]) for member in members), 1),
             "performanceGrade": round(mean(float(member["performanceGrade"]) for member in members), 1),
             "depthScore": round(mean(float(member["depthScore"]) for member in members), 1),
             "sustainedEvidenceScore": round(mean(float(member["sustainedEvidenceScore"]) for member in members), 1),
             "expectationScore": round(mean(float(member["categoryScores"]["expectation"]) for member in members), 1),
             "performanceScore": round(mean(float(member["categoryScores"]["performance"]) for member in members), 1),
         })
-        teams[-1]["grade"] = _grade(float(teams[-1]["overallScore"]))
-    teams.sort(key=lambda row: (-row["overallScore"], row["teamName"]))
+        teams[-1]["grade"] = _grade(float(teams[-1]["performanceGrade"]))
+    teams.sort(key=lambda row: (-row["mvpScore"], row["teamName"]))
     for rank, team in enumerate(teams, 1):
         team["rank"] = rank
 
@@ -130,10 +131,10 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
         "scoringPolicy": {
             "performance": 0.35, "expectation": 0.25, "consistency": 0.15,
             "clutch": 0.15, "resilience": 0.10,
-            "finalTournamentGrade": {"performanceGrade": 0.75, "depth": 0.15, "sustainedEvidence": 0.10},
+            "mvpScore": {"performanceGrade": 0.75, "depth": 0.15, "sustainedEvidence": 0.10},
             "gameGradePriorRounds": GAME_GRADE_PRIOR_ROUNDS,
             "letterGradeScale": "academic-plus-minus-v1",
-            "note": "Performance grade measures how well a player performed. The final tournament/MVP grade adds tournament depth and sustained evidence, so equally strong play over a deeper run earns greater MVP credibility without changing the underlying performance grade.",
+            "note": "The academic letter grade comes only from individual performance. MVP score separately adds tournament depth and sustained evidence to rank the most valuable tournament resume. Winning and advancement never alter the player's performance grade.",
         },
     }
 
@@ -510,9 +511,14 @@ def _apply_event_relative_scores(players: list[dict[str, Any]]) -> None:
             + .10 * scores["resilience"]
         )
         confidence = min(1.0, math.sqrt(max(0, row["rounds"]) / 24))
+        # Category inputs are event-relative percentiles, not classroom-grade
+        # percentages. Map the 50th percentile to a neutral 75/C before
+        # applying the academic letter scale. Small samples shrink toward that
+        # neutral grade rather than toward 50/F.
+        academic_raw = 50.0 + 0.5 * raw
         row["categoryScores"] = scores
         row["categoryWeightedScore"] = round(raw, 1)
-        row["performanceGrade"] = round(50 + (raw - 50) * confidence, 1)
+        row["performanceGrade"] = round(75 + (academic_raw - 75) * confidence, 1)
         row["sampleConfidence"] = round(confidence, 3)
         row["performanceGradeLetter"] = _grade(row["performanceGrade"])
 
@@ -642,8 +648,11 @@ def _apply_tournament_resume_scores(
         row["depthScore"] = round(depth, 1)
         row["sustainedEvidenceScore"] = round(sustained, 1)
         row["aboveExpectedGames"] = above_expected
-        row["overallScore"] = round(final_score, 1)
-        row["grade"] = _grade(row["overallScore"])
+        row["mvpScore"] = round(final_score, 1)
+        # Keep overallScore as the actual player-performance score for older UI
+        # consumers. Tournament advancement belongs only to mvpScore.
+        row["overallScore"] = round(performance, 1)
+        row["grade"] = _grade(performance)
 
 
 def _numeric_sort(value: Any) -> tuple[int, str]:
@@ -891,14 +900,24 @@ def apply_current_grade_labels(report: dict[str, Any]) -> dict[str, Any]:
         return report
     for collection_key in ("players", "teams"):
         for row in report.get(collection_key) or []:
-            if row.get("overallScore") is not None:
+            if row.get("performanceGrade") is not None:
+                if row.get("mvpScore") is None and row.get("overallScore") is not None:
+                    row["mvpScore"] = round(float(row["overallScore"]), 1)
+                row["overallScore"] = round(float(row["performanceGrade"]), 1)
+                row["grade"] = _grade(float(row["performanceGrade"]))
+            elif row.get("overallScore") is not None:
                 row["grade"] = _grade(float(row["overallScore"]))
             for card in row.get("matchReportCards") or []:
                 if card.get("overallScore") is not None:
                     card["grade"] = _grade(float(card["overallScore"]))
     for subject_key in ("playerMvp", "teamMvp"):
         subject = report.get(subject_key)
-        if isinstance(subject, dict) and subject.get("overallScore") is not None:
+        if isinstance(subject, dict) and subject.get("performanceGrade") is not None:
+            if subject.get("mvpScore") is None and subject.get("overallScore") is not None:
+                subject["mvpScore"] = round(float(subject["overallScore"]), 1)
+            subject["overallScore"] = round(float(subject["performanceGrade"]), 1)
+            subject["grade"] = _grade(float(subject["performanceGrade"]))
+        elif isinstance(subject, dict) and subject.get("overallScore") is not None:
             subject["grade"] = _grade(float(subject["overallScore"]))
     report["letterGradeScaleVersion"] = "academic-plus-minus-v1"
     return report

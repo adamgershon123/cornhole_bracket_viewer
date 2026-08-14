@@ -38,7 +38,7 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
-        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v5-academic-letter-scale")
+        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v7-academic-performance-and-mvp")
 
     def test_letter_grades_use_familiar_academic_thresholds(self):
         self.assertEqual(_grade(100), "A+")
@@ -69,6 +69,17 @@ class TournamentReportCardsTests(unittest.TestCase):
         _apply_event_relative_scores(players)
         self.assertGreater(players[1]["performanceGrade"], players[0]["performanceGrade"])
         self.assertGreater(players[1]["categoryWeightedScore"], players[0]["categoryWeightedScore"])
+
+    def test_event_percentiles_are_normalized_before_academic_letter_grade(self):
+        players = [
+            {"playerId": 1, "playerName": "Only player", "rounds": 24, "ppr": 7.5, "pprVsExpected": 0,
+             "consistencyRaw": 0, "clutchNet": 0, "dpr": 0, "recoveryNet": 0, "largeSwingsConceded": 0,
+             "matchReportCards": []},
+        ]
+        _apply_event_relative_scores(players)
+        self.assertEqual(players[0]["categoryWeightedScore"], 50.0)
+        self.assertEqual(players[0]["performanceGrade"], 75.0)
+        self.assertEqual(players[0]["performanceGradeLetter"], "C")
 
     def test_single_game_grade_does_not_build_tournament_resume(self):
         result = build_game_report_card(self.conn, 99, "1", 1)
@@ -147,7 +158,18 @@ class TournamentReportCardsTests(unittest.TestCase):
         _apply_tournament_resume_scores(players, [], event_complete=True)
         self.assertEqual(players[0]["performanceGrade"], players[1]["performanceGrade"])
         self.assertGreater(players[1]["sustainedEvidenceScore"], players[0]["sustainedEvidenceScore"])
-        self.assertGreater(players[1]["overallScore"], players[0]["overallScore"])
+        self.assertEqual(players[1]["overallScore"], players[0]["overallScore"])
+        self.assertGreater(players[1]["mvpScore"], players[0]["mvpScore"])
+
+    def test_tournament_advancement_does_not_change_player_grade(self):
+        players = [
+            {"playerId": 1, "teamId": "A", "performanceGrade": 76.5, "games": 7, "rounds": 49,
+             "matchReportCards": [{"pprVsExpected": 1.44}] * 7},
+        ]
+        _apply_tournament_resume_scores(players, [], event_complete=True)
+        self.assertEqual(players[0]["overallScore"], 76.5)
+        self.assertEqual(players[0]["grade"], "C")
+        self.assertNotEqual(players[0]["mvpScore"], players[0]["overallScore"])
 
     def test_extra_poor_games_do_not_create_a_sustained_bonus(self):
         players = [

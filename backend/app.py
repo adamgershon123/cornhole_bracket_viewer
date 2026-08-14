@@ -1880,6 +1880,8 @@ def api_tournament_report_cards(event_id: str):
             return jsonify({
                 **saved,
                 "updateAvailable": bool(new_games),
+                "gradingUpdateAvailable": saved.get("gradingModelVersion") != GRADING_MODEL_VERSION,
+                "currentGradingModelVersion": GRADING_MODEL_VERSION,
                 "newCompletedGameCount": len(new_games),
                 "newCompletedGames": [
                     {"matchId": match_id, "gameId": game_id}
@@ -1911,11 +1913,16 @@ def api_tournament_report_cards(event_id: str):
         for row in (saved or {}).get("matches", [])
     } if isinstance(saved, dict) else set()
     new_completed_games = completed_now - incorporated
+    grading_update_available = bool(
+        isinstance(saved, dict)
+        and saved.get("gradingModelVersion") != GRADING_MODEL_VERSION
+    )
     if (
         isinstance(saved, dict)
         and saved.get("status") == "COMPLETE"
         and not force_new_version
         and not new_completed_games
+        and not grading_update_available
     ):
         return jsonify({
             **saved,

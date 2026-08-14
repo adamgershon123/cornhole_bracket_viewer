@@ -16,10 +16,15 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
-GRADING_MODEL_VERSION = "tournament-report-cards-v7-academic-performance-and-mvp"
+GRADING_MODEL_VERSION = "tournament-report-cards-v8-final-placement-depth"
 
 
-def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
+def build_tournament_report_cards(
+    conn: sqlite3.Connection,
+    event_id: int,
+    *,
+    event_complete_override: bool | None = None,
+) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
     event = conn.execute(
         "SELECT event_id,event_name,event_date,status,match_type,bracket_type,blind_draw,location_name FROM events WHERE event_id=?",
@@ -68,7 +73,14 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
             aggregate[int(card["playerId"])].append(card)
             player_team[int(card["playerId"])] = str(card.get("teamId") or "")
 
-    event_complete = _event_complete(conn, int(event_id))
+    # The local games ledger can lag ACL's event status while the final game is
+    # being normalized.  When the caller has the current ACL event record, use
+    # that authoritative completion state before calculating placement/depth.
+    event_complete = (
+        bool(event_complete_override)
+        if event_complete_override is not None
+        else _event_complete(conn, int(event_id))
+    )
     players = [_aggregate_player(pid, cards, baselines.get(pid)) for pid, cards in aggregate.items()]
     for player in players:
         if int(player.get("baselineRounds") or 0) == 0:

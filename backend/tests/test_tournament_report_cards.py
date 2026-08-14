@@ -38,7 +38,7 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
-        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v7-academic-performance-and-mvp")
+        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v8-final-placement-depth")
 
     def test_letter_grades_use_familiar_academic_thresholds(self):
         self.assertEqual(_grade(100), "A+")
@@ -180,6 +180,32 @@ class TournamentReportCardsTests(unittest.TestCase):
         ]
         _apply_tournament_resume_scores(players, [], event_complete=True)
         self.assertLess(players[1]["sustainedEvidenceScore"], players[0]["sustainedEvidenceScore"])
+
+    def test_completed_double_elimination_final_separates_champion_and_runner_up(self):
+        players = [
+            {"playerId": 1, "teamId": "champion", "performanceGrade": 80.2, "games": 7, "rounds": 52,
+             "matchReportCards": [{"pprVsExpected": 0.5}] * 7},
+            {"playerId": 2, "teamId": "runner-up", "performanceGrade": 81.0, "games": 5, "rounds": 32,
+             "matchReportCards": [{"pprVsExpected": 0.5}] * 5},
+        ]
+        matches = [
+            {"matchId": "29", "gameId": 1, "winnerTeamId": "runner-up", "players": [
+                {"teamId": "runner-up"}, {"teamId": "champion"},
+            ]},
+            {"matchId": "30", "gameId": 1, "winnerTeamId": "champion", "players": [
+                {"teamId": "runner-up"}, {"teamId": "champion"},
+            ]},
+            {"matchId": "30", "gameId": 2, "winnerTeamId": "champion", "players": [
+                {"teamId": "runner-up"}, {"teamId": "champion"},
+            ]},
+        ]
+
+        _apply_tournament_resume_scores(players, matches, event_complete=True, bracket_type="W")
+
+        champion, runner_up = players
+        self.assertEqual(champion["depthScore"], 100.0)
+        self.assertEqual(runner_up["depthScore"], 0.0)
+        self.assertGreater(champion["mvpScore"], runner_up["mvpScore"])
 
 
 if __name__ == "__main__":

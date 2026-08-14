@@ -4,6 +4,8 @@ import json
 import sqlite3
 from typing import Any
 
+from automated_pattern_discovery import discovery_status
+
 
 def cached_model_research_inputs(
     conn: sqlite3.Connection,
@@ -62,7 +64,11 @@ def cached_model_research_inputs(
             "only in a batch retraining run that passes chronological validation and a later holdout."
         ),
     }
-    return {"historicalBacktest": backtest, "historicalTournamentReplay": replay}, learning
+    try:
+        discovery = discovery_status(conn)
+    except sqlite3.Error:
+        discovery = {"status": "UNAVAILABLE", "phase": "UNAVAILABLE", "candidates": []}
+    return {"historicalBacktest": backtest, "historicalTournamentReplay": replay, "automatedDiscovery": discovery}, learning
 
 
 def model_research_report(
@@ -73,6 +79,7 @@ def model_research_report(
     """Turn model-evaluation output into an honest, readable research snapshot."""
     backtest = performance.get("historicalBacktest") or {}
     replay = performance.get("historicalTournamentReplay") or {}
+    discovery = performance.get("automatedDiscovery") or {}
     models = [dict(row) for row in (backtest.get("models") or [])]
     ppr = next((row for row in models if row.get("model") == "PPR only"), None)
     challengers = [
@@ -132,6 +139,21 @@ def model_research_report(
         ),
         "tone": "INFO",
     })
+    discovered = list(discovery.get("candidates") or [])
+    if discovered:
+        leader = discovered[0]
+        accuracy_delta = _number(leader.get("accuracy_delta"))
+        brier_delta = _number(leader.get("brier_improvement"))
+        findings.insert(0, {
+            "title": "Leading automated discovery",
+            "headline": str(leader.get("name") or "Candidate pattern"),
+            "detail": (
+                f"{_signed_points(accuracy_delta)} holdout accuracy and "
+                f"{_signed_decimal(brier_delta)} Brier improvement versus PPR. "
+                "This is research evidence, not a production promotion."
+            ),
+            "tone": "POSITIVE" if accuracy_delta > 0 and brier_delta > 0 else "CAUTION",
+        })
 
     gate = learning.get("promotionGate") or {}
     collection = collection or {}
@@ -188,6 +210,7 @@ def model_research_report(
                 "status": replay.get("status") or "UNKNOWN",
                 "updatedAt": replay.get("updatedAt"),
             },
+            "discovery": discovery,
         },
         "baseline": _experiment(ppr, ppr) if ppr else None,
         "experiments": experiments,
@@ -200,16 +223,16 @@ def model_research_report(
             },
             {
                 "name": "Data-discovered intelligence",
-                "status": "NEXT_BUILD",
+                "status": "ACTIVE" if discovery.get("status") in {"RUNNING", "COMPLETE"} else discovery.get("status") or "WAITING",
                 "description": "Searches the round archive for nonlinear interactions, player and venue cohorts, thresholds, and patterns that were not proposed in advance.",
-                "output": "Discovery engine and candidate registry are the next research-layer milestone.",
+                "output": f"{int(discovery.get('candidatesGenerated') or 0)} patterns generated; {int(discovery.get('candidatesHoldoutScored') or 0)} locked candidates scored on holdout.",
             },
         ],
         "pipeline": [
             _stage("1", "Data foundation", "COMPLETE", f"{int(backtest.get('archiveMatchups') or 0):,} resolved matchups available."),
             _stage("2", "Cutoff-safe feature construction", "COMPLETE", f"{int(backtest.get('eligibleMatchups') or 0):,} matchups use only prior evidence."),
             _stage("3", "Domain-guided candidate tests", "ACTIVE", f"{len(challengers)} challengers compared with PPR."),
-            _stage("4", "Automated pattern discovery", "NEXT", "Mine interactions and cohorts, then register reproducible candidate features."),
+            _stage("4", "Automated pattern discovery", "ACTIVE" if discovery.get("status") in {"RUNNING", "COMPLETE"} else "WAITING", f"{discovery.get('phase') or 'Waiting'} · {int(discovery.get('examplesScanned') or 0):,} examples scanned · {int(discovery.get('candidatesValidated') or 0)} candidates validated."),
             _stage("5", "Historical validation", "ACTIVE", f"{int(backtest.get('holdoutMatchups') or 0):,} untouched holdout matchups."),
             _stage("6", "Tournament-level bake-off", "PARTIAL", f"{_replay_count(replay):,} tournament replays exist; every candidate still needs the same tournament simulation."),
             _stage("7", "Prospective confirmation", "ACTIVE", f"{int(gate.get('currentExamples') or 0):,} frozen forward examples."),

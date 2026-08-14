@@ -20,6 +20,7 @@ from payload_archive import start_payload_archive_worker
 from predictive_player_profile import start_player_analytics_snapshot_worker
 from season_platform import db as season_platform_db
 from integrity_backfill import audit_cached_match_stats
+from automated_pattern_discovery import start_automated_discovery_worker
 
 
 running = True
@@ -95,6 +96,7 @@ if __name__ == "__main__":
     start_historical_tournament_replay_worker(season_platform_db, data_dir=DATA_DIR)
     start_backtest_refresh_worker()
     start_data_integrity_worker()
+    start_automated_discovery_worker(season_platform_db)
     start_prediction_operations_snapshot_worker(season_platform_db)
     while running:
         time.sleep(5)

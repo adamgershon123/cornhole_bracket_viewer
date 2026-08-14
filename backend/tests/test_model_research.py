@@ -74,7 +74,7 @@ class ModelResearchReportTests(unittest.TestCase):
         self.assertEqual(challenger["status"], "PROMISING")
         self.assertFalse(challenger["statisticallyClearAt95"])
         self.assertIn("No challenger is conclusive", report["findings"][2]["headline"])
-        self.assertEqual(report["pipeline"][3]["status"], "NEXT")
+        self.assertEqual(report["pipeline"][3]["status"], "WAITING")
         self.assertEqual(report["activity"]["ledger"]["games"], 2500)
         self.assertEqual(report["activity"]["lastHour"]["roundsAdded"], 240)
         self.assertEqual(report["activity"]["analysis"]["modelMatchEvaluations"], 400)

@@ -21,6 +21,9 @@ const toneClasses: Record<string, string> = {
 const statusClasses: Record<string, string> = {
   COMPLETE: 'bg-emerald-400/15 text-emerald-300',
   ACTIVE: 'bg-sky-400/15 text-sky-300',
+  RUNNING: 'bg-violet-400/15 text-violet-200',
+  WAITING: 'bg-zinc-700 text-zinc-200',
+  FAILED: 'bg-red-400/15 text-red-300',
   NEXT: 'bg-violet-400/15 text-violet-300',
   NEXT_BUILD: 'bg-violet-400/15 text-violet-300',
   PARTIAL: 'bg-amber-400/15 text-amber-200',
@@ -80,6 +83,7 @@ export default function ModelResearchLabView() {
   const experiments = data?.experiments || [];
   const activity = data?.activity || {};
   const analysis = activity?.analysis || {};
+  const discovery = activity?.discovery || {};
   const ledger = activity?.ledger || {};
   const queue = activity?.queue || {};
   const hourly = activity?.lastHour || {};
@@ -141,6 +145,40 @@ export default function ModelResearchLabView() {
             {activity.backtestRefresh?.newGamesSinceRun ? ` · ${Number(activity.backtestRefresh.newGamesSinceRun).toLocaleString()} new games await/reinforce refresh` : ''}
             {activity.backtestRefresh?.generatedAt ? ` · last analyzed ${new Date(activity.backtestRefresh.generatedAt).toLocaleString()}` : ' · not generated in this database'}
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="overflow-hidden rounded-[30px] border border-violet-300/25 bg-zinc-950">
+      <div className="flex flex-col gap-3 border-b border-white/10 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.22em] text-violet-300"><BrainCircuit size={18} /> Automated pattern discovery</div>
+          <h3 className="mt-2 text-2xl font-black text-white">Step 4 is running</h3>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">The engine generates patterns on development history, selects them on chronological validation, and only then opens the untouched holdout. Production predictions are never changed automatically.</p>
+        </div>
+        <Status value={discovery.status || 'WAITING'} />
+      </div>
+      <div className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-5">
+        <DiscoveryMetric label="Examples scanned" value={discovery.examplesScanned} />
+        <DiscoveryMetric label="Patterns generated" value={discovery.candidatesGenerated} />
+        <DiscoveryMetric label="Validated" value={discovery.candidatesValidated} />
+        <DiscoveryMetric label="Locked before holdout" value={discovery.candidatesLocked} />
+        <DiscoveryMetric label="Holdout scored" value={discovery.candidatesHoldoutScored} />
+      </div>
+      <div className="grid gap-4 p-5 md:grid-cols-[1fr_2fr] md:p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[.025] p-4">
+          <div className="text-[10px] font-black uppercase tracking-[.18em] text-zinc-500">Current phase</div>
+          <div className="mt-2 text-lg font-black text-violet-200">{String(discovery.phase || 'Waiting for first run').replaceAll('_', ' ')}</div>
+          <div className="mt-2 text-sm text-zinc-500">{discovery.lastCandidate ? `Evaluating: ${discovery.lastCandidate}` : discovery.completedAt ? `Completed ${new Date(discovery.completedAt).toLocaleString()}` : 'The worker will publish progress here as it advances.'}</div>
+          {discovery.lastError && <div className="mt-3 rounded-xl border border-red-400/25 bg-red-950/30 p-3 text-sm text-red-200">{discovery.lastError}</div>}
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[.025] p-4">
+          <div className="text-[10px] font-black uppercase tracking-[.18em] text-zinc-500">Leading discovered candidates</div>
+          {(discovery.candidates || []).length ? <div className="mt-3 space-y-2">{(discovery.candidates || []).slice(0, 6).map((candidate: any, index: number) => <div key={candidate.candidate_key} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl bg-black/25 p-3">
+            <div className="font-black text-violet-300">#{index + 1}</div>
+            <div><div className="font-black text-white">{candidate.name}</div><div className="text-xs text-zinc-500">{String(candidate.family || '').replaceAll('_', ' ')} · {Number(candidate.evaluated_matchups || 0).toLocaleString()} holdout matches</div></div>
+            <div className="text-right"><div className={`font-black ${Number(candidate.accuracy_delta || 0) > 0 ? 'text-emerald-300' : 'text-zinc-400'}`}>{delta(candidate.accuracy_delta)}</div><div className="text-[10px] uppercase text-zinc-600">vs PPR</div></div>
+          </div>)}</div> : <div className="mt-3 rounded-xl border border-dashed border-white/10 p-4 text-sm text-zinc-500">Candidates will appear after the first development and validation pass.</div>}
         </div>
       </div>
     </section>
@@ -211,6 +249,10 @@ export default function ModelResearchLabView() {
 
 function Status({ value }: { value: string }) {
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider ${statusClasses[value] || statusClasses.GATED}`}>{String(value || 'UNKNOWN').replaceAll('_', ' ')}</span>;
+}
+
+function DiscoveryMetric({ label, value }: { label: string; value?: number }) {
+  return <div className="bg-zinc-950 p-4 md:p-5"><div className="text-[10px] font-black uppercase tracking-[.18em] text-zinc-500">{label}</div><div className="mt-2 text-3xl font-black text-white">{Number(value || 0).toLocaleString()}</div></div>;
 }
 
 function ExperimentCard({ row }: { row: any }) {

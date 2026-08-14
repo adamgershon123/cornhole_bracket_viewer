@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from tournament_report_cards import _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
+from tournament_report_cards import _GAME_CALIBRATION_CACHE, _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
 
 
 class TournamentReportCardsTests(unittest.TestCase):
@@ -10,6 +10,7 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript("""
             CREATE TABLE events(event_id INTEGER PRIMARY KEY,event_name TEXT,event_date TEXT,status TEXT,match_type TEXT,bracket_type TEXT,blind_draw INTEGER,location_name TEXT);
+            CREATE TABLE players(player_id INTEGER PRIMARY KEY,display_name TEXT);
             CREATE TABLE games(event_id INTEGER,match_id TEXT,game_id INTEGER,completed INTEGER);
             CREATE TABLE player_rounds(event_id INTEGER,match_id TEXT,game_id INTEGER,round_no INTEGER,player_id INTEGER,player_name TEXT,team_id TEXT,opponent_player_id INTEGER,opponent_team_id TEXT,team_side TEXT,court_id TEXT,gross_points INTEGER,opponent_points INTEGER,net_points INTEGER,scored_points INTEGER,bags_in INTEGER,bags_on INTEGER,bags_off INTEGER,four_bagger INTEGER,round_result TEXT,event_date TEXT,location_id TEXT,location_name TEXT,match_type TEXT,bracket_type TEXT,blind_draw INTEGER);
         """)
@@ -37,6 +38,7 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
+        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v3-frozen-cutoff")
 
     def test_single_game_grade_does_not_build_tournament_resume(self):
         result = build_game_report_card(self.conn, 99, "1", 1)
@@ -47,6 +49,32 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertNotIn("playerMvp", result)
         self.assertNotIn("teams", result)
         self.assertEqual(result["calculationMode"], "USER_INITIATED_SINGLE_GAME")
+
+    def test_same_name_history_is_flagged_but_not_merged(self):
+        self.conn.execute("INSERT INTO players(player_id,display_name) VALUES(100,'Alpha')")
+        self.conn.execute(
+            "INSERT INTO player_rounds VALUES(98,'9',1,1,100,'Alpha','X',3,'Y','HOME','1',6,7,-1,0,1,1,2,0,'L','2026-07-01','10','Test Hall','D','W',0)"
+        )
+        self.conn.commit()
+        result = build_tournament_report_cards(self.conn, 99)
+        alpha = next(player for player in result["players"] if player["playerId"] == 1)
+        self.assertEqual(alpha["expectationSource"], "NO_PRIOR_HISTORY_NEUTRAL")
+        self.assertEqual(alpha["possibleHistoricalAccounts"][0]["playerId"], 100)
+        self.assertFalse(alpha["possibleHistoricalAccounts"][0]["usedInGrade"])
+
+    def test_future_rounds_do_not_change_completed_event_grades(self):
+        first = build_tournament_report_cards(self.conn, 99)
+        for round_no in range(1, 7):
+            self.conn.execute(
+                "INSERT INTO player_rounds VALUES(100,'1',1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (round_no,1,'Alpha','A',3,'B','HOME','1',0,12,-12,0,0,0,4,0,'L','2026-08-02','10','Test Hall','D','W',0),
+            )
+        self.conn.commit()
+        _GAME_CALIBRATION_CACHE.clear()
+        second = build_tournament_report_cards(self.conn, 99)
+        first_scores = [(player["playerId"], player["overallScore"]) for player in first["players"]]
+        second_scores = [(player["playerId"], player["overallScore"]) for player in second["players"]]
+        self.assertEqual(first_scores, second_scores)
 
     def test_match_awards_identify_the_opponent(self):
         result = build_tournament_report_cards(self.conn, 99)

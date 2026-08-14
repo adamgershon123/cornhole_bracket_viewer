@@ -16,6 +16,7 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
+GRADING_MODEL_VERSION = "tournament-report-cards-v3-frozen-cutoff"
 
 
 def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
@@ -44,8 +45,8 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
     event_data = dict(event) if event else {"event_id": int(event_id)}
     event_date = str(event_data.get("event_date") or "9999-12-31")
     player_ids = sorted({int(row["player_id"]) for row in rows})
-    baselines = _baselines(conn, player_ids, event_date)
-    game_calibration = _historical_game_calibration(conn)
+    baselines = _baselines(conn, player_ids, event_date, int(event_id))
+    game_calibration = _historical_game_calibration(conn, int(event_id))
     games = _group_games(rows)
     match_metadata = _match_metadata(conn, int(event_id))
     match_cards: list[dict[str, Any]] = []
@@ -69,6 +70,14 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
 
     event_complete = _event_complete(conn, int(event_id))
     players = [_aggregate_player(pid, cards, baselines.get(pid)) for pid, cards in aggregate.items()]
+    for player in players:
+        if int(player.get("baselineRounds") or 0) == 0:
+            player["possibleHistoricalAccounts"] = _possible_historical_accounts(
+                conn,
+                int(player["playerId"]),
+                str(player["playerName"]),
+                int(event_id),
+            )
     _apply_event_relative_scores(players)
     _apply_tournament_resume_scores(
         players,
@@ -109,6 +118,7 @@ def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> di
         "eventId": int(event_id),
         "event": event_data,
         "generatedAt": _now(),
+        "gradingModelVersion": GRADING_MODEL_VERSION,
         "calculationMode": "USER_INITIATED_ON_DEMAND",
         "playerMvp": players[0] if players else None,
         "teamMvp": teams[0] if len(teams) and any(len(value) > 1 for value in teams_by_id.values()) else None,
@@ -164,8 +174,8 @@ def build_game_report_card(
     cards, highlights = _game_cards(
         (str(match_id), int(game_id)),
         rows,
-        _baselines(conn, player_ids, event_date),
-        _historical_game_calibration(conn),
+        _baselines(conn, player_ids, event_date, int(event_id)),
+        _historical_game_calibration(conn, int(event_id)),
     )
     cards.sort(key=lambda row: (-float(row.get("overallScore") or 0), row["playerName"]))
     for rank, card in enumerate(cards, 1):
@@ -179,6 +189,7 @@ def build_game_report_card(
         "matchId": str(match_id),
         "gameId": int(game_id),
         "generatedAt": _now(),
+        "gradingModelVersion": GRADING_MODEL_VERSION,
         "calculationMode": "USER_INITIATED_SINGLE_GAME",
         "game": {
             "matchId": str(match_id),
@@ -197,7 +208,12 @@ def build_game_report_card(
     }
 
 
-def _baselines(conn: sqlite3.Connection, player_ids: list[int], event_date: str) -> dict[int, dict[str, float]]:
+def _baselines(
+    conn: sqlite3.Connection,
+    player_ids: list[int],
+    event_date: str,
+    event_id: int,
+) -> dict[int, dict[str, float]]:
     if not player_ids:
         return {}
     marks = ",".join("?" for _ in player_ids)
@@ -206,10 +222,11 @@ def _baselines(conn: sqlite3.Connection, player_ids: list[int], event_date: str)
         SELECT player_id,COUNT(*) rounds,AVG(gross_points) ppr,AVG(net_points) dpr,
                AVG(CASE WHEN round_result='W' THEN 1.0 ELSE 0 END) round_win_rate,
                AVG(four_bagger*1.0) four_bagger_rate
-        FROM player_rounds WHERE player_id IN ({marks}) AND event_date<?
+        FROM player_rounds
+        WHERE player_id IN ({marks}) AND event_id<?
         GROUP BY player_id
         """,
-        [*player_ids, event_date],
+        [*player_ids, int(event_id)],
     ).fetchall()
     return {int(row["player_id"]): {key: float(row[key] or 0) for key in ("rounds", "ppr", "dpr", "round_win_rate", "four_bagger_rate")} for row in rows}
 
@@ -286,6 +303,8 @@ def _game_cards(
             "bagsInRate": round(sum(int(row["bags_in"] or 0) for row in player_rows) / (4 * len(player_rows)), 4),
             "consistencyRaw": round(-pstdev(gross), 4) if len(gross) > 1 else 0,
             "expectedPpr": round(float(baseline.get("ppr", ppr)), 3),
+            "baselineRounds": int(baseline.get("rounds", 0)),
+            "expectationSource": "PRIOR_PLAYER_HISTORY" if int(baseline.get("rounds", 0)) > 0 else "NO_PRIOR_HISTORY_NEUTRAL",
             "pprVsExpected": round(ppr - float(baseline.get("ppr", ppr)), 3),
             "clutchNet": round(mean(float(row["net_points"] or 0) for row in clutch_rows), 3) if clutch_rows else None,
             "clutchRounds": len(clutch_rows),
@@ -408,6 +427,8 @@ def _aggregate_player(player_id: int, cards: list[dict[str, Any]], baseline: dic
         "roundWinRate": round(weighted("roundWinRate"), 4), "fourBaggerRate": round(weighted("fourBaggerRate"), 4),
         "fourBaggers": sum(card["fourBaggers"] for card in cards), "bagsInRate": round(weighted("bagsInRate"), 4),
         "pprVsExpected": round(weighted("pprVsExpected"), 3), "expectedPpr": round(float((baseline or {}).get("ppr", weighted("ppr"))), 3),
+        "baselineRounds": int((baseline or {}).get("rounds", 0)),
+        "expectationSource": "PRIOR_PLAYER_HISTORY" if int((baseline or {}).get("rounds", 0)) > 0 else "NO_PRIOR_HISTORY_NEUTRAL",
         "consistencyRaw": round(weighted("consistencyRaw"), 3),
         "clutchNet": round(mean(card["clutchNet"] for card in cards if card["clutchNet"] is not None), 3) if any(card["clutchNet"] is not None for card in cards) else None,
         "clutchRounds": sum(card["clutchRounds"] for card in cards),
@@ -421,6 +442,45 @@ def _aggregate_player(player_id: int, cards: list[dict[str, Any]], baseline: dic
         "finishLift": round(weighted("finishLift"), 3), "roundTrend": round(weighted("roundTrend"), 4),
         "matchReportCards": cards,
     }
+
+
+def _possible_historical_accounts(
+    conn: sqlite3.Connection,
+    player_id: int,
+    player_name: str,
+    event_id: int,
+) -> list[dict[str, Any]]:
+    normalized = " ".join(str(player_name or "").lower().split())
+    if not normalized:
+        return []
+    try:
+        rows = conn.execute(
+            """
+            SELECT p.player_id,p.display_name,COUNT(pr.rowid) rounds,
+                   COUNT(DISTINCT pr.event_id) events,AVG(pr.gross_points) ppr,
+                   MIN(pr.event_date) first_event,MAX(pr.event_date) last_event
+            FROM players p JOIN player_rounds pr ON pr.player_id=p.player_id
+            WHERE p.player_id<>? AND LOWER(TRIM(p.display_name))=? AND pr.event_id<?
+            GROUP BY p.player_id,p.display_name
+            HAVING COUNT(pr.rowid)>0
+            ORDER BY rounds DESC,p.player_id
+            LIMIT 5
+            """,
+            (int(player_id), normalized, int(event_id)),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    return [{
+        "playerId": int(row["player_id"]),
+        "playerName": str(row["display_name"] or player_name),
+        "rounds": int(row["rounds"] or 0),
+        "events": int(row["events"] or 0),
+        "ppr": round(float(row["ppr"] or 0), 3),
+        "firstEvent": row["first_event"],
+        "lastEvent": row["last_event"],
+        "matchEvidence": "EXACT_NORMALIZED_NAME_ONLY",
+        "usedInGrade": False,
+    } for row in rows]
 
 
 def _apply_event_relative_scores(players: list[dict[str, Any]]) -> None:
@@ -446,28 +506,32 @@ def _apply_event_relative_scores(players: list[dict[str, Any]]) -> None:
         row["performanceGradeLetter"] = _grade(row["performanceGrade"])
 
 
-def _historical_game_calibration(conn: sqlite3.Connection) -> dict[str, list[float]]:
-    """Build a reusable empirical reference distribution from recorded games."""
+def _historical_game_calibration(conn: sqlite3.Connection, event_id: int) -> dict[str, list[float]]:
+    """Build a prior-event-only empirical grading reference distribution."""
     try:
         database_path = str(conn.execute("PRAGMA database_list").fetchone()[2] or ":memory:")
-        if database_path in _GAME_CALIBRATION_CACHE:
-            return _GAME_CALIBRATION_CACHE[database_path]
+        cache_key = f"{database_path}:{int(event_id)}"
+        if cache_key in _GAME_CALIBRATION_CACHE:
+            return _GAME_CALIBRATION_CACHE[cache_key]
         rows = conn.execute(
             """
-            WITH baselines AS (
+            WITH eligible AS (
+                SELECT * FROM player_rounds WHERE event_id<?
+            ), baselines AS (
                 SELECT player_id,AVG(gross_points) baseline_ppr
-                FROM player_rounds GROUP BY player_id
+                FROM eligible GROUP BY player_id
             )
             SELECT AVG(pr.gross_points) ppr,AVG(pr.net_points) dpr,
                    AVG(pr.gross_points)-MAX(b.baseline_ppr) ppr_delta,
                    AVG(pr.gross_points*pr.gross_points)-AVG(pr.gross_points)*AVG(pr.gross_points) variance,
                    AVG(CASE WHEN pr.net_points<=-5 THEN 1.0 ELSE 0 END) swing_rate
-            FROM player_rounds pr JOIN baselines b ON b.player_id=pr.player_id
+            FROM eligible pr JOIN baselines b ON b.player_id=pr.player_id
             GROUP BY pr.event_id,pr.match_id,pr.game_id,pr.player_id
             HAVING COUNT(*)>=2
             ORDER BY MAX(pr.event_date) DESC
             LIMIT 50000
-            """
+            """,
+            (int(event_id),),
         ).fetchall()
     except (sqlite3.OperationalError, IndexError):
         return {}
@@ -479,7 +543,7 @@ def _historical_game_calibration(conn: sqlite3.Connection) -> dict[str, list[flo
         "resilienceRaw": sorted(-float(row["swing_rate"] or 0) for row in rows),
     }
     if rows:
-        _GAME_CALIBRATION_CACHE[database_path] = calibration
+        _GAME_CALIBRATION_CACHE[cache_key] = calibration
     return calibration
 
 

@@ -62,7 +62,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">On-demand grading for every recorded game and the full tournament. Nothing runs until you select generate or recalculate.</p>
       </div>
       <button onClick={generate} disabled={generating} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-violet-300 bg-violet-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-60">
-        <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{ready ? 'Recalculate report cards' : 'Generate report cards'}
+        <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{data?.status === 'COMPLETE' ? 'Reload locked final grades' : ready ? 'Refresh live report cards' : 'Generate report cards'}
       </button>
     </div>
     <div className="border-b border-white/10 bg-violet-300/[.035] p-5">
@@ -82,6 +82,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     </div>
     {error && <div className="m-5 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{error}</div>}
     {data?.dataPreparationNote && <div className="mx-5 mt-5 rounded-xl border border-amber-300/25 bg-amber-300/[.08] p-4 text-sm leading-6 text-amber-100">{data.dataPreparationNote}</div>}
+    {data?.status === 'COMPLETE' && <div className="mx-5 mt-5 rounded-xl border border-emerald-300/25 bg-emerald-300/[.07] p-4 text-sm leading-6 text-emerald-100"><span className="font-black">Final grades locked.</span> Reopening or pressing reload returns the same saved grading artifact. Algorithm or source-data changes require a separately versioned report.</div>}
     {loading && <div className="p-8 text-center text-zinc-400">Checking for a saved report…</div>}
     {!loading && !ready && <div className="p-8 text-center text-zinc-400">No report has been generated for this event yet.</div>}
     {ready && <div className="space-y-5 p-5">
@@ -157,6 +158,9 @@ function PlayerCard({ player }: { player: any }) {
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Metric label="DPR" value={signed(player.dpr)}/><Metric label="4-bagger rate" value={percent(player.fourBaggerRate)}/><Metric label="Clutch rounds" value={player.clutchRounds}/><Metric label="Large swings conceded" value={player.largeSwingsConceded}/>
       </div>
+      {player.expectationSource === 'NO_PRIOR_HISTORY_NEUTRAL' && <div className="mt-3 rounded-xl border border-amber-300/25 bg-amber-300/[.07] p-3 text-sm leading-6 text-amber-100">
+        <span className="font-black">No prior history for player ID {player.playerId}.</span> Expectation was held neutral and this player received no above-expectation credit. {(player.possibleHistoricalAccounts || []).length > 0 && <span> Possible same-name historical account{player.possibleHistoricalAccounts.length === 1 ? '' : 's'}: {player.possibleHistoricalAccounts.map((account: any) => `${account.playerName} #${account.playerId} (${account.rounds} rounds, ${number(account.ppr, 2)} PPR)`).join('; ')}. These were not merged or used in grading.</span>}
+      </div>}
       <div className="mt-4 text-xs font-black uppercase tracking-[.16em] text-zinc-500">Game-by-game grades</div>
       <div className="mt-2 grid gap-2 md:grid-cols-2">{(player.matchReportCards || []).map((card: any) => <div key={`${card.matchId}:${card.gameId}`} className="rounded-xl bg-black/25 p-3">
         <div className="flex items-center justify-between"><div className="font-black text-white">Match {card.matchId} · Game {card.gameId}</div><div className="text-xl font-black text-amber-300">{number(card.overallScore, 1)}</div></div>

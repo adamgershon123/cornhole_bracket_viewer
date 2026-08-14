@@ -1853,6 +1853,19 @@ def api_tournament_report_cards(event_id: str):
             "message": "Generate report cards to analyze this event.",
         })
 
+    saved = read_json(output_path, None)
+    if (
+        isinstance(saved, dict)
+        and saved.get("status") == "COMPLETE"
+        and request.args.get("new_version", "0") != "1"
+    ):
+        return jsonify({
+            **saved,
+            "frozenFinalReport": True,
+            "reusedFrozenReport": True,
+            "freezeReason": "Completed tournament grades are immutable. A new grading version must be created explicitly.",
+        })
+
     data = load_bracket(event_id, refresh=request.args.get("refresh", "1") == "1")
     conn = season_platform_db()
     try:
@@ -1909,6 +1922,8 @@ def api_tournament_report_cards(event_id: str):
     report["event"] = {**(report.get("event") or {}), **event_summary}
     if str(event_summary.get("leagueStatus") or event_summary.get("status") or "").upper() in {"C", "COMPLETE", "COMPLETED"}:
         report["status"] = "COMPLETE"
+        report["frozenFinalReport"] = True
+        report["finalizedAt"] = report.get("generatedAt")
     report["dataIntegrity"] = {
         "version": INTEGRITY_VERSION,
         "status": INTEGRITY_READY,

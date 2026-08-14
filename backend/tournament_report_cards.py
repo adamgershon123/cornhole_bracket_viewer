@@ -16,7 +16,7 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
-GRADING_MODEL_VERSION = "tournament-report-cards-v8-final-placement-depth"
+GRADING_MODEL_VERSION = "tournament-report-cards-v9-double-elimination-placement"
 
 
 def build_tournament_report_cards(
@@ -24,6 +24,7 @@ def build_tournament_report_cards(
     event_id: int,
     *,
     event_complete_override: bool | None = None,
+    bracket_type_override: str | None = None,
 ) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
     event = conn.execute(
@@ -95,7 +96,7 @@ def build_tournament_report_cards(
         players,
         match_cards,
         event_complete=event_complete,
-        bracket_type=str(event_data.get("bracket_type") or ""),
+        bracket_type=str(bracket_type_override or event_data.get("bracket_type") or ""),
     )
     players.sort(key=lambda row: (-float(row["mvpScore"]), row["playerName"]))
     for rank, player in enumerate(players, 1):

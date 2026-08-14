@@ -1981,6 +1981,9 @@ def api_tournament_report_cards(event_id: str):
             conn,
             int(event_id),
             event_complete_override=acl_event_complete,
+            bracket_type_override=str(
+                event_summary.get("bracketType") or event_summary.get("bracket_type") or ""
+            ),
         )
         report = apply_current_grade_labels(report)
         report["normalizedPlayerRounds"] = normalized

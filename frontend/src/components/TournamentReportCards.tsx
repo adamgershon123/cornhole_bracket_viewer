@@ -37,6 +37,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const [gameReport, setGameReport] = useState<any>();
   const [gameError, setGameError] = useState('');
   const [error, setError] = useState('');
+  const [playerSort, setPlayerSort] = useState<'performance' | 'mvp'>('performance');
 
   useEffect(() => {
     setLoading(true);
@@ -78,6 +79,11 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const updateAvailable = Boolean(data?.updateAvailable);
   const gradingUpdateAvailable = Boolean(data?.gradingUpdateAvailable);
   const showPrimaryAction = !ready || updateAvailable || gradingUpdateAvailable;
+  const sortedPlayers = [...(data?.players || [])].sort((left: any, right: any) => {
+    const leftScore = playerSort === 'mvp' ? Number(left.mvpScore ?? left.overallScore ?? 0) : Number(left.performanceGrade ?? left.overallScore ?? 0);
+    const rightScore = playerSort === 'mvp' ? Number(right.mvpScore ?? right.overallScore ?? 0) : Number(right.performanceGrade ?? right.overallScore ?? 0);
+    return rightScore - leftScore || String(left.playerName || '').localeCompare(String(right.playerName || ''));
+  });
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-5">
       <div>
@@ -131,9 +137,18 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       <div>
-        <div className="mb-3 text-xs font-black uppercase tracking-[.18em] text-violet-300">Final player report cards</div>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[.18em] text-violet-300">Final player report cards</div>
+            <div className="mt-1 text-xs font-semibold text-zinc-500">Ranked by {playerSort === 'performance' ? 'individual player grade' : 'tournament MVP score'}.</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/30 p-1" role="group" aria-label="Sort player report cards">
+            <button type="button" aria-pressed={playerSort === 'performance'} onClick={() => setPlayerSort('performance')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'performance' ? 'bg-violet-300 text-black shadow-[0_0_18px_rgba(196,181,253,.25)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Player Grade</button>
+            <button type="button" aria-pressed={playerSort === 'mvp'} onClick={() => setPlayerSort('mvp')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'mvp' ? 'bg-amber-300 text-black shadow-[0_0_18px_rgba(252,211,77,.22)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>MVP Score</button>
+          </div>
+        </div>
         <div className="space-y-3">
-          {(data.players || []).map((player: any) => <PlayerCard key={player.playerId} player={player}/>) }
+          {sortedPlayers.map((player: any, index: number) => <PlayerCard key={player.playerId} player={{...player, rank: index + 1}}/>) }
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-xs leading-5 text-zinc-500">

@@ -7,6 +7,26 @@ const categoryLabels: Record<string, string> = {
   clutch: 'Clutch', resilience: 'Resilience',
 };
 
+function recognizableTeamName(team: any, fallback: string) {
+  const playerNames = (team?.players || [])
+    .map((player: any) => player?.displayName || [player?.firstName, player?.lastName].filter(Boolean).join(' '))
+    .filter(Boolean);
+  const name = playerNames.join(' / ') || String(team?.name || '').trim();
+  return name && !/^team\s*-?\d+$/i.test(name) ? name : fallback;
+}
+
+function gameOptionLabel(match: any, game: any) {
+  const top = recognizableTeamName(match?.teams?.top, 'Team A');
+  const bottom = recognizableTeamName(match?.teams?.bottom, 'Team B');
+  const context = [
+    match?.roundDescription || `Match ${match?.matchId}`,
+    `Match ${match?.matchId}`,
+    Number(game?.gameId || 1) > 1 ? `Game ${game.gameId}` : '',
+    match?.courtId && String(match.courtId) !== '-1' ? `Court ${match.courtId}` : '',
+  ].filter(Boolean).join(' · ');
+  return `${top} vs ${bottom} — ${context}`;
+}
+
 export default function TournamentReportCards({ eventId }: { eventId: string }) {
   const [data, setData] = useState<any>();
   const [loading, setLoading] = useState(true);
@@ -28,7 +48,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       const options = event.matches.flatMap(match => (match.games || []).map(game => ({
         matchId: String(match.matchId),
         gameId: Number(game.gameId || 1),
-        label: `${match.roundDescription || `Match ${match.matchId}`} · Match ${match.matchId} · Game ${game.gameId || 1}${match.courtId ? ` · Court ${match.courtId}` : ''}`,
+        label: gameOptionLabel(match, game),
       })));
       setGameOptions(options);
       setSelectedGame(options.length ? `${options[0].matchId}:${options[0].gameId}` : '');

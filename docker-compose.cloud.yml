@@ -27,7 +27,6 @@ services:
     build: .
     restart: unless-stopped
     command: ["nice", "-n", "10", "python", "cloud_worker.py"]
-    cpus: "1.50"
     cpu_shares: 128
     healthcheck:
       disable: true
@@ -41,6 +40,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: "1.50"
           memory: 1300M
 
   tunnel:

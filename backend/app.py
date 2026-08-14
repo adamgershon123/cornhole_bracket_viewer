@@ -419,7 +419,11 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
     match_status_id = str(row.get("matchStatusID") or "")
     if str(result_status) == "5" or match_status_id == "5" or "completed" in match_status or row.get("matchEndTime"):
         status = "completed"
-    elif "progress" in match_status or match_status_id in {"1", "2"}:
+    elif ("progress" in match_status or match_status_id in {"1", "2"}) and (
+        row.get("matchStartTime")
+        or as_float(home_score) != 0
+        or as_float(away_score) != 0
+    ):
         status = "live"
     elif row.get("matchStartTime"):
         status = "live"
@@ -483,6 +487,13 @@ def safe_swap_match_stats(data: Dict[str, Any]) -> Dict[str, Any]:
         "roundLimit": data.get("roundLimit"),
         "homeScore": data.get("homeScore"),
         "awayScore": data.get("awayScore"),
+        "scoresheet": bool(data.get("scoresheet")),
+        "hasPublishedRounds": bool(
+            details
+            or data.get("event_match_inning_history")
+            or data.get("event_match_inning_summary")
+            or as_float(data.get("currentRound")) > 0
+        ),
         "players": details,
         "rounds": [
             {
@@ -2981,8 +2992,13 @@ def api_swap_live(event_id: str):
                 continue
             safe_stats = safe_swap_match_stats(stats)
             match["stats"] = safe_stats
-            match["homeScore"] = safe_stats.get("homeScore", match.get("homeScore"))
-            match["awayScore"] = safe_stats.get("awayScore", match.get("awayScore"))
+            # ACL's match-stat endpoint can publish an empty pregame shell
+            # (scoresheet=false, round 0, 0-0) after the schedule endpoint has
+            # already published live scores. Never let that empty shell erase
+            # the fresher schedule score.
+            if safe_stats.get("scoresheet") or safe_stats.get("hasPublishedRounds"):
+                match["homeScore"] = safe_stats.get("homeScore", match.get("homeScore"))
+                match["awayScore"] = safe_stats.get("awayScore", match.get("awayScore"))
         except Exception as e:
             errors.append({"endpoint": "match-stats", "matchId": match_id, "message": str(e)})
 

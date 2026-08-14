@@ -1799,10 +1799,6 @@ def api_standings(event_id: str):
 @app.route("/api/events/<event_id>/tournament-stats")
 def api_tournament_stats(event_id: str):
     data = load_bracket(event_id, refresh=request.args.get("refresh", "1") == "1")
-    event_summary = normalize_tournament(event_id, data, include_stats=False).get("event", {})
-    acl_event_complete = str(
-        event_summary.get("leagueStatus") or event_summary.get("status") or ""
-    ).upper() in {"C", "COMPLETE", "COMPLETED"}
     cached_only = request.args.get("cached_only", "0") == "1"
     team_id = request.args.get("team_id") or None
     fetch_summary = (
@@ -1936,6 +1932,10 @@ def api_tournament_report_cards(event_id: str):
         })
 
     data = load_bracket(event_id, refresh=request.args.get("refresh", "1") == "1")
+    event_summary = normalize_tournament(event_id, data, include_stats=False).get("event", {})
+    acl_event_complete = str(
+        event_summary.get("leagueStatus") or event_summary.get("status") or ""
+    ).upper() in {"C", "COMPLETE", "COMPLETED"}
     conn = season_platform_db()
     try:
         normalized = 0

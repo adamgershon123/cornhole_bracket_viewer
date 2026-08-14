@@ -2001,9 +2001,10 @@ def api_tournament_report_cards(event_id: str):
     report["reportVersionReason"] = (
         "FORCED_RECALCULATION" if force_new_version
         else "NEW_COMPLETED_GAMES" if new_completed_games
+        else "GRADING_MODEL_UPGRADE" if grading_update_available
         else "INITIAL_GENERATION"
     )
-    if isinstance(saved, dict) and (force_new_version or new_completed_games):
+    if isinstance(saved, dict) and (force_new_version or new_completed_games or grading_update_available):
         versions_dir = os.path.join(DATA_DIR, "report_card_versions")
         os.makedirs(versions_dir, exist_ok=True)
         prior_stamp = str(saved.get("generatedAt") or "unknown").replace(":", "-")

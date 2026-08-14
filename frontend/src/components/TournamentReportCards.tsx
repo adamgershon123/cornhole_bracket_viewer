@@ -35,10 +35,11 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     }).catch(() => setGameOptions([]));
   }, [eventId]);
 
-  async function generate() {
+  async function generate(force = false) {
+    if (force && !window.confirm('Force a new report version using the same game results? The current saved version will be preserved for audit.')) return;
     setGenerating(true);
     setError('');
-    try { setData(await generateTournamentReportCards(eventId)); }
+    try { setData(await generateTournamentReportCards(eventId, force)); }
     catch (error: any) { setError(error.message || 'Report cards could not be generated.'); }
     finally { setGenerating(false); }
   }
@@ -54,6 +55,8 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   }
 
   const ready = data?.status === 'COMPLETE' || data?.status === 'LIVE';
+  const updateAvailable = Boolean(data?.updateAvailable);
+  const showPrimaryAction = !ready || updateAvailable;
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-5">
       <div>
@@ -61,9 +64,13 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         <h2 className="mt-2 text-2xl font-black text-white">Who played best—and who beat expectations?</h2>
         <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-400">On-demand grading for every recorded game and the full tournament. Nothing runs until you select generate or recalculate.</p>
       </div>
-      <button onClick={generate} disabled={generating} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-violet-300 bg-violet-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-60">
-        <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{data?.status === 'COMPLETE' ? 'Reload locked final grades' : ready ? 'Refresh live report cards' : 'Generate report cards'}
-      </button>
+      <div className="flex flex-col items-end gap-2">
+        {showPrimaryAction && <button onClick={() => generate(false)} disabled={generating} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-violet-300 bg-violet-300 px-5 font-black text-black active:translate-y-1 disabled:opacity-60">
+          <RefreshCw className={generating ? 'animate-spin' : ''} size={18}/>{updateAvailable ? `Include ${data.newCompletedGameCount} new completed game${data.newCompletedGameCount === 1 ? '' : 's'}` : 'Generate report cards'}
+        </button>}
+        {ready && !updateAvailable && <div className="text-sm font-bold text-emerald-300">Up to date · {data.incorporatedGameCount || data.matches?.length || 0} games incorporated</div>}
+        {ready && <details className="text-right"><summary className="cursor-pointer text-xs font-bold text-zinc-500">Advanced</summary><button onClick={() => generate(true)} disabled={generating} className="mt-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-black text-zinc-300 disabled:opacity-50">Force a new report version</button></details>}
+      </div>
     </div>
     <div className="border-b border-white/10 bg-violet-300/[.035] p-5">
       <div className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Grade one game only</div>
@@ -82,7 +89,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     </div>
     {error && <div className="m-5 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{error}</div>}
     {data?.dataPreparationNote && <div className="mx-5 mt-5 rounded-xl border border-amber-300/25 bg-amber-300/[.08] p-4 text-sm leading-6 text-amber-100">{data.dataPreparationNote}</div>}
-    {data?.status === 'COMPLETE' && <div className="mx-5 mt-5 rounded-xl border border-emerald-300/25 bg-emerald-300/[.07] p-4 text-sm leading-6 text-emerald-100"><span className="font-black">Final grades locked.</span> Reopening or pressing reload returns the same saved grading artifact. Algorithm or source-data changes require a separately versioned report.</div>}
+    {data?.status === 'COMPLETE' && <div className="mx-5 mt-5 rounded-xl border border-emerald-300/25 bg-emerald-300/[.07] p-4 text-sm leading-6 text-emerald-100"><span className="font-black">Final grades saved server-side.</span> Every phone and computer sees this same result. A new version is offered only when another completed game is available; forced reruns remain under Advanced.</div>}
     {loading && <div className="p-8 text-center text-zinc-400">Checking for a saved report…</div>}
     {!loading && !ready && <div className="p-8 text-center text-zinc-400">No report has been generated for this event yet.</div>}
     {ready && <div className="space-y-5 p-5">

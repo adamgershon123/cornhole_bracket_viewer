@@ -34,7 +34,7 @@ export async function fetchEvent(eventId:string, stats=false): Promise<EventResp
   return response.json();
 }
 export async function fetchMatch(eventId:string, matchId:string): Promise<Match>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/matches/${matchId}`); if(!r.ok) throw new Error(await r.text()); return r.json() }
-export async function fetchBracketProbabilities(eventId:string, simulations=10000): Promise<any>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/bracket-probabilities?simulations=${simulations}`); if(!r.ok) throw new Error(await readableApiError(r)); return r.json() }
+export async function fetchBracketProbabilities(eventId:string, simulations=10000, refresh=false): Promise<any>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/bracket-probabilities?simulations=${simulations}&refresh=${refresh?'1':'0'}`); if(!r.ok) throw new Error(await readableApiError(r)); return r.json() }
 export async function fetchMatchGameStats(eventId:string, matchId:string, gameId:number|string, refresh=true): Promise<Match>{ const r=await fetch(`${API_BASE}/api/events/${eventId}/matches/${matchId}/games/${gameId}/stats?refresh=${refresh?'1':'0'}`); if(!r.ok) throw new Error(await r.text()); return r.json() }
 
 export type TournamentStatsPlayer = {
@@ -62,8 +62,8 @@ export async function fetchTournamentReportCards(eventId: string): Promise<any> 
   return response.json();
 }
 
-export async function generateTournamentReportCards(eventId: string): Promise<any> {
-  const response = await fetch(`${API_BASE}/api/events/${eventId}/report-cards?refresh=1&refresh_live=1`, {
+export async function generateTournamentReportCards(eventId: string, force=false): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/events/${eventId}/report-cards?refresh=1&refresh_live=1${force ? '&new_version=1&force=1' : ''}`, {
     method: 'POST',
   });
   if (!response.ok) throw new Error(await readableApiError(response));

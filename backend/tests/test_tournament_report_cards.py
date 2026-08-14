@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from tournament_report_cards import _GAME_CALIBRATION_CACHE, _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
+from tournament_report_cards import _GAME_CALIBRATION_CACHE, _apply_event_relative_scores, _apply_game_scores, _apply_tournament_resume_scores, build_game_report_card, build_tournament_report_cards
 
 
 class TournamentReportCardsTests(unittest.TestCase):
@@ -38,7 +38,20 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["matches"]), 1)
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
-        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v3-frozen-cutoff")
+        self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v4-category-weighted")
+
+    def test_expectation_category_materially_affects_performance_grade(self):
+        players = [
+            {"playerId": 1, "playerName": "Expected", "rounds": 24, "ppr": 8, "pprVsExpected": 0,
+             "consistencyRaw": -1, "clutchNet": 0, "dpr": 0, "recoveryNet": 0, "largeSwingsConceded": 0,
+             "matchReportCards": []},
+            {"playerId": 2, "playerName": "Outperformed", "rounds": 24, "ppr": 8, "pprVsExpected": 2,
+             "consistencyRaw": -1, "clutchNet": 0, "dpr": 0, "recoveryNet": 0, "largeSwingsConceded": 0,
+             "matchReportCards": []},
+        ]
+        _apply_event_relative_scores(players)
+        self.assertGreater(players[1]["performanceGrade"], players[0]["performanceGrade"])
+        self.assertGreater(players[1]["categoryWeightedScore"], players[0]["categoryWeightedScore"])
 
     def test_single_game_grade_does_not_build_tournament_resume(self):
         result = build_game_report_card(self.conn, 99, "1", 1)

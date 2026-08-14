@@ -13,7 +13,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
   useEffect(() => {
     setData(undefined);
     setError('');
-    fetchBracketProbabilities(eventId)
+    fetchBracketProbabilities(eventId, 10000, true)
       .then(result => {
         setData(result);
         setError('');
@@ -22,7 +22,8 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
   }, [eventId]);
 
   useEffect(() => {
-    if (data?.timelineBuildStatus !== 'BUILDING') return;
+    const eventComplete = ['C', 'COMPLETE', 'COMPLETED'].includes(String(event?.leagueStatus || event?.status || '').toUpperCase());
+    if (eventComplete && data?.timelineBuildStatus !== 'BUILDING') return;
     let cancelled = false;
     let timer: number | undefined;
 
@@ -30,7 +31,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
       if (cancelled || buildPollInFlight.current) return;
       buildPollInFlight.current = true;
       try {
-        const result = await fetchBracketProbabilities(eventId);
+        const result = await fetchBracketProbabilities(eventId, 10000, true);
         if (!cancelled) {
           setData(result);
           setError('');
@@ -48,7 +49,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [data?.timelineBuildStatus, eventId]);
+  }, [data?.timelineBuildStatus, eventId, event?.leagueStatus, event?.status]);
 
   if (error) {
     return <div className="mb-4 rounded-2xl border border-red-400/20 bg-red-950/20 p-5 text-base text-red-200">{error}</div>;

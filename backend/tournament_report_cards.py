@@ -16,7 +16,7 @@ from typing import Any
 GAME_GRADE_PRIOR_ROUNDS = 2.0
 GAME_GRADE_PRIOR_SCORE = 50.0
 _GAME_CALIBRATION_CACHE: dict[str, dict[str, list[float]]] = {}
-GRADING_MODEL_VERSION = "tournament-report-cards-v3-frozen-cutoff"
+GRADING_MODEL_VERSION = "tournament-report-cards-v4-category-weighted"
 
 
 def build_tournament_report_cards(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
@@ -495,12 +495,20 @@ def _apply_event_relative_scores(players: list[dict[str, Any]]) -> None:
     for row in players:
         scores = {category: round(float(row.pop(f"_{category}")), 1) for category in mappings}
         cards = row.get("matchReportCards") or []
+        # These are the published performance-grade weights. Earlier report
+        # versions displayed the five category scores but accidentally graded
+        # only the game-level observed-performance value, so a major
+        # above-expectation result could be visible without affecting the grade.
         raw = (
-            sum(float(card.get("observedPerformanceScore") or 50) * int(card.get("rounds") or 0) for card in cards)
-            / max(1, sum(int(card.get("rounds") or 0) for card in cards))
+            .35 * scores["performance"]
+            + .25 * scores["expectation"]
+            + .15 * scores["consistency"]
+            + .15 * scores["clutch"]
+            + .10 * scores["resilience"]
         )
         confidence = min(1.0, math.sqrt(max(0, row["rounds"]) / 24))
         row["categoryScores"] = scores
+        row["categoryWeightedScore"] = round(raw, 1)
         row["performanceGrade"] = round(50 + (raw - 50) * confidence, 1)
         row["sampleConfidence"] = round(confidence, 3)
         row["performanceGradeLetter"] = _grade(row["performanceGrade"])

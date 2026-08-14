@@ -62,6 +62,7 @@ from bracket_prediction_snapshots import (
     bracket_player_ids,
     bracket_roster_ready,
     bracket_prediction_timeline,
+    delete_prediction_timeline,
     has_valid_pregame_snapshot,
 )
 from player_history_queue import enqueue_players
@@ -72,7 +73,7 @@ from scoring_distribution_challenger import (
     score_scoring_distribution_challenger,
 )
 from match_profile_trajectory import match_profile_trajectories
-from tournament_report_cards import build_game_report_card, build_tournament_report_cards
+from tournament_report_cards import GRADING_MODEL_VERSION, build_game_report_card, build_tournament_report_cards
 from data_integrity import (
     INTEGRITY_VERSION,
     READY as INTEGRITY_READY,
@@ -1687,6 +1688,21 @@ def api_bracket_probabilities(event_id: str):
     return jsonify(result)
 
 
+@app.post("/api/events/<event_id>/bracket-probabilities/reset-pregame")
+def api_reset_bracket_pregame(event_id: str):
+    """Explicit administrative reset; ordinary reads can never rewrite pregame."""
+    with season_platform_db() as conn:
+        deleted = delete_prediction_timeline(conn, int(event_id))
+    with BRACKET_PREDICTION_BUILD_LOCK:
+        BRACKET_PREDICTION_BUILD_RESPONSES.pop(int(event_id), None)
+    return jsonify({
+        "status": "RESET",
+        "eventId": int(event_id),
+        "deletedSnapshots": deleted,
+        "message": "The next bracket prediction request will create a new frozen pregame version.",
+    })
+
+
 @app.route("/api/prediction-operations/bracket-layouts")
 def api_bracket_layouts():
     return jsonify(repository_bracket_templates(DATA_DIR))
@@ -1846,7 +1862,27 @@ def api_tournament_report_cards(event_id: str):
                     "message": "This saved report predates v2 certification or one or more source games are not verified.",
                     "dataIntegrity": state,
                 }), 409
-            return jsonify(saved)
+            bracket = load_bracket(event_id, refresh=False)
+            completed_now = {
+                (str(match_id), int(game_id))
+                for match_id, game_id, is_live in played_game_stat_targets(bracket)
+                if not is_live
+            }
+            incorporated = {
+                (str(row.get("matchId")), int(row.get("gameId") or 1))
+                for row in saved.get("matches", [])
+            }
+            new_games = sorted(completed_now - incorporated, key=lambda row: (int(row[0]), row[1]))
+            return jsonify({
+                **saved,
+                "updateAvailable": bool(new_games),
+                "newCompletedGameCount": len(new_games),
+                "newCompletedGames": [
+                    {"matchId": match_id, "gameId": game_id}
+                    for match_id, game_id in new_games
+                ],
+                "incorporatedGameCount": len(incorporated),
+            })
         return jsonify({
             "status": "NOT_GENERATED",
             "eventId": int(event_id),
@@ -1854,10 +1890,26 @@ def api_tournament_report_cards(event_id: str):
         })
 
     saved = read_json(output_path, None)
+    force_new_version = (
+        request.args.get("new_version", "0") == "1"
+        or request.args.get("force", "0") == "1"
+    )
+    bracket_for_change_check = load_bracket(event_id, refresh=False) if isinstance(saved, dict) else None
+    completed_now = {
+        (str(match_id), int(game_id))
+        for match_id, game_id, is_live in played_game_stat_targets(bracket_for_change_check or {})
+        if not is_live
+    }
+    incorporated = {
+        (str(row.get("matchId")), int(row.get("gameId") or 1))
+        for row in (saved or {}).get("matches", [])
+    } if isinstance(saved, dict) else set()
+    new_completed_games = completed_now - incorporated
     if (
         isinstance(saved, dict)
         and saved.get("status") == "COMPLETE"
-        and request.args.get("new_version", "0") != "1"
+        and not force_new_version
+        and not new_completed_games
     ):
         return jsonify({
             **saved,
@@ -1929,12 +1981,28 @@ def api_tournament_report_cards(event_id: str):
         "status": INTEGRITY_READY,
         "verified": True,
     }
+    report["updateAvailable"] = False
+    report["newCompletedGameCount"] = 0
+    report["incorporatedGameCount"] = len(report.get("matches") or [])
+    report["reportVersionReason"] = (
+        "FORCED_RECALCULATION" if force_new_version
+        else "NEW_COMPLETED_GAMES" if new_completed_games
+        else "INITIAL_GENERATION"
+    )
+    if isinstance(saved, dict) and (force_new_version or new_completed_games):
+        versions_dir = os.path.join(DATA_DIR, "report_card_versions")
+        os.makedirs(versions_dir, exist_ok=True)
+        prior_stamp = str(saved.get("generatedAt") or "unknown").replace(":", "-")
+        prior_path = os.path.join(versions_dir, f"event_{event_id}_{prior_stamp}.json")
+        if not os.path.exists(prior_path):
+            with open(prior_path, "w", encoding="utf-8") as prior_handle:
+                json.dump(saved, prior_handle, indent=2)
     with season_platform_db() as lineage_conn:
         record_artifact_lineage(
             lineage_conn,
             "tournament-report-card",
             str(event_id),
-            "tournament-report-cards-v2",
+            GRADING_MODEL_VERSION,
             INTEGRITY_READY,
             {"eventId": int(event_id), "gameCount": len(report.get("matches") or [])},
         )

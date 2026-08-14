@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import unittest
+import json
+import sqlite3
 
 from bracket_prediction_snapshots import (
     _timeline_checkpoint_indexes,
     bracket_final_standings,
     bracket_round_progress,
     completed_bracket_matches,
+    delete_prediction_timeline,
+    has_valid_pregame_snapshot,
 )
 
 
@@ -30,6 +34,27 @@ def entry(match_id, position, team_id, round_desc, status=5, score=(21, 10), nam
 
 
 class BracketPredictionSnapshotTests(unittest.TestCase):
+    def test_structure_only_pregame_remains_frozen_until_explicit_reset(self) -> None:
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("""CREATE TABLE bracket_prediction_snapshots(
+            snapshot_id INTEGER PRIMARY KEY AUTOINCREMENT,event_id INTEGER,snapshot_type TEXT,
+            state_key TEXT,completed_matches INTEGER,trigger_match_json TEXT,payload_json TEXT,
+            created_at TEXT,UNIQUE(event_id,state_key))""")
+        payload = {"coverage": {"modelCoverageRate": 0}, "teams": [
+            {"teamId": "1", "playerIds": [10]}, {"teamId": "2", "playerIds": [20]},
+        ]}
+        conn.execute(
+            "INSERT INTO bracket_prediction_snapshots(event_id,snapshot_type,state_key,completed_matches,payload_json,created_at) VALUES(1,'PREGAME','PREGAME',0,?,'now')",
+            (json.dumps(payload),),
+        )
+        conn.commit()
+
+        self.assertTrue(has_valid_pregame_snapshot(conn, 1))
+        self.assertEqual(delete_prediction_timeline(conn, 1), 1)
+        self.assertFalse(has_valid_pregame_snapshot(conn, 1))
+        conn.close()
+
     def test_round_progress_excludes_byes_and_champion_placeholder(self) -> None:
         details = [
             entry(1, "T", 1, "Round 1"), entry(1, "B", 2, "Round 1"),

@@ -16,11 +16,21 @@ LIVE_REFORECAST_VERSION = "checkpoint-event-form-double-dip-v2"
 def has_valid_pregame_snapshot(conn: sqlite3.Connection, event_id: int) -> bool:
     _init_schema(conn)
     snapshot = _load_snapshot(conn, event_id, "PREGAME")
-    return (
-        snapshot is not None
-        and _valid_frozen_roster(snapshot)
-        and not _structure_only_snapshot_needs_refresh(conn, snapshot)
+    # Frozen means immutable, including when the initial evidence was sparse.
+    # Data-quality concerns are surfaced on that artifact; only the explicit
+    # reset endpoint is allowed to remove and recreate it.
+    return snapshot is not None
+
+
+def delete_prediction_timeline(conn: sqlite3.Connection, event_id: int) -> int:
+    """Explicitly remove a forecast timeline, including its frozen pregame artifact."""
+    _init_schema(conn)
+    cursor = conn.execute(
+        "DELETE FROM bracket_prediction_snapshots WHERE event_id=?",
+        (int(event_id),),
     )
+    conn.commit()
+    return int(cursor.rowcount or 0)
 
 
 def bracket_roster_ready(bracket: dict[str, Any]) -> bool:
@@ -92,19 +102,6 @@ def bracket_prediction_timeline(
         ]
     })
     pregame = _load_snapshot(conn, event_id, "PREGAME")
-    if pregame is not None and (
-        not _valid_frozen_roster(pregame)
-        or _structure_only_snapshot_needs_refresh(conn, pregame)
-    ):
-        # Early versions admitted ACL's Team -1 unresolved destination as a
-        # competitor. Generated snapshots are disposable and must never remain
-        # authoritative once their frozen roster is known to be invalid.
-        conn.execute(
-            "DELETE FROM bracket_prediction_snapshots WHERE event_id=?",
-            (event_id,),
-        )
-        conn.commit()
-        pregame = None
     if pregame is None:
         result = simulate_bracket(conn, bracket, simulations=simulations, data_dir=data_dir)
         pregame = _save_snapshot(

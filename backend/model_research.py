@@ -65,7 +65,7 @@ def cached_model_research_inputs(
         ),
     }
     try:
-        discovery = discovery_status(conn)
+        discovery = discovery_status()
     except sqlite3.Error:
         discovery = {"status": "UNAVAILABLE", "phase": "UNAVAILABLE", "candidates": []}
     return {"historicalBacktest": backtest, "historicalTournamentReplay": replay, "automatedDiscovery": discovery}, learning

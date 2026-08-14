@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sqlite3
 import threading
 import time
@@ -27,6 +28,9 @@ from historical_archive_backtest import (
 
 
 DISCOVERY_VERSION = "automated-pattern-discovery-v1"
+DISCOVERY_DB_PATH = os.path.join(
+    os.environ.get("DATA_DIR", "data"), "research", "automated_discovery.db"
+)
 BASE_FEATURES = (
     "pprDelta", "fourBaggerDelta", "bagsInDelta", "adjustedPprDelta",
     "recentFormDelta", "roundLossRateDelta", "recentRoundLossDelta",
@@ -35,7 +39,10 @@ BASE_FEATURES = (
 MAX_LOCKED_CANDIDATES = 12
 
 
-def discovery_status(conn: sqlite3.Connection) -> dict[str, Any]:
+def discovery_status(conn: sqlite3.Connection | None = None) -> dict[str, Any]:
+    owns_connection = conn is None
+    if conn is None:
+        conn = _state_db()
     try:
         state = conn.execute(
             "SELECT * FROM automated_discovery_state WHERE state_id=1"
@@ -56,7 +63,7 @@ def discovery_status(conn: sqlite3.Connection) -> dict[str, Any]:
         ).fetchall()
     except sqlite3.Error:
         state, candidates = None, []
-    return {
+    result = {
         "version": DISCOVERY_VERSION,
         "status": str(state["status"] if state else "WAITING"),
         "phase": str(state["phase"] if state else "WAITING_FOR_FIRST_RUN"),
@@ -84,21 +91,28 @@ def discovery_status(conn: sqlite3.Connection) -> dict[str, Any]:
             "selectionPolicy": "GENERATE_ON_DEVELOPMENT_SELECT_ON_VALIDATION_SCORE_LOCKED_ON_HOLDOUT",
         },
     }
+    if owns_connection:
+        conn.close()
+    return result
 
 
 def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str, Any]:
-    _init_schema(conn)
+    state_conn = _state_db()
+    _init_schema(state_conn)
     signature = _ledger_signature(conn)
-    state = conn.execute("SELECT * FROM automated_discovery_state WHERE state_id=1").fetchone()
+    state = state_conn.execute("SELECT * FROM automated_discovery_state WHERE state_id=1").fetchone()
     if state and state["status"] == "COMPLETE" and state["ledger_signature"] == signature and not force:
-        return discovery_status(conn)
+        result = discovery_status(state_conn)
+        state_conn.close()
+        return result
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
-    _set_state(conn, status="RUNNING", phase="BUILDING_CUTOFF_SAFE_DATASET", run_id=run_id,
+    _set_state(state_conn, status="RUNNING", phase="BUILDING_CUTOFF_SAFE_DATASET", run_id=run_id,
                ledger_signature=signature, started_at=_now(), completed_at=None, last_error=None,
                examples_scanned=0, candidates_generated=0, candidates_validated=0,
                candidates_locked=0, candidates_holdout_scored=0, last_candidate=None)
     try:
+        conn.execute("PRAGMA query_only=ON")
         examples = _cutoff_safe_examples(conn, historical_matchups(conn))
         dates = sorted({str(row["eventDate"]) for row in examples})
         if len(dates) < 3:
@@ -109,10 +123,10 @@ def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str,
         development = [row for row in examples if row["eventDate"] < validation_start]
         validation = [row for row in examples if validation_start <= row["eventDate"] < holdout_start]
         holdout = [row for row in examples if row["eventDate"] >= holdout_start]
-        _set_state(conn, phase="GENERATING_CANDIDATES", examples_scanned=len(examples))
+        _set_state(state_conn, phase="GENERATING_CANDIDATES", examples_scanned=len(examples))
 
         definitions = _candidate_definitions(development)
-        _set_state(conn, candidates_generated=len(definitions), phase="VALIDATING_CANDIDATES")
+        _set_state(state_conn, candidates_generated=len(definitions), phase="VALIDATING_CANDIDATES")
         baseline_model = _fit_logistic(development, ("pprDelta",))
         baseline_validation = _predict(validation, baseline_model)
         baseline_holdout = _predict(holdout, baseline_model)
@@ -121,7 +135,7 @@ def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str,
 
         validated: list[dict[str, Any]] = []
         for index, definition in enumerate(definitions, start=1):
-            _set_state(conn, last_candidate=definition["name"], candidates_validated=index - 1)
+            _set_state(state_conn, last_candidate=definition["name"], candidates_validated=index - 1)
             transformed_development = _apply_definition(development, definition)
             transformed_validation = _apply_definition(validation, definition)
             feature_names = ("pprDelta", definition["key"])
@@ -130,11 +144,11 @@ def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str,
             metrics = _metrics(predictions, len(validation))
             score = _selection_score(metrics, baseline_validation_metrics)
             validated.append({"definition": definition, "model": model, "validation": metrics, "score": score})
-        _set_state(conn, candidates_validated=len(validated), phase="LOCKING_BEFORE_HOLDOUT")
+        _set_state(state_conn, candidates_validated=len(validated), phase="LOCKING_BEFORE_HOLDOUT")
 
         locked = sorted(validated, key=lambda row: row["score"], reverse=True)[:MAX_LOCKED_CANDIDATES]
-        _set_state(conn, candidates_locked=len(locked), phase="SCORING_UNTOUCHED_HOLDOUT")
-        conn.execute("DELETE FROM automated_discovery_candidates WHERE discovery_version=?", (DISCOVERY_VERSION,))
+        _set_state(state_conn, candidates_locked=len(locked), phase="SCORING_UNTOUCHED_HOLDOUT")
+        state_conn.execute("DELETE FROM automated_discovery_candidates WHERE discovery_version=?", (DISCOVERY_VERSION,))
         for index, row in enumerate(locked, start=1):
             definition = row["definition"]
             holdout_rows = _apply_definition(holdout, definition)
@@ -144,7 +158,7 @@ def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str,
             accuracy_delta = _num(metrics.get("accuracy")) - _num(baseline_holdout_metrics.get("accuracy"))
             brier_improvement = _num(baseline_holdout_metrics.get("brierScore")) - _num(metrics.get("brierScore"))
             promising = accuracy_delta > 0 and brier_improvement > 0
-            conn.execute(
+            state_conn.execute(
                 """
                 INSERT INTO automated_discovery_candidates(
                   discovery_version,candidate_key,name,family,status,definition_json,
@@ -158,13 +172,16 @@ def run_discovery(conn: sqlite3.Connection, *, force: bool = False) -> dict[str,
                  metrics.get("accuracy"), metrics.get("brierScore"), accuracy_delta,
                  brier_improvement, metrics.get("evaluatedMatchups"), json.dumps(paired), _now()),
             )
-            conn.commit()
-            _set_state(conn, candidates_holdout_scored=index, last_candidate=definition["name"])
-        _set_state(conn, status="COMPLETE", phase="COMPLETE", completed_at=_now(), last_candidate=None)
+            state_conn.commit()
+            _set_state(state_conn, candidates_holdout_scored=index, last_candidate=definition["name"])
+        _set_state(state_conn, status="COMPLETE", phase="COMPLETE", completed_at=_now(), last_candidate=None)
     except Exception as exc:
-        _set_state(conn, status="FAILED", phase="FAILED", last_error=str(exc), completed_at=_now())
+        _set_state(state_conn, status="FAILED", phase="FAILED", last_error=str(exc), completed_at=_now())
+        state_conn.close()
         raise
-    return discovery_status(conn)
+    result = discovery_status(state_conn)
+    state_conn.close()
+    return result
 
 
 def start_automated_discovery_worker(db_factory: Callable[[], Any], *, initial_delay: int = 90,
@@ -260,6 +277,16 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     """)
     conn.execute("INSERT OR IGNORE INTO automated_discovery_state(state_id) VALUES (1)")
     conn.commit()
+
+
+def _state_db() -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(DISCOVERY_DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DISCOVERY_DB_PATH, timeout=5.0)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
 
 
 def _now() -> str:

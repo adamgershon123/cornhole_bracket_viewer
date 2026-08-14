@@ -164,7 +164,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
           </div>
         </div>
         <div className="space-y-3">
-          {sortedPlayers.map((player: any, index: number) => <PlayerCard key={player.playerId} player={{...player, rank: index + 1}}/>) }
+          {sortedPlayers.map((player: any, index: number) => <PlayerCard key={player.playerId} player={{...player, rank: index + 1}} sortMode={playerSort}/>) }
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-xs leading-5 text-zinc-500">
@@ -234,12 +234,19 @@ function MvpCard({ title, icon, subject, player = false }: { title: string; icon
   </div>;
 }
 
-function PlayerCard({ player }: { player: any }) {
+function PlayerCard({ player, sortMode }: { player: any; sortMode: 'performance' | 'mvp' }) {
+  const showingMvp = sortMode === 'mvp';
+  const playerGrade = player.performanceGrade ?? player.overallScore;
+  const mvpScore = player.mvpScore ?? player.overallScore;
   return <details className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
     <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
       <div className="w-9 text-xl font-black text-cyan-300">#{player.rank}</div>
       <div className="min-w-0 flex-1"><div className="truncate text-lg font-black text-white">{player.playerName}</div><div className="text-xs text-zinc-500">{player.games} games · {player.rounds} rounds · {number(player.ppr, 2)} PPR · {signed(player.pprVsExpected)} vs expected</div></div>
-      <div className="text-right"><div className="text-2xl font-black text-amber-300">{number(player.performanceGrade ?? player.overallScore, 1)}</div><div className="text-xs font-black text-violet-300">{player.grade} player grade</div><div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">MVP {number(player.mvpScore ?? player.overallScore, 1)}</div></div>
+      <div className="text-right">
+        <div className={`text-2xl font-black ${showingMvp ? 'text-amber-300' : 'text-violet-300'}`}>{number(showingMvp ? mvpScore : playerGrade, 1)}</div>
+        <div className={`text-xs font-black ${showingMvp ? 'text-amber-200' : 'text-violet-200'}`}>{showingMvp ? 'MVP Score' : `${player.grade} Player Grade`}</div>
+        <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{showingMvp ? `Player Grade ${number(playerGrade, 1)} ${player.grade || ''}` : `MVP Score ${number(mvpScore, 1)}`}</div>
+      </div>
       <ChevronDown className="text-zinc-500" size={18}/>
     </summary>
     <div className="border-t border-white/10 p-4">

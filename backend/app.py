@@ -34,6 +34,7 @@ from lifecycle_runner import (
 from prediction_feedback import prediction_learning_report
 from prediction_performance import prediction_performance_report
 from model_research import cached_model_research_inputs, model_research_report
+from automated_pattern_discovery import discovery_status
 from game_state_reconstruction import reconstruct_game_states
 from live_win_probability import calculate_probability_series
 from live_probability_evaluation import evaluate_live_probability
@@ -2330,13 +2331,23 @@ def api_model_research():
     if cached is not None:
         return jsonify(cached)
 
-    # Only the first request after a process restart waits for the persisted
-    # snapshot. Deployment primes this before collection workers resume.
-    snapshot = _build_model_research_snapshot()
+    # Never make the first Research Lab view wait on the busy live ledger.
+    # Step 4 has an isolated status database, so it can be shown immediately
+    # while the broader saved evidence refreshes asynchronously.
     with _MODEL_RESEARCH_CACHE_LOCK:
-        _MODEL_RESEARCH_CACHE = snapshot
-        _MODEL_RESEARCH_CACHE_AT = time.monotonic()
-    return jsonify(snapshot)
+        if not _MODEL_RESEARCH_REFRESHING:
+            _MODEL_RESEARCH_REFRESHING = True
+            threading.Thread(
+                target=_refresh_model_research_snapshot,
+                name="model-research-initial-refresh",
+                daemon=True,
+            ).start()
+    immediate = model_research_report(
+        {"automatedDiscovery": discovery_status()},
+        {},
+        {"status": "REFRESHING"},
+    )
+    return jsonify(immediate)
 
 
 @app.route("/api/prediction-operations/live-validation")

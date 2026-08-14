@@ -39,6 +39,12 @@ class TournamentReportCardsTests(unittest.TestCase):
         self.assertEqual(len(result["players"]), 4)
         self.assertIn("performance", result["playerMvp"]["categoryScores"])
         self.assertEqual(result["gradingModelVersion"], "tournament-report-cards-v9-double-elimination-placement")
+        for team in result["teams"]:
+            self.assertEqual(team["teamGrade"], team["mvpScore"])
+            self.assertEqual(team["teamGrade"], team["overallScore"])
+            self.assertEqual(team["combinedPlayerGrade"], team["performanceGrade"])
+            self.assertEqual(team["grade"], _grade(team["teamGrade"]))
+        self.assertEqual(result["teamMvp"]["teamId"], result["teams"][0]["teamId"])
 
     def test_letter_grades_use_familiar_academic_thresholds(self):
         self.assertEqual(_grade(100), "A+")

@@ -109,20 +109,24 @@ def build_tournament_report_cards(
     for team_id, members in teams_by_id.items():
         if not team_id:
             continue
+        combined_player_grade = round(mean(float(member["performanceGrade"]) for member in members), 1)
+        team_grade = round(mean(float(member["mvpScore"]) for member in members), 1)
         teams.append({
             "teamId": team_id,
             "teamName": " / ".join(member["playerName"] for member in members),
             "players": [{"playerId": member["playerId"], "playerName": member["playerName"]} for member in members],
-            "overallScore": round(mean(float(member["performanceGrade"]) for member in members), 1),
-            "mvpScore": round(mean(float(member["mvpScore"]) for member in members), 1),
-            "performanceGrade": round(mean(float(member["performanceGrade"]) for member in members), 1),
+            "overallScore": team_grade,
+            "mvpScore": team_grade,
+            "teamGrade": team_grade,
+            "combinedPlayerGrade": combined_player_grade,
+            "performanceGrade": combined_player_grade,
             "depthScore": round(mean(float(member["depthScore"]) for member in members), 1),
             "sustainedEvidenceScore": round(mean(float(member["sustainedEvidenceScore"]) for member in members), 1),
             "expectationScore": round(mean(float(member["categoryScores"]["expectation"]) for member in members), 1),
             "performanceScore": round(mean(float(member["categoryScores"]["performance"]) for member in members), 1),
         })
-        teams[-1]["grade"] = _grade(float(teams[-1]["performanceGrade"]))
-    teams.sort(key=lambda row: (-row["mvpScore"], row["teamName"]))
+        teams[-1]["grade"] = _grade(float(teams[-1]["teamGrade"]))
+    teams.sort(key=lambda row: (-row["teamGrade"], row["teamName"]))
     for rank, team in enumerate(teams, 1):
         team["rank"] = rank
 
@@ -147,7 +151,7 @@ def build_tournament_report_cards(
             "mvpScore": {"performanceGrade": 0.75, "depth": 0.15, "sustainedEvidence": 0.10},
             "gameGradePriorRounds": GAME_GRADE_PRIOR_ROUNDS,
             "letterGradeScale": "academic-plus-minus-v1",
-            "note": "The academic letter grade comes only from individual performance. MVP score separately adds tournament depth and sustained evidence to rank the most valuable tournament resume. Winning and advancement never alter the player's performance grade.",
+            "note": "The academic Player Grade comes only from individual performance. Individual MVP Score separately adds tournament depth and sustained evidence. A team receives one Team Grade that combines its players' MVP resumes; Combined Player Grade remains available as the performance-only component.",
         },
     }
 
@@ -911,21 +915,34 @@ def apply_current_grade_labels(report: dict[str, Any]) -> dict[str, Any]:
     """Remap presentation labels without recalculating immutable numeric scores."""
     if not isinstance(report, dict):
         return report
-    for collection_key in ("players", "teams"):
-        for row in report.get(collection_key) or []:
-            if row.get("performanceGrade") is not None:
-                if row.get("mvpScore") is None and row.get("overallScore") is not None:
-                    row["mvpScore"] = round(float(row["overallScore"]), 1)
-                row["overallScore"] = round(float(row["performanceGrade"]), 1)
-                row["grade"] = _grade(float(row["performanceGrade"]))
-            elif row.get("overallScore") is not None:
-                row["grade"] = _grade(float(row["overallScore"]))
-            for card in row.get("matchReportCards") or []:
-                if card.get("overallScore") is not None:
-                    card["grade"] = _grade(float(card["overallScore"]))
+    for row in report.get("players") or []:
+        if row.get("performanceGrade") is not None:
+            if row.get("mvpScore") is None and row.get("overallScore") is not None:
+                row["mvpScore"] = round(float(row["overallScore"]), 1)
+            row["overallScore"] = round(float(row["performanceGrade"]), 1)
+            row["grade"] = _grade(float(row["performanceGrade"]))
+        elif row.get("overallScore") is not None:
+            row["grade"] = _grade(float(row["overallScore"]))
+        for card in row.get("matchReportCards") or []:
+            if card.get("overallScore") is not None:
+                card["grade"] = _grade(float(card["overallScore"]))
+    for row in report.get("teams") or []:
+        if row.get("performanceGrade") is not None:
+            row["combinedPlayerGrade"] = round(float(row["performanceGrade"]), 1)
+        team_grade = row.get("teamGrade", row.get("mvpScore", row.get("overallScore")))
+        if team_grade is not None:
+            row["teamGrade"] = row["mvpScore"] = row["overallScore"] = round(float(team_grade), 1)
+            row["grade"] = _grade(float(team_grade))
     for subject_key in ("playerMvp", "teamMvp"):
         subject = report.get(subject_key)
-        if isinstance(subject, dict) and subject.get("performanceGrade") is not None:
+        if subject_key == "teamMvp" and isinstance(subject, dict):
+            if subject.get("performanceGrade") is not None:
+                subject["combinedPlayerGrade"] = round(float(subject["performanceGrade"]), 1)
+            team_grade = subject.get("teamGrade", subject.get("mvpScore", subject.get("overallScore")))
+            if team_grade is not None:
+                subject["teamGrade"] = subject["mvpScore"] = subject["overallScore"] = round(float(team_grade), 1)
+                subject["grade"] = _grade(float(team_grade))
+        elif isinstance(subject, dict) and subject.get("performanceGrade") is not None:
             if subject.get("mvpScore") is None and subject.get("overallScore") is not None:
                 subject["mvpScore"] = round(float(subject["overallScore"]), 1)
             subject["overallScore"] = round(float(subject["performanceGrade"]), 1)

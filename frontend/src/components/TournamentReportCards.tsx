@@ -38,7 +38,6 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const [gameError, setGameError] = useState('');
   const [error, setError] = useState('');
   const [playerSort, setPlayerSort] = useState<'performance' | 'mvp'>('performance');
-  const [teamSort, setTeamSort] = useState<'performance' | 'mvp'>('mvp');
 
   useEffect(() => {
     setLoading(true);
@@ -86,8 +85,8 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     return rightScore - leftScore || String(left.playerName || '').localeCompare(String(right.playerName || ''));
   });
   const sortedTeams = [...(data?.teams || [])].sort((left: any, right: any) => {
-    const leftScore = teamSort === 'mvp' ? Number(left.mvpScore ?? left.overallScore ?? 0) : Number(left.performanceGrade ?? left.overallScore ?? 0);
-    const rightScore = teamSort === 'mvp' ? Number(right.mvpScore ?? right.overallScore ?? 0) : Number(right.performanceGrade ?? right.overallScore ?? 0);
+    const leftScore = Number(left.teamGrade ?? left.mvpScore ?? left.overallScore ?? 0);
+    const rightScore = Number(right.teamGrade ?? right.mvpScore ?? right.overallScore ?? 0);
     return rightScore - leftScore || String(left.teamName || '').localeCompare(String(right.teamName || ''));
   });
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
@@ -128,7 +127,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     {ready && <div className="space-y-5 p-5">
       <div className="grid gap-4 lg:grid-cols-2">
         <MvpCard title="Tournament MVP" icon={<Award size={22}/>} subject={data.playerMvp} player/>
-        {data.teamMvp && <MvpCard title="MVP Team" icon={<Trophy size={22}/>} subject={data.teamMvp}/>} 
+        {data.teamMvp && <MvpCard title="Top Graded Team" icon={<Trophy size={22}/>} subject={data.teamMvp}/>}
       </div>
       <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
         <div className="text-xs font-black uppercase tracking-[.18em] text-amber-300">Tournament superlatives</div>
@@ -143,14 +142,10 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       {sortedTeams.length > 0 && <div>
-        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-3">
           <div>
             <div className="text-xs font-black uppercase tracking-[.18em] text-amber-300">Final team report cards</div>
-            <div className="mt-1 text-xs font-semibold text-zinc-500">Every team, ranked by {teamSort === 'mvp' ? 'team MVP score' : 'combined player performance grade'}.</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/30 p-1" role="group" aria-label="Sort team report cards">
-            <button type="button" aria-pressed={teamSort === 'mvp'} onClick={() => setTeamSort('mvp')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${teamSort === 'mvp' ? 'bg-amber-300 text-black shadow-[0_0_18px_rgba(252,211,77,.22)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Team MVP</button>
-            <button type="button" aria-pressed={teamSort === 'performance'} onClick={() => setTeamSort('performance')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${teamSort === 'performance' ? 'bg-violet-300 text-black shadow-[0_0_18px_rgba(196,181,253,.25)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Team Grade</button>
+            <div className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-zinc-500">Every team receives one Team Grade combining both players' performance, sustained evidence, and tournament advancement. Combined Player Grade remains visible inside each card to explain the performance component.</div>
           </div>
         </div>
         <div className="space-y-3">
@@ -164,8 +159,8 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
             <div className="mt-1 text-xs font-semibold text-zinc-500">Ranked by {playerSort === 'performance' ? 'individual player grade' : 'tournament MVP score'}.</div>
           </div>
           <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/30 p-1" role="group" aria-label="Sort player report cards">
-            <button type="button" aria-pressed={playerSort === 'performance'} onClick={() => setPlayerSort('performance')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'performance' ? 'bg-violet-300 text-black shadow-[0_0_18px_rgba(196,181,253,.25)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Player Grade</button>
-            <button type="button" aria-pressed={playerSort === 'mvp'} onClick={() => setPlayerSort('mvp')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'mvp' ? 'bg-amber-300 text-black shadow-[0_0_18px_rgba(252,211,77,.22)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>MVP Score</button>
+            <button type="button" aria-pressed={playerSort === 'performance'} onClick={() => setPlayerSort('performance')} className={`min-h-11 rounded-lg border-2 px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'performance' ? 'border-violet-100 bg-violet-300 text-black shadow-[0_0_24px_rgba(196,181,253,.45)]' : 'border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>{playerSort === 'performance' ? '✓ ' : ''}Player Grade</button>
+            <button type="button" aria-pressed={playerSort === 'mvp'} onClick={() => setPlayerSort('mvp')} className={`min-h-11 rounded-lg border-2 px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'mvp' ? 'border-amber-100 bg-amber-300 text-black shadow-[0_0_24px_rgba(252,211,77,.45)]' : 'border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>{playerSort === 'mvp' ? '✓ ' : ''}MVP Score</button>
           </div>
         </div>
         <div className="space-y-3">
@@ -173,7 +168,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-xs leading-5 text-zinc-500">
-        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Letter grades use the familiar academic scale and measure individual play only. MVP score is separate: 75% player performance, 15% tournament depth and 10% sustained evidence. Winning and advancement do not change the player letter grade.
+        Generated {formatTime(data.generatedAt)} · {data.status === 'LIVE' ? 'Live tournament snapshot' : 'Final tournament report'} · Individual Player Grade measures play only; individual MVP Score also considers tournament depth and sustained evidence. Teams receive one Team Grade because team performance and advancement describe the same competitive result.
       </div>
     </div>}
   </section>;
@@ -188,16 +183,15 @@ function TeamCard({ team }: { team: any }) {
         <div className="mt-1 text-xs text-zinc-500">{(team.players || []).map((player: any) => `ACL #${player.playerId}`).join(' / ')}</div>
       </div>
       <div className="text-right">
-        <div className="text-2xl font-black text-amber-300">{number(team.mvpScore ?? team.overallScore, 1)}</div>
-        <div className="text-xs font-black text-amber-200">Team MVP</div>
-        <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Grade {number(team.performanceGrade ?? team.overallScore, 1)} {team.grade || ''}</div>
+        <div className="text-2xl font-black text-amber-300">{number(team.teamGrade ?? team.mvpScore ?? team.overallScore, 1)}</div>
+        <div className="text-xs font-black text-amber-200">{team.grade || ''} Team Grade</div>
       </div>
       <ChevronDown className="text-zinc-500" size={18}/>
     </summary>
     <div className="border-t border-white/10 p-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Metric label="Combined player grade" value={`${number(team.performanceGrade ?? team.overallScore, 1)} ${team.grade || ''}`}/>
-        <Metric label="Team MVP score" value={number(team.mvpScore ?? team.overallScore, 1)}/>
+        <Metric label="Team grade" value={`${number(team.teamGrade ?? team.mvpScore ?? team.overallScore, 1)} ${team.grade || ''}`}/>
+        <Metric label="Combined player grade" value={number(team.combinedPlayerGrade ?? team.performanceGrade, 1)}/>
         <Metric label="Tournament depth" value={number(team.depthScore, 1)}/>
         <Metric label="Sustained evidence" value={number(team.sustainedEvidenceScore, 1)}/>
       </div>
@@ -230,12 +224,13 @@ function SingleGameReport({ report }: { report: any }) {
 function MvpCard({ title, icon, subject, player = false }: { title: string; icon: any; subject: any; player?: boolean }) {
   if (!subject) return null;
   const name = player ? subject.playerName : subject.teamName;
+  const primaryScore = player ? subject.mvpScore ?? subject.overallScore : subject.teamGrade ?? subject.mvpScore ?? subject.overallScore;
   return <div className="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-300/10 to-violet-300/[.06] p-5">
     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-amber-300">{icon}{title}</div>
     <div className="mt-3 text-2xl font-black text-white">{name}</div>
-    <div className="mt-3 flex items-end gap-3"><div className="text-5xl font-black text-amber-300">{number(subject.mvpScore ?? subject.overallScore, 1)}</div></div>
-    <div className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">MVP score</div>
-    {subject.performanceGrade != null && <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-zinc-400"><span>Player grade {number(subject.performanceGrade, 1)} {subject.grade}</span><span>Depth {number(subject.depthScore, 1)}</span><span>Sustained evidence {number(subject.sustainedEvidenceScore, 1)}</span></div>}
+    <div className="mt-3 flex items-end gap-3"><div className="text-5xl font-black text-amber-300">{number(primaryScore, 1)}</div></div>
+    <div className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">{player ? 'MVP score' : `${subject.grade || ''} Team Grade`}</div>
+    {subject.performanceGrade != null && <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-zinc-400"><span>{player ? 'Player grade' : 'Combined player grade'} {number(player ? subject.performanceGrade : subject.combinedPlayerGrade ?? subject.performanceGrade, 1)} {player ? subject.grade : ''}</span><span>Depth {number(subject.depthScore, 1)}</span><span>Sustained evidence {number(subject.sustainedEvidenceScore, 1)}</span></div>}
   </div>;
 }
 

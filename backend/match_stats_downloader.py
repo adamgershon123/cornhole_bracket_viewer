@@ -104,7 +104,11 @@ def fetch_and_save_match_stats(
             continue
 
         cached = load_cached_match_stats(filepath)
-        headers = build_fanzone_headers(cached)
+        # A forced request represents an actively viewed/live game. Do not
+        # send the cached ETag in that case: ACL can return 304 for a payload
+        # captured before the first score even while the game is advancing,
+        # which leaves the UI permanently showing 0-0.
+        headers = build_fanzone_headers(None if force else cached)
         url = f"https://api.iplayacl.com/api/v1/match-stats/eventid/{event_id}/matchid/{match_id}/gameid/{game_id}"
 
         try:

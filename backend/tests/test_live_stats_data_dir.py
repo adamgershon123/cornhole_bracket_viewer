@@ -35,6 +35,27 @@ class LiveStatsDataDirectoryTests(unittest.TestCase):
             self.assertEqual(result["saved"], 1)
             self.assertFalse((Path.cwd() / "data" / saved_path.name).exists())
 
+    def test_forced_live_refresh_does_not_send_cached_etag(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            saved_path = Path(temp_dir) / "event_123_match_4_game_1_stats.json"
+            saved_path.write_text(json.dumps({
+                "matchStatus": 0,
+                "homeScore": 0,
+                "awayScore": 0,
+                "_aclEtag": "pregame-etag",
+            }), encoding="utf-8")
+            captured_headers = {}
+
+            def fetch(_url, headers):
+                captured_headers.update(headers)
+                return FakeResponse()
+
+            with patch("match_stats_downloader.fetch_match_stats_response", side_effect=fetch):
+                result = fetch_and_save_match_stats("123", [4], force=True, data_dir=temp_dir)
+
+            self.assertEqual(result["saved"], 1)
+            self.assertNotIn("if-none-match", captured_headers)
+
     def test_consolidation_reads_and_writes_same_shared_directory(self):
         payload = {
             "event_match_details": [

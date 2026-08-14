@@ -2960,33 +2960,22 @@ def api_swap_live(event_id: str):
         seen_matches.add(match_key)
         matches.append(safe_swap_match(row))
 
-    match_ids = [
-        int(match.get("matchId"))
-        for match in matches
-        if str(match.get("matchId") or "").isdigit()
-    ]
-    max_match_id = max(match_ids, default=0)
-    for match_id in range(1, max_match_id + 1):
-        if load_game_stats(event_id, str(match_id), 1):
-            continue
-        try:
-            maybe_fetch_match_stats(event_id, str(match_id), 1, force=False)
-        except Exception as e:
-            errors.append({"endpoint": "match-stats-backfill", "matchId": match_id, "message": str(e)})
-
+    # Refresh the games the user is watching before doing any historical
+    # catch-up. A long run of missing older files must never delay live scores.
     for match in matches:
         match_id = match.get("matchId")
         if not match_id:
             continue
         try:
             should_refresh_current = match.get("status") == "live" and refresh
-            maybe_fetch_match_stats(
-                event_id,
-                str(match_id),
-                1,
-                force=should_refresh_current,
-                refresh_completed=should_refresh_current,
-            )
+            if should_refresh_current:
+                maybe_fetch_match_stats(
+                    event_id,
+                    str(match_id),
+                    1,
+                    force=True,
+                    refresh_completed=True,
+                )
             stats = load_game_stats(event_id, str(match_id), 1)
             if not isinstance(stats, dict):
                 continue
@@ -2996,6 +2985,24 @@ def api_swap_live(event_id: str):
             match["awayScore"] = safe_stats.get("awayScore", match.get("awayScore"))
         except Exception as e:
             errors.append({"endpoint": "match-stats", "matchId": match_id, "message": str(e)})
+
+    match_ids = [
+        int(match.get("matchId"))
+        for match in matches
+        if str(match.get("matchId") or "").isdigit()
+    ]
+    max_match_id = max(match_ids, default=0)
+    backfill_budget = 2
+    for match_id in range(1, max_match_id + 1):
+        if backfill_budget <= 0:
+            break
+        if load_game_stats(event_id, str(match_id), 1):
+            continue
+        try:
+            maybe_fetch_match_stats(event_id, str(match_id), 1, force=False)
+            backfill_budget -= 1
+        except Exception as e:
+            errors.append({"endpoint": "match-stats-backfill", "matchId": match_id, "message": str(e)})
 
     player_totals: dict[int, dict[str, Any]] = defaultdict(empty_swap_player_totals)
     archived_completed: list[dict[str, Any]] = []

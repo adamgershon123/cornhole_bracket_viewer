@@ -23,6 +23,7 @@ class SwapLiveScoreTests(unittest.TestCase):
             "matchStatus": "In-Progress",
             "matchStatusID": 1,
             "matchStartTime": "2026-08-14 18:42:08",
+            "matchEndTime": "2026-08-14 18:42:08",
             "homeScore": 15,
             "awayScore": 9,
             "homeTeam": [],

@@ -38,6 +38,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const [gameError, setGameError] = useState('');
   const [error, setError] = useState('');
   const [playerSort, setPlayerSort] = useState<'performance' | 'mvp'>('performance');
+  const [teamSort, setTeamSort] = useState<'performance' | 'mvp'>('mvp');
 
   useEffect(() => {
     setLoading(true);
@@ -83,6 +84,11 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     const leftScore = playerSort === 'mvp' ? Number(left.mvpScore ?? left.overallScore ?? 0) : Number(left.performanceGrade ?? left.overallScore ?? 0);
     const rightScore = playerSort === 'mvp' ? Number(right.mvpScore ?? right.overallScore ?? 0) : Number(right.performanceGrade ?? right.overallScore ?? 0);
     return rightScore - leftScore || String(left.playerName || '').localeCompare(String(right.playerName || ''));
+  });
+  const sortedTeams = [...(data?.teams || [])].sort((left: any, right: any) => {
+    const leftScore = teamSort === 'mvp' ? Number(left.mvpScore ?? left.overallScore ?? 0) : Number(left.performanceGrade ?? left.overallScore ?? 0);
+    const rightScore = teamSort === 'mvp' ? Number(right.mvpScore ?? right.overallScore ?? 0) : Number(right.performanceGrade ?? right.overallScore ?? 0);
+    return rightScore - leftScore || String(left.teamName || '').localeCompare(String(right.teamName || ''));
   });
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-5">
@@ -136,6 +142,21 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
           </div>)}
         </div>
       </div>
+      {sortedTeams.length > 0 && <div>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[.18em] text-amber-300">Final team report cards</div>
+            <div className="mt-1 text-xs font-semibold text-zinc-500">Every team, ranked by {teamSort === 'mvp' ? 'team MVP score' : 'combined player performance grade'}.</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/30 p-1" role="group" aria-label="Sort team report cards">
+            <button type="button" aria-pressed={teamSort === 'mvp'} onClick={() => setTeamSort('mvp')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${teamSort === 'mvp' ? 'bg-amber-300 text-black shadow-[0_0_18px_rgba(252,211,77,.22)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Team MVP</button>
+            <button type="button" aria-pressed={teamSort === 'performance'} onClick={() => setTeamSort('performance')} className={`min-h-11 rounded-lg px-4 text-sm font-black transition active:translate-y-0.5 ${teamSort === 'performance' ? 'bg-violet-300 text-black shadow-[0_0_18px_rgba(196,181,253,.25)]' : 'border border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>Team Grade</button>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {sortedTeams.map((team: any, index: number) => <TeamCard key={team.teamId || team.teamName} team={{...team, rank: index + 1}}/>)}
+        </div>
+      </div>}
       <div>
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -156,6 +177,39 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       </div>
     </div>}
   </section>;
+}
+
+function TeamCard({ team }: { team: any }) {
+  return <details className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
+    <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+      <div className="w-9 text-xl font-black text-cyan-300">#{team.rank}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-lg font-black text-white">{team.teamName}</div>
+        <div className="mt-1 text-xs text-zinc-500">{(team.players || []).map((player: any) => `ACL #${player.playerId}`).join(' / ')}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-2xl font-black text-amber-300">{number(team.mvpScore ?? team.overallScore, 1)}</div>
+        <div className="text-xs font-black text-amber-200">Team MVP</div>
+        <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">Grade {number(team.performanceGrade ?? team.overallScore, 1)} {team.grade || ''}</div>
+      </div>
+      <ChevronDown className="text-zinc-500" size={18}/>
+    </summary>
+    <div className="border-t border-white/10 p-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Metric label="Combined player grade" value={`${number(team.performanceGrade ?? team.overallScore, 1)} ${team.grade || ''}`}/>
+        <Metric label="Team MVP score" value={number(team.mvpScore ?? team.overallScore, 1)}/>
+        <Metric label="Tournament depth" value={number(team.depthScore, 1)}/>
+        <Metric label="Sustained evidence" value={number(team.sustainedEvidenceScore, 1)}/>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Metric label="Combined vs expectation" value={number(team.expectationScore, 1)}/>
+        <Metric label="Combined performance" value={number(team.performanceScore, 1)}/>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(team.players || []).map((player: any) => <div key={player.playerId} className="rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-sm font-bold text-zinc-200">{player.playerName} <span className="text-xs text-zinc-500">ACL #{player.playerId}</span></div>)}
+      </div>
+    </div>
+  </details>;
 }
 
 function SingleGameReport({ report }: { report: any }) {

@@ -6,9 +6,11 @@ import os
 import shutil
 import sqlite3
 import tempfile
+import time
 import threading
 from collections import defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterable
 
 import requests
@@ -51,6 +53,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "data")
 PLATFORM_DIR = os.path.join(DATA_DIR, "season_platform")
 RAW_DIR = os.path.join(PLATFORM_DIR, "raw")
 DB_PATH = os.path.join(PLATFORM_DIR, "season_platform.db")
+LIVE_PRIORITY_DIR = os.path.join(DATA_DIR, "live_priority")
 
 AUTH_RETRY_STATUSES = {401, 403}
 
@@ -136,6 +139,22 @@ def payload_hash(payload: Any) -> str:
 def db() -> sqlite3.Connection:
     global _DB_SCHEMA_READY
     ensure_dirs()
+    # Live forecasts and live-game writes are user-facing and time-sensitive.
+    # Background workers yield before opening their next database transaction
+    # whenever a web process has reserved the SQLite writer lane.
+    if os.environ.get("PROCESS_ROLE", "web").strip().lower() == "background":
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            try:
+                active = [
+                    path for path in Path(LIVE_PRIORITY_DIR).glob("*.lock")
+                    if time.time() - path.stat().st_mtime < 300
+                ]
+            except OSError:
+                active = []
+            if not active:
+                break
+            time.sleep(0.5)
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout = 30000")

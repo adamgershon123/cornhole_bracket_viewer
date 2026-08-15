@@ -32,6 +32,7 @@ services:
       disable: true
     environment:
       DATA_DIR: /data
+      PROCESS_ROLE: background
     volumes:
       - ./cloud-data:/data
     depends_on:

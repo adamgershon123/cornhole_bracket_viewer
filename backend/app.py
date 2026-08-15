@@ -61,13 +61,11 @@ from prediction_weighting import prediction_weighting_policy
 from bracket_simulation import simulate_bracket
 from double_dip_analysis import championship_double_dip_profile, start_double_dip_history_worker
 from bracket_prediction_snapshots import (
-    bracket_player_ids,
     bracket_roster_ready,
     bracket_prediction_timeline,
     delete_prediction_timeline,
     has_valid_pregame_snapshot,
 )
-from player_history_queue import enqueue_players
 from bracket_templates import repository_bracket_templates, select_template
 from stage_a_features import build_matchup_features
 from baseline_predictions import score_matchup
@@ -226,7 +224,19 @@ def start_bracket_prediction_build(
 
     def worker() -> None:
         last_error: Exception | None = None
+        priority_dir = os.path.join(DATA_DIR, "live_priority")
+        priority_path = os.path.join(priority_dir, f"bracket-{event_id}-{build_id}.lock")
         try:
+            os.makedirs(priority_dir, exist_ok=True)
+            with open(priority_path, "w", encoding="utf-8") as marker:
+                marker.write(now)
+            update_status(
+                "RESERVING_DATABASE",
+                "Prioritizing this live forecast over background collection.",
+            )
+            # Allow already-running short background transactions to finish;
+            # subsequent background cycles see the marker and yield.
+            time.sleep(2)
             # Live forecasts are time-sensitive. Background archive/backfill
             # writers share this SQLite database and can temporarily hold its
             # single write lock. Keep this build alive through contention
@@ -234,31 +244,11 @@ def start_bracket_prediction_build(
             for attempt in range(1, 9):
                 try:
                     update_status(
-                        "PREPARING_PLAYER_HISTORY",
-                        "Preparing cutoff-safe player history.",
+                        "RUNNING_SIMULATIONS",
+                        f"Running {simulations:,} bracket simulations.",
                         attempt=attempt,
                     )
                     with season_platform_db() as conn:
-                        player_ids = bracket_player_ids(bracket)
-                        enqueue_players(
-                            conn,
-                            player_ids=player_ids,
-                            reason={
-                                "source": "bracket-roster",
-                                "eventId": str(event_id),
-                                "purpose": "frozen-bracket-prediction",
-                            },
-                            priority=0,
-                        )
-                        # End the queue write before simulation and snapshot
-                        # work. This minimizes how long the live build itself
-                        # owns SQLite's write lock.
-                        conn.commit()
-                        update_status(
-                            "RUNNING_SIMULATIONS",
-                            f"Running {simulations:,} bracket simulations.",
-                            attempt=attempt,
-                        )
                         bracket_prediction_timeline(
                             conn,
                             bracket,
@@ -307,6 +297,10 @@ def start_bracket_prediction_build(
                         "failedAt": datetime.now(timezone.utc).isoformat(),
                     })
         finally:
+            try:
+                os.remove(priority_path)
+            except FileNotFoundError:
+                pass
             with BRACKET_PREDICTION_BUILD_LOCK:
                 current = BRACKET_PREDICTION_BUILD_STATUS.get(event_id)
                 if current and current.get("buildId") == build_id:

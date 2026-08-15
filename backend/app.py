@@ -249,12 +249,17 @@ def start_bracket_prediction_build(
                         attempt=attempt,
                     )
                     with season_platform_db() as conn:
+                        # Reserve SQLite's single writer lane once. Snapshot
+                        # creation then remains atomic instead of releasing the
+                        # lock between checkpoints and losing it to refreshes.
+                        conn.execute("BEGIN IMMEDIATE")
                         bracket_prediction_timeline(
                             conn,
                             bracket,
                             simulations=simulations,
                             data_dir=DATA_DIR,
                         )
+                        conn.commit()
                     last_error = None
                     break
                 except sqlite3.OperationalError as exc:

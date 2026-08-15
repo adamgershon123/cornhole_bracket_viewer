@@ -184,6 +184,7 @@ def bracket_prediction_timeline(
         "finalStandings": bracket_final_standings(bracket, completed),
         "liveReforecastVersion": LIVE_REFORECAST_VERSION,
     })
+    conn.commit()
     return response
 
 
@@ -429,7 +430,6 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         )
         """
     )
-    conn.commit()
 
 
 def _load_snapshot(
@@ -471,7 +471,6 @@ def _save_snapshot(
             json.dumps(payload), created_at,
         ),
     )
-    conn.commit()
     return _load_snapshot(conn, event_id, state_key) or {
         "snapshotType": snapshot_type,
         "completedMatches": completed_matches,

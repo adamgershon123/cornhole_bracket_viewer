@@ -528,7 +528,11 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def completed_inning_rows(inning_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def completed_inning_rows(
+    inning_history: List[Dict[str, Any]],
+    current_round: Optional[int] = None,
+    match_is_live: bool = False,
+) -> List[Dict[str, Any]]:
     """Return only finished player innings from ACL's live round feed.
 
     ACL publishes placeholder rows for the round currently being played. Those rows
@@ -540,19 +544,26 @@ def completed_inning_rows(inning_history: List[Dict[str, Any]]) -> List[Dict[str
     for row in inning_history or []:
         if not isinstance(row, dict):
             continue
+        inning_no = int(row.get("inningno") or 0)
+        if match_is_live and current_round and inning_no >= current_round:
+            continue
         bags_recorded = sum(int(row.get(key) or 0) for key in ("bagsin", "bagson", "bagsoff"))
         if bags_recorded == 4:
             completed.append(row)
     return completed
 
 
-def completed_player_totals(inning_history: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def completed_player_totals(
+    inning_history: List[Dict[str, Any]],
+    current_round: Optional[int] = None,
+    match_is_live: bool = False,
+) -> Dict[str, Dict[str, Any]]:
     totals: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
         "rounds": 0, "points": 0, "opponentPoints": 0,
         "bagsIn": 0, "bagsOn": 0, "bagsOff": 0, "fourBaggers": 0,
     })
     by_round: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
-    for row in completed_inning_rows(inning_history):
+    for row in completed_inning_rows(inning_history, current_round, match_is_live):
         by_round[row.get("inningno")].append(row)
     for rows in by_round.values():
         for row in rows:
@@ -602,7 +613,11 @@ def safe_match_player_stat(row: Dict[str, Any], completed: Optional[Dict[str, An
 
 def safe_swap_match_stats(data: Dict[str, Any]) -> Dict[str, Any]:
     inning_history = data.get("event_match_inning_history", []) or []
-    completed_totals = completed_player_totals(inning_history) if inning_history else None
+    match_status = data.get("matchStatus")
+    status_desc = str(data.get("matchStatusDesc") or "").lower()
+    match_is_live = str(match_status) == "0" or "progress" in status_desc or status_desc == "live"
+    current_round = int(data.get("currentRound") or 0)
+    completed_totals = completed_player_totals(inning_history, current_round, match_is_live) if inning_history else None
     details = [
         safe_match_player_stat(row, completed_totals.get(str(row.get("playerid")), {}) if completed_totals is not None else None)
         for row in data.get("event_match_details", []) or []
@@ -1307,14 +1322,19 @@ def flatten_matches_by_game(matches):
     return flat
 
 
-def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def normalize_player_totals(
+    details: List[Dict[str, Any]],
+    inning_history: List[Dict[str, Any]],
+    current_round: Optional[int] = None,
+    match_is_live: bool = False,
+) -> List[Dict[str, Any]]:
     totals: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
         "id": None, "name": "", "teamId": None, "points": 0, "opponentPoints": 0,
         "rounds": 0, "bagsIn": 0, "bagsOn": 0, "bagsOff": 0, "fourBaggers": 0,
         "roundsWon": 0, "roundsLost": 0, "roundsTied": 0,
     })
 
-    canonical_totals = completed_player_totals(inning_history) if inning_history else None
+    canonical_totals = completed_player_totals(inning_history, current_round, match_is_live) if inning_history else None
     for p in details or []:
         pid = str(p.get("playerid"))
         item = totals[pid]
@@ -1333,7 +1353,7 @@ def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[
         item["fourBaggers"] += source.get("fourBaggers", 0) if source is not None else (p.get("totalfourbaggers", 0) or 0)
 
     inning_map: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
-    for inning in completed_inning_rows(inning_history):
+    for inning in completed_inning_rows(inning_history, current_round, match_is_live):
         inning_map[inning.get("inningno")].append(inning)
 
     for rows in inning_map.values():
@@ -1379,9 +1399,13 @@ def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[
 
     return sorted(out, key=lambda x: (x["ppr"], x["dpr"]), reverse=True)
 
-def normalize_rounds(inning_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def normalize_rounds(
+    inning_history: List[Dict[str, Any]],
+    current_round: Optional[int] = None,
+    match_is_live: bool = False,
+) -> List[Dict[str, Any]]:
     inning_map: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
-    for inning in completed_inning_rows(inning_history):
+    for inning in completed_inning_rows(inning_history, current_round, match_is_live):
         inning_map[inning.get("inningno")].append(inning)
     rounds = []
     cumulative: Dict[str, int] = defaultdict(int)
@@ -1448,14 +1472,17 @@ def normalize_match(
         game_away = (stats or {}).get("awayScore", g.get("scoreAway", bottom_score))
         inning_history = (stats or {}).get("event_match_inning_history", [])
         details = (stats or {}).get("event_match_details", [])
+        game_status_id = (stats or {}).get("matchStatus", g.get("matchStatusID", top.get("matchStatusID")))
+        game_current_round = int((stats or {}).get("currentRound", top.get("currentRound")) or 0)
+        game_is_live = str(game_status_id) == "0"
         games.append({
             "gameId": gid,
-            "statusId": (stats or {}).get("matchStatus", g.get("matchStatusID", top.get("matchStatusID"))),
+            "statusId": game_status_id,
             "status": (stats or {}).get("matchStatusDesc"),
             "currentRound": (stats or {}).get("currentRound", top.get("currentRound")),
             "score": {"top": game_home, "bottom": game_away},
-            "players": normalize_player_totals(details, inning_history),
-            "rounds": normalize_rounds(inning_history),
+            "players": normalize_player_totals(details, inning_history, game_current_round, game_is_live),
+            "rounds": normalize_rounds(inning_history, game_current_round, game_is_live),
             "coverageNotifications": stats_fetch_result.get("notifications", []),
         })
     status_id = top.get("matchStatusID")

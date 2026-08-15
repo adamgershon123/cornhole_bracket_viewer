@@ -54,6 +54,30 @@ class LiveIncompleteRoundTests(unittest.TestCase):
         self.assertEqual(by_id["10"]["ppr"], 4.0)
         self.assertEqual(len(normalize_rounds(history)), 2)
 
+    def test_current_round_is_provisional_even_after_all_bags_are_recorded(self):
+        history = [
+            inning(1, 10, 1, 8, 2, 2, 0),
+            inning(1, 20, 2, 6, 1, 3, 0),
+            inning(2, 10, 1, 0, 0, 4, 0),
+            inning(2, 20, 2, 0, 0, 4, 0),
+        ]
+        players = normalize_player_totals(self.details, history, current_round=2, match_is_live=True)
+        by_id = {player["id"]: player for player in players}
+
+        self.assertEqual(by_id["10"]["rounds"], 1)
+        self.assertEqual(by_id["10"]["ppr"], 8.0)
+        self.assertEqual(len(normalize_rounds(history, current_round=2, match_is_live=True)), 1)
+
+        result = safe_swap_match_stats({
+            "matchStatus": 0,
+            "currentRound": 2,
+            "event_match_details": self.details,
+            "event_match_inning_history": history,
+        })
+        safe_by_id = {str(player["playerId"]): player for player in result["players"]}
+        self.assertEqual(safe_by_id["10"]["rounds"], 1)
+        self.assertEqual(safe_by_id["10"]["ppr"], 8.0)
+
     def test_swap_live_stats_use_only_completed_innings(self):
         history = [
             inning(1, 10, 1, 8, 2, 2, 0),

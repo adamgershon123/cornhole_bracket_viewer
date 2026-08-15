@@ -88,13 +88,19 @@ def partnership_compatibility(
     placeholders = ",".join("?" for _ in ids)
     rows = [dict(row) for row in conn.execute(
         f"""
-        SELECT player_id, event_id, match_id, game_id, team_id, round_no,
-               event_date, gross_points, net_points, round_result
-        FROM player_rounds
-        WHERE player_id IN ({placeholders})
-          AND event_date>=? AND event_date<?
-          AND team_id IS NOT NULL
-        ORDER BY event_date, event_id, match_id, game_id, round_no
+        SELECT pr.player_id, pr.event_id, pr.match_id, pr.game_id, pr.team_id,
+               pr.round_no, pr.event_date, pr.gross_points, pr.net_points,
+               pr.round_result
+        FROM player_rounds pr
+        JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
+        WHERE pr.player_id IN ({placeholders})
+          AND pr.event_date>=? AND pr.event_date<?
+          AND pr.team_id IS NOT NULL
+          AND g.completed=1
+        ORDER BY pr.event_date, pr.event_id, pr.match_id, pr.game_id, pr.round_no
         """,
         [*ids, start.isoformat(), cutoff.isoformat()],
     ).fetchall()]
@@ -299,10 +305,16 @@ def _team_dynamics(
 def _player_rows(conn: sqlite3.Connection, player_id: int, cutoff: date) -> list[dict[str, Any]]:
     return [dict(row) for row in conn.execute(
         """
-        SELECT event_id, match_id, game_id, event_date, gross_points, net_points
-        FROM player_rounds
-        WHERE player_id=? AND event_date IS NOT NULL AND event_date<?
-        ORDER BY event_date, event_id, match_id, game_id, round_no
+        SELECT pr.event_id, pr.match_id, pr.game_id, pr.event_date,
+               pr.gross_points, pr.net_points
+        FROM player_rounds pr
+        JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
+        WHERE pr.player_id=? AND pr.event_date IS NOT NULL
+          AND pr.event_date<? AND g.completed=1
+        ORDER BY pr.event_date, pr.event_id, pr.match_id, pr.game_id, pr.round_no
         """,
         (player_id, cutoff.isoformat()),
     ).fetchall()]
@@ -331,8 +343,13 @@ def _window_summary(rows: list[dict[str, Any]], start: date | None, cutoff: date
 def _population_ppr(conn: sqlite3.Connection, cutoff: date, start: date) -> float:
     row = conn.execute(
         """
-        SELECT AVG(gross_points) FROM player_rounds
-        WHERE event_date>=? AND event_date<?
+        SELECT AVG(pr.gross_points)
+        FROM player_rounds pr
+        JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
+        WHERE pr.event_date>=? AND pr.event_date<? AND g.completed=1
         """,
         (start.isoformat(), cutoff.isoformat()),
     ).fetchone()

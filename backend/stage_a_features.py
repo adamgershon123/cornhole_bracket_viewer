@@ -43,23 +43,28 @@ def _history_rows(
     window_days: int | None,
 ) -> list[dict[str, Any]]:
     clauses = [
-        "player_id=?",
-        "event_date IS NOT NULL",
-        "event_date < ?",
+        "pr.player_id=?",
+        "pr.event_date IS NOT NULL",
+        "pr.event_date < ?",
+        "g.completed=1",
     ]
     params: list[Any] = [int(player_id), cutoff_date]
     if window_days is not None:
         if window_days <= 0:
             raise ValueError("window_days must be positive")
         start = date.fromisoformat(cutoff_date) - timedelta(days=window_days)
-        clauses.append("event_date >= ?")
+        clauses.append("pr.event_date >= ?")
         params.append(start.isoformat())
     cursor = conn.execute(
         f"""
-        SELECT *
-        FROM player_rounds
+        SELECT pr.*
+        FROM player_rounds pr
+        JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
         WHERE {' AND '.join(clauses)}
-        ORDER BY event_date, event_id, match_id, game_id, round_no
+        ORDER BY pr.event_date, pr.event_id, pr.match_id, pr.game_id, pr.round_no
         """,
         params,
     )
@@ -130,7 +135,7 @@ def _expected_games(
         JOIN games g
           ON g.event_id=tm.event_id
          AND (g.home_team_id=tm.team_id OR g.away_team_id=tm.team_id)
-        WHERE {' AND '.join(clauses)}
+        WHERE {' AND '.join(clauses)} AND g.completed=1
         """,
         params,
     ).fetchall()

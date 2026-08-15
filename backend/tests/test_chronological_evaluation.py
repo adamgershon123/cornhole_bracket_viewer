@@ -153,6 +153,18 @@ class ChronologicalEvaluationTests(unittest.TestCase):
         self.assertEqual(targets[0]["sideBPlayerIds"], [20])
         self.assertEqual(targets[0]["sideAWon"], 1)
 
+    def test_incomplete_game_is_not_an_evaluation_target(self) -> None:
+        self.add_target(player_a=10, player_b=20)
+        self.conn.execute(
+            "UPDATE games SET completed=0 WHERE event_id=2 AND match_id='1'"
+        )
+        targets = historical_matchups(
+            self.conn,
+            start_date="2026-02-01",
+            end_date="2026-02-01",
+        )
+        self.assertEqual(targets, [])
+
     def test_ppr_benchmark_uses_only_prior_event_history(self) -> None:
         self.add_prior_history()
         self.add_target()

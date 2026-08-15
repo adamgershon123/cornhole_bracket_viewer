@@ -3,8 +3,15 @@ from __future__ import annotations
 import glob
 import json
 import os
+import threading
+import time
 from collections import Counter, defaultdict
 from typing import Any
+
+
+_REPOSITORY_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_REPOSITORY_CACHE_LOCK = threading.Lock()
+_REPOSITORY_CACHE_SECONDS = 300
 
 
 def infer_bracket_layout(payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -85,6 +92,15 @@ def repository_bracket_templates(
     minimum_consistency: float = 0.9,
     exclude_event_id: int | None = None,
 ) -> dict[str, Any]:
+    cache_key = (
+        os.path.abspath(data_dir), minimum_events, minimum_consistency,
+        int(exclude_event_id) if exclude_event_id is not None else None,
+    )
+    now = time.monotonic()
+    with _REPOSITORY_CACHE_LOCK:
+        cached = _REPOSITORY_CACHE.get(cache_key)
+        if cached and now - cached[0] < _REPOSITORY_CACHE_SECONDS:
+            return cached[1]
     layouts = []
     for path in glob.glob(os.path.join(data_dir, "event_*.json")):
         try:
@@ -167,7 +183,7 @@ def repository_bracket_templates(
                 else "INSUFFICIENT_REPLICATION"
             ),
         }
-    return {
+    result = {
         "status": "COMPLETE",
         "sourceLayouts": len(layouts),
         "templateCount": len(templates),
@@ -179,6 +195,9 @@ def repository_bracket_templates(
         "minimumConsistency": minimum_consistency,
         "templates": templates,
     }
+    with _REPOSITORY_CACHE_LOCK:
+        _REPOSITORY_CACHE[cache_key] = (time.monotonic(), result)
+    return result
 
 
 def select_template(

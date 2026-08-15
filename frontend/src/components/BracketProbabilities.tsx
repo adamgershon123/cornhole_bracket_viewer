@@ -14,7 +14,9 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
   useEffect(() => {
     setData(undefined);
     setError('');
-    fetchBracketProbabilities(eventId, 10000, true)
+    // Reopening the tab should read the saved forecast first. Live polling
+    // below is the only path that asks ACL for newer bracket results.
+    fetchBracketProbabilities(eventId, 10000, false)
       .then(result => {
         setData(result);
         setError('');

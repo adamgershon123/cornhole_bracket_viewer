@@ -19,7 +19,17 @@ class PerformanceProjectionTests(unittest.TestCase):
                 gross_points REAL, net_points REAL, round_result TEXT
             )
         """)
+        self.conn.execute("""
+            CREATE TABLE games (
+                event_id INTEGER, match_id TEXT, game_id INTEGER,
+                completed INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(event_id, match_id, game_id)
+            )
+        """)
         for event_id, event_date in ((1, "2025-09-10"), (2, "2025-10-10")):
+            self.conn.execute(
+                "INSERT INTO games VALUES (?, '1', 1, 1)", (event_id,)
+            )
             for round_no in range(1, 21):
                 for player_id, gross in ((10, 8), (20, 7)):
                     self.conn.execute(
@@ -61,6 +71,18 @@ class PerformanceProjectionTests(unittest.TestCase):
             dynamics["carryBurden"],
             max(dynamics["requiredCarryPpr"] - dynamics["strongerExpectedPpr"], 0),
         )
+
+    def test_incomplete_game_rounds_do_not_affect_projection_history(self):
+        self.conn.execute("INSERT INTO games VALUES (3, '1', 1, 0)")
+        self.conn.execute(
+            "INSERT INTO player_rounds VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (10, 3, "1", 1, "A", 1, "2025-10-20", 0, -12, "L"),
+        )
+        result = rolling_ppr_profile(
+            self.conn, 10, cutoff_at="2025-11-01T00:00:00+00:00"
+        )
+        self.assertEqual(result["windows"]["season"]["rounds"], 40)
+        self.assertEqual(result["windows"]["season"]["ppr"], 8)
 
 
 if __name__ == "__main__":

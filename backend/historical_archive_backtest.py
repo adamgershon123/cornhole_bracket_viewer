@@ -245,19 +245,23 @@ def _cutoff_safe_examples(
 ) -> list[dict[str, Any]]:
     daily_rows = conn.execute(
         """
-        SELECT player_id, event_date, COALESCE(location_id, '') AS location_id,
-               COALESCE(match_type, 'UNKNOWN') AS match_type,
+        SELECT pr.player_id, pr.event_date, COALESCE(pr.location_id, '') AS location_id,
+               COALESCE(pr.match_type, 'UNKNOWN') AS match_type,
                COUNT(*) AS rounds,
-               SUM(COALESCE(gross_points, 0)) AS gross,
-               SUM(COALESCE(four_bagger, 0)) AS four_baggers,
-               SUM(COALESCE(bags_in, 0)) AS bags_in,
-               SUM(COALESCE(bags_on, 0)) AS bags_on,
-               SUM(COALESCE(bags_off, 0)) AS bags_off,
-               SUM(CASE WHEN UPPER(COALESCE(round_result, ''))='L' THEN 1 ELSE 0 END) AS losses
-        FROM player_rounds
-        WHERE event_date IS NOT NULL
-        GROUP BY player_id, event_date, COALESCE(location_id, ''), COALESCE(match_type, 'UNKNOWN')
-        ORDER BY event_date, player_id
+               SUM(COALESCE(pr.gross_points, 0)) AS gross,
+               SUM(COALESCE(pr.four_bagger, 0)) AS four_baggers,
+               SUM(COALESCE(pr.bags_in, 0)) AS bags_in,
+               SUM(COALESCE(pr.bags_on, 0)) AS bags_on,
+               SUM(COALESCE(pr.bags_off, 0)) AS bags_off,
+               SUM(CASE WHEN UPPER(COALESCE(pr.round_result, ''))='L' THEN 1 ELSE 0 END) AS losses
+        FROM player_rounds pr
+        JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
+        WHERE pr.event_date IS NOT NULL AND g.completed=1
+        GROUP BY pr.player_id, pr.event_date, COALESCE(pr.location_id, ''), COALESCE(pr.match_type, 'UNKNOWN')
+        ORDER BY pr.event_date, pr.player_id
         """
     ).fetchall()
     additions: dict[str, list[tuple[int, tuple[int, ...], str, str]]] = defaultdict(list)

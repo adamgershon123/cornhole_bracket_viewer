@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 import requests
 from filelock import FileLock
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from consolidate_tournament_stats import consolidate_tournament_stats
@@ -113,6 +113,35 @@ app = Flask(__name__, static_folder="../frontend/dist", static_url_path="/__fron
 CORS(app)
 
 DATA_DIR = os.environ.get("DATA_DIR", "data")
+
+
+@app.before_request
+def prioritize_interactive_analytics() -> None:
+    """Make user-facing analytics yield the SQLite writer lane from workers."""
+    path = request.path
+    if not any(fragment in path for fragment in (
+        "/bracket-probabilities", "/report-cards", "/tournament-stats",
+    )):
+        return
+    priority_dir = os.path.join(DATA_DIR, "live_priority")
+    os.makedirs(priority_dir, exist_ok=True)
+    marker_path = os.path.join(priority_dir, f"web-{os.getpid()}-{threading.get_ident()}-{uuid.uuid4().hex}.lock")
+    try:
+        with open(marker_path, "w", encoding="utf-8") as marker:
+            marker.write(datetime.now(timezone.utc).isoformat())
+        g.analytics_priority_marker = marker_path
+    except OSError:
+        pass
+
+
+@app.teardown_request
+def release_interactive_analytics_priority(_: BaseException | None) -> None:
+    marker_path = getattr(g, "analytics_priority_marker", None)
+    if marker_path:
+        try:
+            os.remove(marker_path)
+        except OSError:
+            pass
 os.makedirs(DATA_DIR, exist_ok=True)
 
 _MODEL_RESEARCH_CACHE: dict[str, Any] | None = None

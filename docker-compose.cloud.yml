@@ -2,7 +2,7 @@ services:
   web:
     build: .
     restart: unless-stopped
-    command: ["gunicorn", "--bind", "0.0.0.0:5173", "--workers", "1", "--threads", "8", "--timeout", "120", "--access-logfile", "-", "app:app"]
+    command: ["gunicorn", "--bind", "0.0.0.0:5173", "--workers", "1", "--threads", "8", "--timeout", "120", "--access-logfile", "-", "--access-logformat", "%(h)s %(r)s %(s)s %(b)s %(L)ssec", "app:app"]
     environment:
       DATA_DIR: /data
       PORT: 5173
@@ -28,6 +28,10 @@ services:
     restart: unless-stopped
     command: ["nice", "-n", "10", "python", "cloud_worker.py"]
     cpu_shares: 128
+    # Compose's deploy limit was not applied to the ordinary (non-Swarm)
+    # container. This runtime limit keeps archival research from saturating
+    # every core needed by predictions and grading.
+    cpus: "0.75"
     healthcheck:
       disable: true
     environment:

@@ -528,12 +528,59 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def safe_match_player_stat(row: Dict[str, Any]) -> Dict[str, Any]:
+def completed_inning_rows(inning_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Return only finished player innings from ACL's live round feed.
+
+    ACL publishes placeholder rows for the round currently being played. Those rows
+    contain zero bags and must remain match state, not become statistical evidence.
+    A finished cornhole inning always accounts for all four thrown bags, including a
+    completed 0-0 wash.
+    """
+    completed = []
+    for row in inning_history or []:
+        if not isinstance(row, dict):
+            continue
+        bags_recorded = sum(int(row.get(key) or 0) for key in ("bagsin", "bagson", "bagsoff"))
+        if bags_recorded == 4:
+            completed.append(row)
+    return completed
+
+
+def completed_player_totals(inning_history: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    totals: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
+        "rounds": 0, "points": 0, "opponentPoints": 0,
+        "bagsIn": 0, "bagsOn": 0, "bagsOff": 0, "fourBaggers": 0,
+    })
+    by_round: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
+    for row in completed_inning_rows(inning_history):
+        by_round[row.get("inningno")].append(row)
+    for rows in by_round.values():
+        for row in rows:
+            player_id = str(row.get("playerid"))
+            item = totals[player_id]
+            points = int(row.get("totalpoints") or 0)
+            opponent = next((candidate for candidate in rows if candidate is not row), None)
+            item["rounds"] += 1
+            item["points"] += points
+            item["opponentPoints"] += int((opponent or {}).get("totalpoints") or 0)
+            item["bagsIn"] += int(row.get("bagsin") or 0)
+            item["bagsOn"] += int(row.get("bagson") or 0)
+            item["bagsOff"] += int(row.get("bagsoff") or 0)
+            item["fourBaggers"] += int(row.get("bagsin") or 0) == 4
+    return totals
+
+
+def safe_match_player_stat(row: Dict[str, Any], completed: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     first = row.get("playerfirstname") or ""
     last = row.get("playerlastname") or ""
-    rounds = int(row.get("rounds") or row.get("playedinnings") or 0)
-    points = int(row.get("totalpts") or 0)
-    opponent_points = int(row.get("opponentpts") or 0)
+    rounds = int((completed or {}).get("rounds") if completed is not None else (row.get("rounds") or row.get("playedinnings") or 0))
+    points = int((completed or {}).get("points") if completed is not None else (row.get("totalpts") or 0))
+    opponent_points = int((completed or {}).get("opponentPoints") if completed is not None else (row.get("opponentpts") or 0))
+    bags_in = int((completed or {}).get("bagsIn") if completed is not None else (row.get("totalbagsin") or 0))
+    bags_on = int((completed or {}).get("bagsOn") if completed is not None else (row.get("totalbagson") or 0))
+    bags_off = int((completed or {}).get("bagsOff") if completed is not None else (row.get("totalbagsoff") or 0))
+    four_baggers = int((completed or {}).get("fourBaggers") if completed is not None else (row.get("totalfourbaggers") or 0))
+    bags_thrown = bags_in + bags_on + bags_off
     return {
         "playerId": row.get("playerid"),
         "teamId": row.get("teamid"),
@@ -542,20 +589,22 @@ def safe_match_player_stat(row: Dict[str, Any]) -> Dict[str, Any]:
         "rounds": rounds,
         "points": points,
         "ppr": round(points / rounds, 2) if rounds else row.get("ptsperrnd"),
-        "oppPpr": row.get("opponentptsperrnd"),
-        "dpr": row.get("diffperrnd"),
-        "fourBaggers": int(row.get("totalfourbaggers") or 0),
-        "fourBaggerPct": row.get("fourbaggerpct"),
-        "bagsInPct": row.get("bagsinpct"),
-        "bagsOnPct": row.get("bagsonpct"),
-        "bagsOffPct": row.get("bagsoffpct"),
-        "bagsThrown": int(row.get("totalbagsthrown") or 0),
+        "oppPpr": round(opponent_points / rounds, 2) if rounds else None,
+        "dpr": round((points - opponent_points) / rounds, 2) if rounds else None,
+        "fourBaggers": four_baggers,
+        "fourBaggerPct": round(four_baggers * 100 / rounds, 1) if rounds else 0,
+        "bagsInPct": round(bags_in * 100 / bags_thrown, 1) if bags_thrown else 0,
+        "bagsOnPct": round(bags_on * 100 / bags_thrown, 1) if bags_thrown else 0,
+        "bagsOffPct": round(bags_off * 100 / bags_thrown, 1) if bags_thrown else 0,
+        "bagsThrown": bags_thrown,
     }
 
 
 def safe_swap_match_stats(data: Dict[str, Any]) -> Dict[str, Any]:
+    inning_history = data.get("event_match_inning_history", []) or []
+    completed_totals = completed_player_totals(inning_history) if inning_history else None
     details = [
-        safe_match_player_stat(row)
+        safe_match_player_stat(row, completed_totals.get(str(row.get("playerid")), {}) if completed_totals is not None else None)
         for row in data.get("event_match_details", []) or []
         if isinstance(row, dict)
     ]
@@ -1265,6 +1314,7 @@ def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[
         "roundsWon": 0, "roundsLost": 0, "roundsTied": 0,
     })
 
+    canonical_totals = completed_player_totals(inning_history) if inning_history else None
     for p in details or []:
         pid = str(p.get("playerid"))
         item = totals[pid]
@@ -1273,16 +1323,17 @@ def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[
         first = p.get("playerfirstname", "")
         last = p.get("playerlastname", "")
         item["name"] = f"{first} {last[:1]}.".strip()
-        item["points"] += p.get("totalpts", 0) or 0
-        item["opponentPoints"] += p.get("opponentpts", 0) or 0
-        item["rounds"] += p.get("rounds", 0) or 0
-        item["bagsIn"] += p.get("totalbagsin", 0) or 0
-        item["bagsOn"] += p.get("totalbagson", 0) or 0
-        item["bagsOff"] += p.get("totalbagsoff", 0) or 0
-        item["fourBaggers"] += p.get("totalfourbaggers", 0) or 0
+        source = canonical_totals.get(pid, {}) if canonical_totals is not None else None
+        item["points"] += source.get("points", 0) if source is not None else (p.get("totalpts", 0) or 0)
+        item["opponentPoints"] += source.get("opponentPoints", 0) if source is not None else (p.get("opponentpts", 0) or 0)
+        item["rounds"] += source.get("rounds", 0) if source is not None else (p.get("rounds", 0) or 0)
+        item["bagsIn"] += source.get("bagsIn", 0) if source is not None else (p.get("totalbagsin", 0) or 0)
+        item["bagsOn"] += source.get("bagsOn", 0) if source is not None else (p.get("totalbagson", 0) or 0)
+        item["bagsOff"] += source.get("bagsOff", 0) if source is not None else (p.get("totalbagsoff", 0) or 0)
+        item["fourBaggers"] += source.get("fourBaggers", 0) if source is not None else (p.get("totalfourbaggers", 0) or 0)
 
     inning_map: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
-    for inning in inning_history or []:
+    for inning in completed_inning_rows(inning_history):
         inning_map[inning.get("inningno")].append(inning)
 
     for rows in inning_map.values():
@@ -1330,7 +1381,7 @@ def normalize_player_totals(details: List[Dict[str, Any]], inning_history: List[
 
 def normalize_rounds(inning_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     inning_map: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
-    for inning in inning_history or []:
+    for inning in completed_inning_rows(inning_history):
         inning_map[inning.get("inningno")].append(inning)
     rounds = []
     cumulative: Dict[str, int] = defaultdict(int)

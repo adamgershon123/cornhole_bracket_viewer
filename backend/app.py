@@ -11,6 +11,7 @@ import sqlite3
 import tempfile
 import time
 import threading
+import uuid
 from pathlib import Path
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
@@ -125,9 +126,10 @@ SEASON_GATHER_PROGRESS: dict[str, dict[str, Any]] = {}
 SEASON_GATHER_RESULTS: dict[str, dict[str, Any]] = {}
 SEASON_GATHER_LOCK = threading.Lock()
 PREDICTION_LIFECYCLE_LOCK = threading.Lock()
-BRACKET_PREDICTION_BUILD_LOCK = threading.Lock()
+BRACKET_PREDICTION_BUILD_LOCK = threading.RLock()
 BRACKET_PREDICTION_BUILDS: set[int] = set()
 BRACKET_PREDICTION_BUILD_RESPONSES: dict[int, dict[str, Any]] = {}
+BRACKET_PREDICTION_BUILD_STATUS: dict[int, dict[str, Any]] = {}
 
 
 @app.route("/api/health")
@@ -192,10 +194,35 @@ def start_bracket_prediction_build(
     bracket: dict[str, Any],
     simulations: int,
 ) -> None:
+    build_id = uuid.uuid4().hex
+    now = datetime.now(timezone.utc).isoformat()
     with BRACKET_PREDICTION_BUILD_LOCK:
         if event_id in BRACKET_PREDICTION_BUILDS:
             return
         BRACKET_PREDICTION_BUILDS.add(event_id)
+        BRACKET_PREDICTION_BUILD_STATUS[event_id] = {
+            "buildId": build_id,
+            "state": "BUILDING",
+            "stage": "QUEUED",
+            "startedAt": now,
+            "updatedAt": now,
+            "attempt": 0,
+            "maxAttempts": 8,
+            "message": "Build queued.",
+        }
+
+    def update_status(stage: str, message: str, **extra: Any) -> None:
+        with BRACKET_PREDICTION_BUILD_LOCK:
+            current = BRACKET_PREDICTION_BUILD_STATUS.get(event_id)
+            if not current or current.get("buildId") != build_id:
+                return
+            current.update({
+                "state": "BUILDING",
+                "stage": stage,
+                "message": message,
+                "updatedAt": datetime.now(timezone.utc).isoformat(),
+                **extra,
+            })
 
     def worker() -> None:
         last_error: Exception | None = None
@@ -206,6 +233,11 @@ def start_bracket_prediction_build(
             # instead of dropping it and making every UI poll start over.
             for attempt in range(1, 9):
                 try:
+                    update_status(
+                        "PREPARING_PLAYER_HISTORY",
+                        "Preparing cutoff-safe player history.",
+                        attempt=attempt,
+                    )
                     with season_platform_db() as conn:
                         player_ids = bracket_player_ids(bracket)
                         enqueue_players(
@@ -222,6 +254,11 @@ def start_bracket_prediction_build(
                         # work. This minimizes how long the live build itself
                         # owns SQLite's write lock.
                         conn.commit()
+                        update_status(
+                            "RUNNING_SIMULATIONS",
+                            f"Running {simulations:,} bracket simulations.",
+                            attempt=attempt,
+                        )
                         bracket_prediction_timeline(
                             conn,
                             bracket,
@@ -235,6 +272,11 @@ def start_bracket_prediction_build(
                     if "locked" not in str(exc).lower() or attempt >= 8:
                         raise
                     delay = min(2 * attempt, 10)
+                    update_status(
+                        "WAITING_FOR_DATABASE",
+                        f"Database is busy; retrying in {delay} seconds.",
+                        attempt=attempt,
+                    )
                     print(
                         f"Bracket prediction {event_id} waiting for database "
                         f"lock (attempt {attempt}/8; retry in {delay}s)"
@@ -242,12 +284,34 @@ def start_bracket_prediction_build(
                     time.sleep(delay)
             if last_error is not None:
                 raise last_error
+            with BRACKET_PREDICTION_BUILD_LOCK:
+                current = BRACKET_PREDICTION_BUILD_STATUS.get(event_id)
+                if current and current.get("buildId") == build_id:
+                    current.update({
+                        "state": "COMPLETE",
+                        "stage": "COMPLETE",
+                        "message": "Frozen pregame prediction created.",
+                        "updatedAt": datetime.now(timezone.utc).isoformat(),
+                        "completedAt": datetime.now(timezone.utc).isoformat(),
+                    })
         except Exception as exc:
             print(f"Bracket prediction initialization failed for {event_id}: {exc}")
+            with BRACKET_PREDICTION_BUILD_LOCK:
+                current = BRACKET_PREDICTION_BUILD_STATUS.get(event_id)
+                if current and current.get("buildId") == build_id:
+                    current.update({
+                        "state": "FAILED",
+                        "stage": "FAILED",
+                        "message": str(exc),
+                        "updatedAt": datetime.now(timezone.utc).isoformat(),
+                        "failedAt": datetime.now(timezone.utc).isoformat(),
+                    })
         finally:
             with BRACKET_PREDICTION_BUILD_LOCK:
-                BRACKET_PREDICTION_BUILDS.discard(event_id)
-                BRACKET_PREDICTION_BUILD_RESPONSES.pop(event_id, None)
+                current = BRACKET_PREDICTION_BUILD_STATUS.get(event_id)
+                if current and current.get("buildId") == build_id:
+                    BRACKET_PREDICTION_BUILDS.discard(event_id)
+                    BRACKET_PREDICTION_BUILD_RESPONSES.pop(event_id, None)
 
     threading.Thread(
         target=worker,
@@ -258,6 +322,16 @@ def start_bracket_prediction_build(
 
 def bracket_prediction_pending(event_id: int, data: dict[str, Any]) -> Response:
     event_info = data.get("eventInfo") or {}
+    with BRACKET_PREDICTION_BUILD_LOCK:
+        build_status = dict(BRACKET_PREDICTION_BUILD_STATUS.get(event_id) or {})
+    if build_status.get("state") == "BUILDING" and build_status.get("updatedAt"):
+        try:
+            updated_at = datetime.fromisoformat(str(build_status["updatedAt"]).replace("Z", "+00:00"))
+            idle_seconds = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds()))
+            build_status["idleSeconds"] = idle_seconds
+            build_status["stale"] = idle_seconds >= 180
+        except ValueError:
+            pass
     return jsonify({
         "status": "PREGAME_PENDING",
         "eventId": event_id,
@@ -266,7 +340,8 @@ def bracket_prediction_pending(event_id: int, data: dict[str, Any]) -> Response:
             or event_info.get("leagueName")
             or event_info.get("leaguename")
         ),
-        "timelineBuildStatus": "BUILDING",
+        "timelineBuildStatus": build_status.get("state") or "BUILDING",
+        "buildStatus": build_status,
         "completedMatchesApplied": 0,
         "completedMatchesAvailable": 0,
     })
@@ -1681,6 +1756,9 @@ def api_bracket_probabilities(event_id: str):
             if saved_response is not None:
                 return jsonify(saved_response)
             return bracket_prediction_pending(numeric_event_id, data)
+        previous_build = BRACKET_PREDICTION_BUILD_STATUS.get(numeric_event_id) or {}
+        if previous_build.get("state") == "FAILED":
+            return bracket_prediction_pending(numeric_event_id, data)
     with season_platform_db() as conn:
         if not has_valid_pregame_snapshot(conn, numeric_event_id):
             start_bracket_prediction_build(numeric_event_id, data, simulations)
@@ -1722,6 +1800,29 @@ def api_bracket_probabilities(event_id: str):
             BRACKET_PREDICTION_BUILD_RESPONSES[numeric_event_id] = result
         start_bracket_prediction_build(numeric_event_id, data, simulations)
     return jsonify(result)
+
+
+@app.post("/api/events/<event_id>/bracket-probabilities/retry")
+def api_retry_bracket_probabilities(event_id: str):
+    """Explicitly replace a failed or stale in-memory prediction build."""
+    numeric_event_id = int(event_id)
+    data = load_bracket(event_id, refresh=True)
+    if not bracket_roster_ready(data):
+        return jsonify({"status": "ROSTER_PENDING", "eventId": numeric_event_id}), 409
+    with season_platform_db() as conn:
+        if has_valid_pregame_snapshot(conn, numeric_event_id):
+            return jsonify({
+                "status": "ALREADY_COMPLETE",
+                "eventId": numeric_event_id,
+                "message": "A valid frozen pregame prediction already exists.",
+            })
+    with BRACKET_PREDICTION_BUILD_LOCK:
+        BRACKET_PREDICTION_BUILDS.discard(numeric_event_id)
+        BRACKET_PREDICTION_BUILD_RESPONSES.pop(numeric_event_id, None)
+        BRACKET_PREDICTION_BUILD_STATUS.pop(numeric_event_id, None)
+    simulations = min(max(int(request.args.get("simulations", 10000)), 100), 50000)
+    start_bracket_prediction_build(numeric_event_id, data, simulations)
+    return bracket_prediction_pending(numeric_event_id, data), 202
 
 
 @app.post("/api/events/<event_id>/bracket-probabilities/reset-pregame")

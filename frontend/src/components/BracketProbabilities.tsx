@@ -2,12 +2,13 @@ import { AlertTriangle, BarChart3, Brackets, ChevronLeft, ChevronRight, LoaderCi
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBracketProbabilities } from '../lib/api';
+import { fetchBracketProbabilities, retryBracketProbabilities } from '../lib/api';
 import { ShareBracketSnapshotButton } from './ShareSnapshotButton';
 
 export function BracketProbabilities({ eventId, event }: { eventId: string; event?: any }) {
   const [data, setData] = useState<any>();
   const [error, setError] = useState('');
+  const [retrying, setRetrying] = useState(false);
   const buildPollInFlight = useRef(false);
 
   useEffect(() => {
@@ -68,19 +69,63 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
     );
   }
   if (data.status === 'PREGAME_PENDING') {
+    const build = data.buildStatus || {};
+    const failed = build.state === 'FAILED';
+    const stale = Boolean(build.stale);
+    const started = build.startedAt ? new Date(build.startedAt).getTime() : NaN;
+    const elapsedSeconds = Number.isFinite(started) ? Math.max(0, Math.floor((Date.now() - started) / 1000)) : null;
+    const stageLabels: Record<string, string> = {
+      QUEUED: 'Queued',
+      PREPARING_PLAYER_HISTORY: 'Preparing player history',
+      RUNNING_SIMULATIONS: 'Running bracket simulations',
+      WAITING_FOR_DATABASE: 'Waiting for the analytics database',
+      FAILED: 'Build failed',
+    };
+    const restart = async () => {
+      setRetrying(true);
+      try {
+        const result = await retryBracketProbabilities(eventId, 10000);
+        setData(result);
+        setError('');
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setRetrying(false);
+      }
+    };
     return (
-      <section className="mb-4 flex min-h-[240px] items-center justify-center rounded-[28px] border border-sky-300/25 bg-zinc-950 p-8 text-center">
+      <section className={`mb-4 flex min-h-[240px] items-center justify-center rounded-[28px] border bg-zinc-950 p-8 text-center ${failed || stale ? 'border-red-300/30' : 'border-sky-300/25'}`}>
         <div>
-          <LoaderCircle className="mx-auto animate-spin text-sky-300" size={42} />
-          <div className="mt-4 text-2xl font-black text-white">Creating Frozen Pregame Prediction</div>
+          {failed || stale
+            ? <AlertTriangle className="mx-auto text-red-300" size={42}/>
+            : <LoaderCircle className="mx-auto animate-spin text-sky-300" size={42} />}
+          <div className="mt-4 text-2xl font-black text-white">{failed ? 'Frozen Prediction Build Failed' : stale ? 'Frozen Prediction Build Appears Stuck' : 'Creating Frozen Pregame Prediction'}</div>
           <div className="mt-2 max-w-xl text-base leading-7 text-zinc-400">
-            The roster is available. The engine is freezing the first official forecast from the pre-event history currently available.
-            Players without usable history receive the clearly identified fallback; deeper collection continues separately.
+            {failed || stale
+              ? 'The saved frozen prediction has not been created. Restarting this build will not rewrite a completed frozen prediction.'
+              : 'The roster is available. The engine is freezing the first official forecast from the pre-event history currently available.'}
           </div>
+          <div className="mx-auto mt-5 grid max-w-xl gap-3 text-left sm:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-white/[.04] p-3">
+              <div className="text-xs font-black uppercase tracking-widest text-zinc-500">Current stage</div>
+              <div className="mt-1 font-bold text-sky-200">{stageLabels[build.stage] || build.stage || 'Starting'}</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[.04] p-3">
+              <div className="text-xs font-black uppercase tracking-widest text-zinc-500">Elapsed time</div>
+              <div className="mt-1 font-bold text-white">{elapsedSeconds == null ? 'Just started' : `${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`}</div>
+            </div>
+          </div>
+          {build.message && <div className="mt-3 text-sm font-semibold text-zinc-400">{build.message}</div>}
+          {build.attempt > 0 && <div className="mt-2 text-xs font-bold uppercase tracking-widest text-zinc-500">Attempt {build.attempt} of {build.maxAttempts || 8} · checked every 15 seconds</div>}
           {data.historyPlayersPending != null && (
             <div className="mt-4 text-sm font-bold text-sky-200">
               {data.historyPlayersReady || 0} ready · {data.historyPlayersPending || 0} gathering · {data.historyPlayersUnavailable || 0} unavailable after retries
             </div>
+          )}
+          {(failed || stale) && (
+            <button type="button" onClick={restart} disabled={retrying} className="mt-5 min-h-12 rounded-xl border border-red-300/40 bg-red-300/10 px-6 py-3 font-black text-red-100 transition active:scale-[.98] disabled:opacity-50">
+              {retrying ? 'Restarting…' : 'Restart frozen prediction build'}
+            </button>
           )}
         </div>
       </section>

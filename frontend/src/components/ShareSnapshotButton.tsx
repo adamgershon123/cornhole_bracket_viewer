@@ -5,6 +5,9 @@ import {
   createBracketSnapshot,
   createFinalResultSnapshot,
   createPlayerStatusSnapshot,
+  createTeamGradesSnapshot,
+  createPlayerGradesSnapshot,
+  createMatchGradeSnapshot,
   createTaleOfTapeSnapshot,
   downloadImage,
   shareImage,
@@ -13,7 +16,22 @@ import {
   type PlayerStatusSnapshotInput,
   type SnapshotEventDetails,
   type TaleOfTapeSnapshotInput,
+  type TeamGradesSnapshotInput,
+  type PlayerGradesSnapshotInput,
+  type MatchGradeSnapshotInput,
 } from '../lib/shareSnapshot';
+
+function ReportCardShareButton({ label, title, filename, create }: { label: string; title: string; filename: string; create: () => Promise<Blob> }) {
+  const [open, setOpen] = useState(false), [blob, setBlob] = useState<Blob>(), [preview, setPreview] = useState(''), [busy, setBusy] = useState(false), [notice, setNotice] = useState('');
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  async function show() { setOpen(true); setBusy(true); setNotice(''); try { const next = await create(); setBlob(next); setPreview(current => { if (current) URL.revokeObjectURL(current); return URL.createObjectURL(next); }); } catch (error: any) { setNotice(error.message || 'Snapshot creation failed.'); } finally { setBusy(false); } }
+  async function run(action: 'share' | 'copy' | 'download') { if (!blob) return; try { if (action === 'share') await shareImage(blob, filename, title); else if (action === 'copy') await copyImage(blob); else downloadImage(blob, filename); setNotice(action === 'copy' ? 'Image copied — paste it into your message.' : action === 'download' ? 'Image downloaded.' : 'Share sheet opened.'); } catch (error: any) { setNotice(error.message || 'That action is unavailable. Download will preserve the same image.'); } }
+  return <><button type="button" onClick={show} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/35 bg-amber-300/10 px-4 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-300/20 active:translate-y-px"><Share2 size={18}/>{label}</button>{open && <SnapshotDialog title={title} preview={preview} busy={busy} notice={notice} onClose={() => setOpen(false)} onAction={run}/>}</>;
+}
+
+export const ShareTeamGradesButton = ({ input }: { input: TeamGradesSnapshotInput }) => <ReportCardShareButton label="Share Team Grades" title="Team Grade Report Cards" filename={`cheesebaggers-team-grades-${input.eventId}.png`} create={() => createTeamGradesSnapshot(input)}/>;
+export const SharePlayerGradesButton = ({ input }: { input: PlayerGradesSnapshotInput }) => <ReportCardShareButton label="Share Player Grades + MVP" title="Player Grades and MVP Rankings" filename={`cheesebaggers-player-grades-${input.eventId}.png`} create={() => createPlayerGradesSnapshot(input)}/>;
+export const ShareMatchGradeButton = ({ input }: { input: MatchGradeSnapshotInput }) => <ReportCardShareButton label="Share Complete Match Card" title="Detailed Match Report Card" filename={`cheesebaggers-match-grade-${input.eventId}-${input.report?.matchId}-${input.report?.gameId}.png`} create={() => createMatchGradeSnapshot(input)}/>;
 
 export function SharePlayerStatusSnapshotButton({ input }: { input: PlayerStatusSnapshotInput }) {
   const [open, setOpen] = useState(false);

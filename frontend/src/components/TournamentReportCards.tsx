@@ -1,6 +1,7 @@
 import { Award, ChevronDown, RefreshCw, Sparkles, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchEvent, fetchTournamentReportCards, generateSingleGameReportCard, generateTournamentReportCards } from '../lib/api';
+import { ShareMatchGradeButton, SharePlayerGradesButton, ShareTeamGradesButton } from './ShareSnapshotButton';
 
 const categoryLabels: Record<string, string> = {
   performance: 'Performance', expectation: 'Vs Expectation', consistency: 'Consistency',
@@ -31,13 +32,15 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
   const [data, setData] = useState<any>();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [gameOptions, setGameOptions] = useState<{ matchId: string; gameId: number; label: string }[]>([]);
+  const [eventDetails, setEventDetails] = useState<any>();
+  const [gameOptions, setGameOptions] = useState<{ matchId: string; gameId: number; label: string; match: any; game: any }[]>([]);
   const [selectedGame, setSelectedGame] = useState('');
   const [gameGenerating, setGameGenerating] = useState(false);
   const [gameReport, setGameReport] = useState<any>();
   const [gameError, setGameError] = useState('');
   const [error, setError] = useState('');
   const [playerSort, setPlayerSort] = useState<'performance' | 'mvp'>('performance');
+  const [queuedMessage, setQueuedMessage] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -46,10 +49,12 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
       .catch(error => setError(error.message))
       .finally(() => setLoading(false));
     fetchEvent(eventId, false).then(event => {
+      setEventDetails(event);
       const options = event.matches.flatMap(match => (match.games || []).map(game => ({
         matchId: String(match.matchId),
         gameId: Number(game.gameId || 1),
         label: gameOptionLabel(match, game),
+        match, game,
       })));
       setGameOptions(options);
       setSelectedGame(options.length ? `${options[0].matchId}:${options[0].gameId}` : '');
@@ -60,10 +65,26 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     if (force && !window.confirm('Force a new report version using the same game results? The current saved version will be preserved for audit.')) return;
     setGenerating(true);
     setError('');
-    try { setData(await generateTournamentReportCards(eventId, force)); }
+    try {
+      await generateTournamentReportCards(eventId, force);
+      setQueuedMessage('Grading queued. You can leave this page; the saved report will appear here when it is ready.');
+    }
     catch (error: any) { setError(error.message || 'Report cards could not be generated.'); }
     finally { setGenerating(false); }
   }
+
+  useEffect(() => {
+    if (!queuedMessage) return;
+    const timer = window.setInterval(() => {
+      fetchTournamentReportCards(eventId).then(result => {
+        if (result?.status === 'COMPLETE' || result?.status === 'LIVE') {
+          setData(result);
+          setQueuedMessage('');
+        }
+      }).catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [eventId, queuedMessage]);
 
   async function gradeOneGame() {
     const option = gameOptions.find(item => `${item.matchId}:${item.gameId}` === selectedGame);
@@ -89,6 +110,8 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
     const rightScore = Number(right.teamGrade ?? right.mvpScore ?? right.overallScore ?? 0);
     return rightScore - leftScore || String(left.teamName || '').localeCompare(String(right.teamName || ''));
   });
+  const eventName = eventDetails?.name || eventDetails?.eventName || data?.event?.event_name || `ACL Event ${eventId}`;
+  const selectedGameDetails = gameOptions.find(item => `${item.matchId}:${item.gameId}` === selectedGame);
   return <section className="mt-4 overflow-hidden rounded-[28px] border border-violet-300/20 bg-zinc-950">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-5">
       <div>
@@ -117,9 +140,10 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </button>
       </div>
       {gameError && <div className="mt-3 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{gameError}</div>}
-      {gameReport?.status === 'COMPLETE' && <SingleGameReport report={gameReport}/>}
+      {gameReport?.status === 'COMPLETE' && <SingleGameReport report={gameReport} eventId={eventId} eventName={eventName} option={selectedGameDetails}/>}
     </div>
     {error && <div className="m-5 rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-red-200">{error}</div>}
+    {queuedMessage && <div className="m-5 rounded-xl border border-sky-300/30 bg-sky-950/30 p-4 font-bold text-sky-100">{queuedMessage}</div>}
     {data?.dataPreparationNote && <div className="mx-5 mt-5 rounded-xl border border-amber-300/25 bg-amber-300/[.08] p-4 text-sm leading-6 text-amber-100">{data.dataPreparationNote}</div>}
     {data?.status === 'COMPLETE' && <div className="mx-5 mt-5 rounded-xl border border-emerald-300/25 bg-emerald-300/[.07] p-4 text-sm leading-6 text-emerald-100"><span className="font-black">Final grades saved server-side.</span> Every phone and computer sees this same result. A new version is offered only when another completed game is available; forced reruns remain under Advanced.</div>}
     {loading && <div className="p-8 text-center text-zinc-400">Checking for a saved report…</div>}
@@ -142,11 +166,12 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
         </div>
       </div>
       {sortedTeams.length > 0 && <div>
-        <div className="mb-3">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-black uppercase tracking-[.18em] text-amber-300">Final team report cards</div>
             <div className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-zinc-500">Every team receives one Team Grade combining both players' performance, sustained evidence, and tournament advancement. Combined Player Grade remains visible inside each card to explain the performance component.</div>
           </div>
+          <ShareTeamGradesButton input={{ eventId, eventName, generatedAt: data.generatedAt, teams: sortedTeams }}/>
         </div>
         <div className="space-y-3">
           {sortedTeams.map((team: any, index: number) => <TeamCard key={team.teamId || team.teamName} team={{...team, rank: index + 1}}/>)}
@@ -162,6 +187,7 @@ export default function TournamentReportCards({ eventId }: { eventId: string }) 
             <button type="button" aria-pressed={playerSort === 'performance'} onClick={() => setPlayerSort('performance')} className={`min-h-11 rounded-lg border-2 px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'performance' ? 'border-violet-100 bg-violet-300 text-black shadow-[0_0_24px_rgba(196,181,253,.45)]' : 'border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>{playerSort === 'performance' ? '✓ ' : ''}Player Grade</button>
             <button type="button" aria-pressed={playerSort === 'mvp'} onClick={() => setPlayerSort('mvp')} className={`min-h-11 rounded-lg border-2 px-4 text-sm font-black transition active:translate-y-0.5 ${playerSort === 'mvp' ? 'border-amber-100 bg-amber-300 text-black shadow-[0_0_24px_rgba(252,211,77,.45)]' : 'border-white/10 text-zinc-300 hover:bg-white/[.06]'}`}>{playerSort === 'mvp' ? '✓ ' : ''}MVP Score</button>
           </div>
+          <SharePlayerGradesButton input={{ eventId, eventName, generatedAt: data.generatedAt, players: data.players || [] }}/>
         </div>
         <div className="space-y-3">
           {sortedPlayers.map((player: any, index: number) => <PlayerCard key={player.playerId} player={{...player, rank: index + 1}} sortMode={playerSort}/>) }
@@ -206,11 +232,12 @@ function TeamCard({ team }: { team: any }) {
   </details>;
 }
 
-function SingleGameReport({ report }: { report: any }) {
+function SingleGameReport({ report, eventId, eventName, option }: { report: any; eventId: string; eventName: string; option?: any }) {
   return <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-black/30 p-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div><div className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Single-game report</div><div className="mt-1 text-lg font-black text-white">Match {report.matchId} · Game {report.gameId}</div></div>
       <div className="rounded-lg bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-cyan-200">Tournament report unchanged</div>
+      <ShareMatchGradeButton input={{ eventId, eventName, report, match: option?.match, game: option?.game, label: option?.label }}/>
     </div>
     <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       {(report.players || []).map((player: any) => <div key={player.playerId} className="rounded-xl bg-white/[.05] p-3">

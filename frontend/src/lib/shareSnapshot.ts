@@ -84,8 +84,380 @@ export type PlayerStatusSnapshotInput = {
   performanceSummary?: string;
 };
 
+export type ReportCardEvent = { eventId: string; eventName?: string; eventDate?: string; locationName?: string };
+export type TeamGradesSnapshotInput = ReportCardEvent & { generatedAt?: string; teams: any[] };
+export type PlayerGradesSnapshotInput = ReportCardEvent & { generatedAt?: string; players: any[] };
+export type MatchGradeSnapshotInput = ReportCardEvent & { report: any; match?: any; game?: any; label?: string };
+
+type ReportCardEventDuplicateA = { eventId: string; eventName?: string; eventDate?: string; locationName?: string };
+type TeamGradesSnapshotInputDuplicateA = ReportCardEventDuplicateA & { generatedAt?: string; teams: any[] };
+type PlayerGradesSnapshotInputDuplicateA = ReportCardEventDuplicateA & { generatedAt?: string; players: any[] };
+type MatchGradeSnapshotInputDuplicateA = ReportCardEventDuplicateA & {
+  report: any;
+  match?: any;
+  game?: any;
+  label?: string;
+};
+
+type ReportCardEventDuplicateB = { eventId: string; eventName?: string; eventDate?: string; locationName?: string };
+type TeamGradesSnapshotInputDuplicateB = ReportCardEventDuplicateB & { generatedAt?: string; teams: any[] };
+type PlayerGradesSnapshotInputDuplicateB = ReportCardEventDuplicateB & { generatedAt?: string; players: any[] };
+type MatchGradeSnapshotInputDuplicateB = ReportCardEventDuplicateB & {
+  report: any;
+  match?: any;
+  game?: any;
+  label?: string;
+};
+
 const WIDTH = 1080;
 const HEIGHT = 1350;
+
+const scoreOfDuplicateA = (value: any, fallback = 0) => Number(value ?? fallback) || 0;
+const reportGradeDuplicateA = (score: number) => score >= 97 ? 'A+' : score >= 93 ? 'A' : score >= 90 ? 'A-' : score >= 87 ? 'B+' : score >= 83 ? 'B' : score >= 80 ? 'B-' : score >= 77 ? 'C+' : score >= 73 ? 'C' : score >= 70 ? 'C-' : score >= 67 ? 'D+' : score >= 63 ? 'D' : score >= 60 ? 'D-' : 'F';
+
+function reportCanvasDuplicateA(height: number) {
+  const canvas = document.createElement('canvas'); canvas.width = WIDTH; canvas.height = height;
+  const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('This browser cannot create an image.');
+  const gradient = ctx.createLinearGradient(0, 0, WIDTH, height);
+  gradient.addColorStop(0, '#07111e'); gradient.addColorStop(.55, '#09090b'); gradient.addColorStop(1, '#170d05');
+  ctx.fillStyle = gradient; ctx.fillRect(0, 0, WIDTH, height);
+  ctx.strokeStyle = '#4a3b10'; ctx.lineWidth = 2; roundedRect(ctx, 38, 38, WIDTH - 76, height - 76, 34); ctx.stroke();
+  return { canvas, ctx };
+}
+
+function reportHeaderDuplicateA(ctx: CanvasRenderingContext2D, title: string, subtitle: string, eventName?: string) {
+  text(ctx, 'CHEESEBAGGERS ANALYTICS', 70, 92, 20, 900, '#facc15', 'left', 4);
+  text(ctx, title, 70, 154, 46, 900, '#ffffff'); text(ctx, subtitle, 70, 192, 19, 800, '#7dd3fc', 'left', 2);
+  wrap(ctx, eventName || 'ACL Tournament', 25, 920, 2).forEach((line, index) => text(ctx, line, 70, 240 + index * 31, 25, 850, '#d4d4d8'));
+}
+
+async function createTeamGradesSnapshotDuplicateA(input: TeamGradesSnapshotInput) {
+  const teams = [...input.teams].sort((a, b) => scoreOf(b.teamGrade, b.overallScore) - scoreOf(a.teamGrade, a.overallScore));
+  const height = Math.max(HEIGHT, 400 + teams.length * 116); const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'TEAM REPORT CARDS', 'TOURNAMENT PERFORMANCE • FINAL RANKING', input.eventName);
+  let y = 315;
+  teams.forEach((team, index) => {
+    const grade = scoreOf(team.teamGrade, team.overallScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, index === 0 ? '#171407' : '#111318', index === 0 ? '#59470d' : '#272a31');
+    text(ctx, `#${index + 1}`, 91, y + 43, 25, 900, index === 0 ? '#facc15' : '#67e8f9');
+    text(ctx, truncate(team.teamName || 'Team', 48), 158, y + 38, 25, 900, '#ffffff');
+    text(ctx, `${(team.players || []).length} players • depth ${scoreOf(team.depthScore).toFixed(1)} • evidence ${scoreOf(team.sustainedEvidenceScore).toFixed(1)}`, 158, y + 72, 16, 700, '#a1a1aa');
+    text(ctx, grade.toFixed(1), 938, y + 44, 31, 900, '#facc15', 'right'); text(ctx, team.grade || reportGrade(grade), 938, y + 74, 18, 900, '#fde68a', 'right'); y += 116;
+  });
+  text(ctx, 'TEAM GRADE • COMBINED PLAY + EVIDENCE + TOURNAMENT ADVANCEMENT', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right'); return canvasBlob(canvas);
+}
+
+async function createPlayerGradesSnapshotDuplicateA(input: PlayerGradesSnapshotInput) {
+  const byGrade = [...input.players].sort((a, b) => scoreOf(b.performanceGrade, b.overallScore) - scoreOf(a.performanceGrade, a.overallScore));
+  const mvpOrder = [...input.players].sort((a, b) => scoreOf(b.mvpScore) - scoreOf(a.mvpScore));
+  const mvpRank = new Map(mvpOrder.map((player, index) => [String(player.playerId), index + 1]));
+  const height = Math.max(HEIGHT, 420 + byGrade.length * 116); const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'PLAYER GRADES + MVP', 'ONE CARD • TWO DISTINCT LEADERBOARDS', input.eventName);
+  text(ctx, 'PLAYER GRADE', 676, 308, 15, 900, '#c4b5fd', 'right', 2); text(ctx, 'MVP', 958, 308, 15, 900, '#facc15', 'right', 2);
+  let y = 328;
+  byGrade.forEach((player, index) => {
+    const grade = scoreOf(player.performanceGrade, player.overallScore), mvp = scoreOf(player.mvpScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, '#111318', '#272a31'); text(ctx, `#${index + 1}`, 91, y + 43, 24, 900, '#67e8f9');
+    text(ctx, truncate(player.playerName || `Player ${player.playerId}`, 34), 158, y + 37, 25, 900, '#ffffff');
+    text(ctx, `${Number(player.games || 0)} games • ${Number(player.rounds || 0)} rounds • ${scoreOf(player.ppr).toFixed(2)} PPR • ${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)} expected`, 158, y + 72, 15, 700, '#a1a1aa');
+    text(ctx, `${grade.toFixed(1)}  ${player.performanceGradeLetter || player.grade || reportGrade(grade)}`, 676, y + 55, 27, 900, '#c4b5fd', 'right');
+    text(ctx, `#${mvpRank.get(String(player.playerId)) || '-'}  ${mvp.toFixed(1)}`, 958, y + 55, 27, 900, '#facc15', 'right'); y += 116;
+  });
+  text(ctx, 'PLAYER GRADE = INDIVIDUAL PLAY • MVP = GRADE + DEPTH + EVIDENCE', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right'); return canvasBlob(canvas);
+}
+
+function performanceTagDuplicateA(score: number) {
+  if (score >= 90) return 'ABSOLUTELY DIALED'; if (score >= 80) return 'BAG BUSINESS HANDLED'; if (score >= 70) return 'SOLID SHIFT';
+  if (score >= 60) return 'A MIXED BAG'; if (score >= 50) return 'THE BOARD WON THIS ROUND'; return 'WE HAVE THE RECEIPTS';
+}
+
+async function createMatchGradeSnapshotDuplicateA(input: MatchGradeSnapshotInput) {
+  const players = [...(input.report?.players || [])].sort((a, b) => scoreOf(b.overallScore) - scoreOf(a.overallScore));
+  const height = Math.max(1860, 870 + players.length * 306); const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'MATCH REPORT CARD', 'BRAGGING RIGHTS • RECEIPTS • FULL PERFORMANCE REVIEW', input.eventName || input.report?.event?.event_name);
+  const game = input.report?.game || input.game || {}, round = game.roundDescription || input.match?.roundDescription || `Match ${input.report?.matchId}`;
+  const court = game.courtId && String(game.courtId) !== '-1' ? `Court ${game.courtId}` : 'Court not reported';
+  roundedFill(ctx, 68, 306, 944, 130, 22, '#10151d', '#273242'); text(ctx, truncate(input.label || `${round} • Game ${input.report?.gameId || 1}`, 68), 94, 350, 25, 900, '#ffffff');
+  text(ctx, `${court} • COMPLETED`, 94, 388, 16, 750, '#94a3b8');
+  if (game.homeScore != null && game.awayScore != null) text(ctx, `${game.homeScore} — ${game.awayScore}`, 956, 375, 38, 900, '#facc15', 'right');
+  const best = players[0]; roundedFill(ctx, 68, 458, 944, 150, 24, '#171407', '#59470d'); text(ctx, 'MATCH MVP', 94, 496, 17, 900, '#facc15', 'left', 3);
+  text(ctx, truncate(best?.playerName || 'Unavailable', 38), 94, 548, 34, 900, '#ffffff'); text(ctx, `${performanceTag(scoreOf(best?.overallScore))} • ${scoreOf(best?.ppr).toFixed(2)} PPR`, 94, 581, 17, 850, '#fde68a');
+  text(ctx, scoreOf(best?.overallScore).toFixed(1), 956, 548, 48, 900, '#facc15', 'right');
+  let y = 636;
+  players.forEach((player, index) => {
+    const score = scoreOf(player.overallScore), accent = index === 0 ? '#facc15' : '#7dd3fc'; roundedFill(ctx, 68, y, 944, 286, 22, '#111318', '#292d35');
+    text(ctx, `#${index + 1}  ${truncate(player.playerName || `Player ${player.playerId}`, 31)}`, 94, y + 45, 27, 900, '#ffffff'); text(ctx, performanceTag(score), 94, y + 78, 15, 900, accent, 'left', 2);
+    text(ctx, score.toFixed(1), 956, y + 55, 40, 900, accent, 'right'); text(ctx, reportGrade(score), 956, y + 86, 18, 900, accent, 'right');
+    const evidence = scoreOf(player.sampleConfidence) * (scoreOf(player.sampleConfidence) <= 1 ? 100 : 1);
+    const metrics = [['PPR', scoreOf(player.ppr).toFixed(2)], ['DPR', `${scoreOf(player.dpr) >= 0 ? '+' : ''}${scoreOf(player.dpr).toFixed(2)}`], ['VS EXPECTED', `${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)}`], ['ROUNDS', String(player.rounds || 0)], ['THROWING', scoreOf(player.throwingPerformanceGrade).toFixed(1)], ['IMPACT', scoreOf(player.competitiveImpactGrade).toFixed(1)], ['4-BAGGERS', String(player.fourBaggers || 0)], ['EVIDENCE', `${Math.round(evidence)}%`]];
+    metrics.forEach(([label, value], i) => { const x = 94 + (i % 4) * 224, my = y + 127 + Math.floor(i / 4) * 76; text(ctx, label, x, my, 13, 900, '#71717a', 'left', 1.5); text(ctx, value, x, my + 31, 23, 900, '#ffffff'); }); y += 306;
+  });
+  roundedFill(ctx, 68, y + 4, 944, 124, 20, '#0d1118', '#26303d'); text(ctx, 'HOW TO READ IT', 94, y + 43, 15, 900, '#c4b5fd', 'left', 2);
+  wrap(ctx, 'Player grade combines throwing quality, competitive impact and sample evidence. Positive DPR means net points added; vs expected compares this game with prior player history.', 17, 870, 3).forEach((line, index) => text(ctx, line, 94, y + 75 + index * 23, 17, 700, '#a1a1aa'));
+  text(ctx, 'Detailed Match Card • Premium Preview', 70, height - 74, 16, 850, '#c4b5fd'); text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right'); return canvasBlob(canvas);
+}
+
+const scoreOfDuplicateB = (value: any, fallback = 0) => Number(value ?? fallback) || 0;
+const reportGradeDuplicateB = (score: number) => score >= 97 ? 'A+' : score >= 93 ? 'A' : score >= 90 ? 'A-' : score >= 87 ? 'B+' : score >= 83 ? 'B' : score >= 80 ? 'B-' : score >= 77 ? 'C+' : score >= 73 ? 'C' : score >= 70 ? 'C-' : score >= 67 ? 'D+' : score >= 63 ? 'D' : score >= 60 ? 'D-' : 'F';
+
+function reportCanvasDuplicateB(height: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser cannot create an image.');
+  const gradient = ctx.createLinearGradient(0, 0, WIDTH, height);
+  gradient.addColorStop(0, '#07111e'); gradient.addColorStop(.55, '#09090b'); gradient.addColorStop(1, '#170d05');
+  ctx.fillStyle = gradient; ctx.fillRect(0, 0, WIDTH, height);
+  ctx.strokeStyle = '#4a3b10'; ctx.lineWidth = 2; roundedRect(ctx, 38, 38, WIDTH - 76, height - 76, 34); ctx.stroke();
+  return { canvas, ctx };
+}
+
+function reportHeaderDuplicateB(ctx: CanvasRenderingContext2D, title: string, subtitle: string, eventName?: string) {
+  text(ctx, 'CHEESEBAGGERS ANALYTICS', 70, 92, 20, 900, '#facc15', 'left', 4);
+  text(ctx, title, 70, 154, 46, 900, '#ffffff');
+  text(ctx, subtitle, 70, 192, 19, 800, '#7dd3fc', 'left', 2);
+  const lines = wrap(ctx, eventName || 'ACL Tournament', 25, 920, 2);
+  lines.forEach((line, index) => text(ctx, line, 70, 240 + index * 31, 25, 850, '#d4d4d8'));
+}
+
+async function createTeamGradesSnapshotDuplicateB(input: TeamGradesSnapshotInput) {
+  const teams = [...input.teams].sort((a, b) => scoreOf(b.teamGrade, b.overallScore) - scoreOf(a.teamGrade, a.overallScore));
+  const height = Math.max(HEIGHT, 400 + teams.length * 116);
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'TEAM REPORT CARDS', 'TOURNAMENT PERFORMANCE • FINAL RANKING', input.eventName);
+  let y = 315;
+  teams.forEach((team, index) => {
+    const grade = scoreOf(team.teamGrade, team.overallScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, index === 0 ? '#171407' : '#111318', index === 0 ? '#59470d' : '#272a31');
+    text(ctx, `#${index + 1}`, 91, y + 43, 25, 900, index === 0 ? '#facc15' : '#67e8f9');
+    text(ctx, truncate(team.teamName || 'Team', 48), 158, y + 38, 25, 900, '#ffffff');
+    text(ctx, `${(team.players || []).length} players • depth ${scoreOf(team.depthScore).toFixed(1)} • evidence ${scoreOf(team.sustainedEvidenceScore).toFixed(1)}`, 158, y + 72, 16, 700, '#a1a1aa');
+    text(ctx, grade.toFixed(1), 938, y + 44, 31, 900, '#facc15', 'right');
+    text(ctx, team.grade || reportGrade(grade), 938, y + 74, 18, 900, '#fde68a', 'right');
+    y += 116;
+  });
+  text(ctx, 'TEAM GRADE • COMBINED PLAY + SUSTAINED EVIDENCE + TOURNAMENT ADVANCEMENT', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
+
+async function createPlayerGradesSnapshotDuplicateB(input: PlayerGradesSnapshotInput) {
+  const byGrade = [...input.players].sort((a, b) => scoreOf(b.performanceGrade, b.overallScore) - scoreOf(a.performanceGrade, a.overallScore));
+  const mvpOrder = [...input.players].sort((a, b) => scoreOf(b.mvpScore) - scoreOf(a.mvpScore));
+  const mvpRank = new Map(mvpOrder.map((player, index) => [String(player.playerId), index + 1]));
+  const height = Math.max(HEIGHT, 420 + byGrade.length * 116);
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'PLAYER GRADES + MVP', 'ONE CARD • TWO DISTINCT LEADERBOARDS', input.eventName);
+  text(ctx, 'PLAYER GRADE', 676, 308, 15, 900, '#c4b5fd', 'right', 2);
+  text(ctx, 'MVP', 958, 308, 15, 900, '#facc15', 'right', 2);
+  let y = 328;
+  byGrade.forEach((player, index) => {
+    const grade = scoreOf(player.performanceGrade, player.overallScore);
+    const mvp = scoreOf(player.mvpScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, '#111318', '#272a31');
+    text(ctx, `#${index + 1}`, 91, y + 43, 24, 900, '#67e8f9');
+    text(ctx, truncate(player.playerName || `Player ${player.playerId}`, 34), 158, y + 37, 25, 900, '#ffffff');
+    text(ctx, `${Number(player.games || 0)} games • ${Number(player.rounds || 0)} rounds • ${scoreOf(player.ppr).toFixed(2)} PPR • ${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)} expected`, 158, y + 72, 15, 700, '#a1a1aa');
+    text(ctx, `${grade.toFixed(1)}  ${player.performanceGradeLetter || player.grade || reportGrade(grade)}`, 676, y + 55, 27, 900, '#c4b5fd', 'right');
+    text(ctx, `#${mvpRank.get(String(player.playerId)) || '-'}  ${mvp.toFixed(1)}`, 958, y + 55, 27, 900, '#facc15', 'right');
+    y += 116;
+  });
+  text(ctx, 'PLAYER GRADE = INDIVIDUAL PLAY • MVP = PLAYER GRADE + DEPTH + SUSTAINED EVIDENCE', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
+
+function performanceTagDuplicateB(score: number) {
+  if (score >= 90) return 'ABSOLUTELY DIALED';
+  if (score >= 80) return 'BAG BUSINESS HANDLED';
+  if (score >= 70) return 'SOLID SHIFT';
+  if (score >= 60) return 'A MIXED BAG';
+  if (score >= 50) return 'THE BOARD WON THIS ROUND';
+  return 'WE HAVE THE RECEIPTS';
+}
+
+async function createMatchGradeSnapshotDuplicateB(input: MatchGradeSnapshotInput) {
+  const players = [...(input.report?.players || [])].sort((a, b) => scoreOf(b.overallScore) - scoreOf(a.overallScore));
+  const height = 1860 + Math.max(0, players.length - 4) * 315;
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'MATCH REPORT CARD', 'BRAGGING RIGHTS • RECEIPTS • FULL PERFORMANCE REVIEW', input.eventName || input.report?.event?.event_name);
+  const game = input.report?.game || input.game || {};
+  const round = game.roundDescription || input.match?.roundDescription || `Match ${input.report?.matchId}`;
+  const court = game.courtId && String(game.courtId) !== '-1' ? `Court ${game.courtId}` : 'Court not reported';
+  const homeScore = game.homeScore, awayScore = game.awayScore;
+  roundedFill(ctx, 68, 306, 944, 130, 22, '#10151d', '#273242');
+  text(ctx, truncate(input.label || `${round} • Game ${input.report?.gameId || 1}`, 68), 94, 350, 25, 900, '#ffffff');
+  text(ctx, `${court} • COMPLETED • ${new Date(input.report?.generatedAt || Date.now()).toLocaleString()}`, 94, 388, 16, 750, '#94a3b8');
+  if (homeScore != null && awayScore != null) text(ctx, `${homeScore} — ${awayScore}`, 956, 375, 38, 900, '#facc15', 'right');
+  const best = players[0];
+  roundedFill(ctx, 68, 458, 944, 150, 24, '#171407', '#59470d');
+  text(ctx, 'MATCH MVP', 94, 496, 17, 900, '#facc15', 'left', 3);
+  text(ctx, truncate(best?.playerName || 'Unavailable', 38), 94, 548, 34, 900, '#ffffff');
+  text(ctx, `${performanceTag(scoreOf(best?.overallScore))} • ${scoreOf(best?.ppr).toFixed(2)} PPR`, 94, 581, 17, 850, '#fde68a');
+  text(ctx, scoreOf(best?.overallScore).toFixed(1), 956, 548, 48, 900, '#facc15', 'right');
+  let y = 636;
+  players.forEach((player, index) => {
+    const score = scoreOf(player.overallScore);
+    const accent = index === 0 ? '#facc15' : '#7dd3fc';
+    roundedFill(ctx, 68, y, 944, 286, 22, '#111318', '#292d35');
+    text(ctx, `#${index + 1}  ${truncate(player.playerName || `Player ${player.playerId}`, 31)}`, 94, y + 45, 27, 900, '#ffffff');
+    text(ctx, performanceTag(score), 94, y + 78, 15, 900, accent, 'left', 2);
+    text(ctx, score.toFixed(1), 956, y + 55, 40, 900, accent, 'right');
+    text(ctx, reportGrade(score), 956, y + 86, 18, 900, accent, 'right');
+    const metrics = [
+      ['PPR', scoreOf(player.ppr).toFixed(2)], ['DPR', `${scoreOf(player.dpr) >= 0 ? '+' : ''}${scoreOf(player.dpr).toFixed(2)}`],
+      ['VS EXPECTED', `${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)}`], ['ROUNDS', String(player.rounds || 0)],
+      ['THROWING', scoreOf(player.throwingPerformanceGrade).toFixed(1)], ['IMPACT', scoreOf(player.competitiveImpactGrade).toFixed(1)],
+      ['4-BAGGERS', String(player.fourBaggers || 0)], ['EVIDENCE', `${Math.round(scoreOf(player.sampleConfidence) * (scoreOf(player.sampleConfidence) <= 1 ? 100 : 1))}%`],
+    ];
+    metrics.forEach(([label, value], metricIndex) => {
+      const col = metricIndex % 4, row = Math.floor(metricIndex / 4);
+      const x = 94 + col * 224, my = y + 127 + row * 76;
+      text(ctx, label, x, my, 13, 900, '#71717a', 'left', 1.5);
+      text(ctx, value, x, my + 31, 23, 900, '#ffffff');
+    });
+    y += 306;
+  });
+  roundedFill(ctx, 68, y + 4, 944, 124, 20, '#0d1118', '#26303d');
+  text(ctx, 'HOW TO READ IT', 94, y + 43, 15, 900, '#c4b5fd', 'left', 2);
+  const note = 'Player grade combines throwing quality, competitive impact and sample evidence. Positive DPR means net points added; vs expected compares this game with prior player history.';
+  wrap(ctx, note, 17, 870, 3).forEach((line, index) => text(ctx, line, 94, y + 75 + index * 23, 17, 700, '#a1a1aa'));
+  text(ctx, 'Detailed Match Card • Premium Preview', 70, height - 74, 16, 850, '#c4b5fd');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
+
+const scoreOf = (value: any, fallback = 0) => Number(value ?? fallback) || 0;
+const reportGrade = (score: number) => score >= 97 ? 'A+' : score >= 93 ? 'A' : score >= 90 ? 'A-' : score >= 87 ? 'B+' : score >= 83 ? 'B' : score >= 80 ? 'B-' : score >= 77 ? 'C+' : score >= 73 ? 'C' : score >= 70 ? 'C-' : score >= 67 ? 'D+' : score >= 63 ? 'D' : score >= 60 ? 'D-' : 'F';
+
+function reportCanvas(height: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser cannot create an image.');
+  const gradient = ctx.createLinearGradient(0, 0, WIDTH, height);
+  gradient.addColorStop(0, '#07111e'); gradient.addColorStop(.55, '#09090b'); gradient.addColorStop(1, '#170d05');
+  ctx.fillStyle = gradient; ctx.fillRect(0, 0, WIDTH, height);
+  ctx.strokeStyle = '#4a3b10'; ctx.lineWidth = 2; roundedRect(ctx, 38, 38, WIDTH - 76, height - 76, 34); ctx.stroke();
+  return { canvas, ctx };
+}
+
+function reportHeader(ctx: CanvasRenderingContext2D, title: string, subtitle: string, eventName?: string) {
+  text(ctx, 'CHEESEBAGGERS ANALYTICS', 70, 92, 20, 900, '#facc15', 'left', 4);
+  text(ctx, title, 70, 154, 46, 900, '#ffffff');
+  text(ctx, subtitle, 70, 192, 19, 800, '#7dd3fc', 'left', 2);
+  const lines = wrap(ctx, eventName || 'ACL Tournament', 25, 920, 2);
+  lines.forEach((line, index) => text(ctx, line, 70, 240 + index * 31, 25, 850, '#d4d4d8'));
+}
+
+export async function createTeamGradesSnapshot(input: TeamGradesSnapshotInput) {
+  const teams = [...input.teams].sort((a, b) => scoreOf(b.teamGrade, b.overallScore) - scoreOf(a.teamGrade, a.overallScore));
+  const height = Math.max(HEIGHT, 400 + teams.length * 116);
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'TEAM REPORT CARDS', 'TOURNAMENT PERFORMANCE • FINAL RANKING', input.eventName);
+  let y = 315;
+  teams.forEach((team, index) => {
+    const grade = scoreOf(team.teamGrade, team.overallScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, index === 0 ? '#171407' : '#111318', index === 0 ? '#59470d' : '#272a31');
+    text(ctx, `#${index + 1}`, 91, y + 43, 25, 900, index === 0 ? '#facc15' : '#67e8f9');
+    text(ctx, truncate(team.teamName || 'Team', 48), 158, y + 38, 25, 900, '#ffffff');
+    text(ctx, `${(team.players || []).length} players • depth ${scoreOf(team.depthScore).toFixed(1)} • evidence ${scoreOf(team.sustainedEvidenceScore).toFixed(1)}`, 158, y + 72, 16, 700, '#a1a1aa');
+    text(ctx, grade.toFixed(1), 938, y + 44, 31, 900, '#facc15', 'right');
+    text(ctx, team.grade || reportGrade(grade), 938, y + 74, 18, 900, '#fde68a', 'right');
+    y += 116;
+  });
+  text(ctx, 'TEAM GRADE • COMBINED PLAY + SUSTAINED EVIDENCE + TOURNAMENT ADVANCEMENT', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
+
+export async function createPlayerGradesSnapshot(input: PlayerGradesSnapshotInput) {
+  const byGrade = [...input.players].sort((a, b) => scoreOf(b.performanceGrade, b.overallScore) - scoreOf(a.performanceGrade, a.overallScore));
+  const mvpOrder = [...input.players].sort((a, b) => scoreOf(b.mvpScore) - scoreOf(a.mvpScore));
+  const mvpRank = new Map(mvpOrder.map((player, index) => [String(player.playerId), index + 1]));
+  const height = Math.max(HEIGHT, 420 + byGrade.length * 116);
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'PLAYER GRADES + MVP', 'ONE CARD • TWO DISTINCT LEADERBOARDS', input.eventName);
+  text(ctx, 'PLAYER GRADE', 676, 308, 15, 900, '#c4b5fd', 'right', 2);
+  text(ctx, 'MVP', 958, 308, 15, 900, '#facc15', 'right', 2);
+  let y = 328;
+  byGrade.forEach((player, index) => {
+    const grade = scoreOf(player.performanceGrade, player.overallScore);
+    const mvp = scoreOf(player.mvpScore);
+    roundedFill(ctx, 68, y, 944, 102, 18, '#111318', '#272a31');
+    text(ctx, `#${index + 1}`, 91, y + 43, 24, 900, '#67e8f9');
+    text(ctx, truncate(player.playerName || `Player ${player.playerId}`, 34), 158, y + 37, 25, 900, '#ffffff');
+    text(ctx, `${Number(player.games || 0)} games • ${Number(player.rounds || 0)} rounds • ${scoreOf(player.ppr).toFixed(2)} PPR • ${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)} expected`, 158, y + 72, 15, 700, '#a1a1aa');
+    text(ctx, `${grade.toFixed(1)}  ${player.performanceGradeLetter || player.grade || reportGrade(grade)}`, 676, y + 55, 27, 900, '#c4b5fd', 'right');
+    text(ctx, `#${mvpRank.get(String(player.playerId)) || '-'}  ${mvp.toFixed(1)}`, 958, y + 55, 27, 900, '#facc15', 'right');
+    y += 116;
+  });
+  text(ctx, 'PLAYER GRADE = INDIVIDUAL PLAY • MVP = PLAYER GRADE + DEPTH + SUSTAINED EVIDENCE', 70, height - 75, 15, 800, '#71717a');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
+
+function performanceTag(score: number) {
+  if (score >= 90) return 'ABSOLUTELY DIALED';
+  if (score >= 80) return 'BAG BUSINESS HANDLED';
+  if (score >= 70) return 'SOLID SHIFT';
+  if (score >= 60) return 'A MIXED BAG';
+  if (score >= 50) return 'THE BOARD WON THIS ROUND';
+  return 'WE HAVE THE RECEIPTS';
+}
+
+export async function createMatchGradeSnapshot(input: MatchGradeSnapshotInput) {
+  const players = [...(input.report?.players || [])].sort((a, b) => scoreOf(b.overallScore) - scoreOf(a.overallScore));
+  const height = 1860 + Math.max(0, players.length - 4) * 315;
+  const { canvas, ctx } = reportCanvas(height);
+  reportHeader(ctx, 'MATCH REPORT CARD', 'BRAGGING RIGHTS • RECEIPTS • FULL PERFORMANCE REVIEW', input.eventName || input.report?.event?.event_name);
+  const game = input.report?.game || input.game || {};
+  const round = game.roundDescription || input.match?.roundDescription || `Match ${input.report?.matchId}`;
+  const court = game.courtId && String(game.courtId) !== '-1' ? `Court ${game.courtId}` : 'Court not reported';
+  const homeScore = game.homeScore, awayScore = game.awayScore;
+  roundedFill(ctx, 68, 306, 944, 130, 22, '#10151d', '#273242');
+  text(ctx, truncate(input.label || `${round} • Game ${input.report?.gameId || 1}`, 68), 94, 350, 25, 900, '#ffffff');
+  text(ctx, `${court} • COMPLETED • ${new Date(input.report?.generatedAt || Date.now()).toLocaleString()}`, 94, 388, 16, 750, '#94a3b8');
+  if (homeScore != null && awayScore != null) text(ctx, `${homeScore} — ${awayScore}`, 956, 375, 38, 900, '#facc15', 'right');
+  const best = players[0];
+  roundedFill(ctx, 68, 458, 944, 150, 24, '#171407', '#59470d');
+  text(ctx, 'MATCH MVP', 94, 496, 17, 900, '#facc15', 'left', 3);
+  text(ctx, truncate(best?.playerName || 'Unavailable', 38), 94, 548, 34, 900, '#ffffff');
+  text(ctx, `${performanceTag(scoreOf(best?.overallScore))} • ${scoreOf(best?.ppr).toFixed(2)} PPR`, 94, 581, 17, 850, '#fde68a');
+  text(ctx, scoreOf(best?.overallScore).toFixed(1), 956, 548, 48, 900, '#facc15', 'right');
+  let y = 636;
+  players.forEach((player, index) => {
+    const score = scoreOf(player.overallScore);
+    const accent = index === 0 ? '#facc15' : '#7dd3fc';
+    roundedFill(ctx, 68, y, 944, 286, 22, '#111318', '#292d35');
+    text(ctx, `#${index + 1}  ${truncate(player.playerName || `Player ${player.playerId}`, 31)}`, 94, y + 45, 27, 900, '#ffffff');
+    text(ctx, performanceTag(score), 94, y + 78, 15, 900, accent, 'left', 2);
+    text(ctx, score.toFixed(1), 956, y + 55, 40, 900, accent, 'right');
+    text(ctx, reportGrade(score), 956, y + 86, 18, 900, accent, 'right');
+    const metrics = [
+      ['PPR', scoreOf(player.ppr).toFixed(2)], ['DPR', `${scoreOf(player.dpr) >= 0 ? '+' : ''}${scoreOf(player.dpr).toFixed(2)}`],
+      ['VS EXPECTED', `${scoreOf(player.pprVsExpected) >= 0 ? '+' : ''}${scoreOf(player.pprVsExpected).toFixed(2)}`], ['ROUNDS', String(player.rounds || 0)],
+      ['THROWING', scoreOf(player.throwingPerformanceGrade).toFixed(1)], ['IMPACT', scoreOf(player.competitiveImpactGrade).toFixed(1)],
+      ['4-BAGGERS', String(player.fourBaggers || 0)], ['EVIDENCE', `${Math.round(scoreOf(player.sampleConfidence) * (scoreOf(player.sampleConfidence) <= 1 ? 100 : 1))}%`],
+    ];
+    metrics.forEach(([label, value], metricIndex) => {
+      const col = metricIndex % 4, row = Math.floor(metricIndex / 4);
+      const x = 94 + col * 224, my = y + 127 + row * 76;
+      text(ctx, label, x, my, 13, 900, '#71717a', 'left', 1.5);
+      text(ctx, value, x, my + 31, 23, 900, '#ffffff');
+    });
+    y += 306;
+  });
+  roundedFill(ctx, 68, y + 4, 944, 124, 20, '#0d1118', '#26303d');
+  text(ctx, 'HOW TO READ IT', 94, y + 43, 15, 900, '#c4b5fd', 'left', 2);
+  const note = 'Player grade combines throwing quality, competitive impact and sample evidence. Positive DPR means net points added; vs expected compares this game with prior player history.';
+  wrap(ctx, note, 17, 870, 3).forEach((line, index) => text(ctx, line, 94, y + 75 + index * 23, 17, 700, '#a1a1aa'));
+  text(ctx, 'Detailed Match Card • Premium Preview', 70, height - 74, 16, 850, '#c4b5fd');
+  text(ctx, 'live.cheesebaggers.com', WIDTH - 70, height - 42, 18, 900, '#facc15', 'right');
+  return canvasBlob(canvas);
+}
 
 export async function createBracketSnapshot(data: BracketSnapshotData, eventId: string, event?: SnapshotEventDetails) {
   const canvas = document.createElement('canvas');

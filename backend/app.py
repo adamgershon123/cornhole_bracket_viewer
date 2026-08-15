@@ -420,7 +420,7 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
     # ACL populates matchEndTime with the same timestamp as matchStartTime
     # while a game is still In-Progress. Status/result fields, not the mere
     # presence of that timestamp, determine completion.
-    if str(result_status) == "5" or match_status_id == "5" or "completed" in match_status:
+    if match_status_id == "5" or "completed" in match_status:
         status = "completed"
     elif ("progress" in match_status or match_status_id in {"1", "2"}) and (
         row.get("matchStartTime")
@@ -428,6 +428,8 @@ def safe_swap_match(row: Dict[str, Any]) -> Dict[str, Any]:
         or as_float(away_score) != 0
     ):
         status = "live"
+    elif not match_status and str(result_status) == "5":
+        status = "completed"
     elif row.get("matchStartTime"):
         status = "live"
     else:

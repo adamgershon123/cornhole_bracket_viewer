@@ -32,6 +32,7 @@ services:
     # container. This runtime limit keeps archival research from saturating
     # every core needed by predictions and grading.
     cpus: "0.75"
+    mem_limit: 1300M
     healthcheck:
       disable: true
     environment:
@@ -42,12 +43,6 @@ services:
     depends_on:
       web:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "1.50"
-          memory: 1300M
-
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped

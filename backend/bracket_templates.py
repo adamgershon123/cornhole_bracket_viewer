@@ -82,6 +82,48 @@ def infer_bracket_layout(payload: dict[str, Any]) -> dict[str, Any] | None:
             for match_id, match in matches.items()
         },
         "edges": edges,
+        "expectedEdgeCount": _expected_edge_count(len(teams), bracket_type),
+    }
+
+
+def validate_published_layout(layout: dict[str, Any] | None) -> dict[str, Any]:
+    """Validate that a learned layout is a complete published bracket graph."""
+    if not layout:
+        return {"valid": False, "reason": "BRACKET_LAYOUT_UNAVAILABLE"}
+    expected = int(layout.get("expectedEdgeCount") or _expected_edge_count(
+        int(layout.get("teamCount") or 0), str(layout.get("bracketType") or "")
+    ))
+    edges = layout.get("edges") or {}
+    matches = layout.get("matches") or {}
+    destinations: set[tuple[int, str]] = set()
+    for edge_key, destination in edges.items():
+        try:
+            source_text, outcome = str(edge_key).split(":", 1)
+            source = int(source_text)
+            target = int(destination["matchId"])
+            position = str(destination["position"]).upper()
+        except (KeyError, TypeError, ValueError):
+            return {"valid": False, "reason": "MALFORMED_ADVANCEMENT_EDGE"}
+        if outcome not in ("W", "L") or position not in ("T", "B"):
+            return {"valid": False, "reason": "MALFORMED_ADVANCEMENT_EDGE"}
+        if str(source) not in matches or str(target) not in matches or target <= source:
+            return {"valid": False, "reason": "NON_FORWARD_OR_UNKNOWN_ADVANCEMENT"}
+        coordinate = (target, position)
+        if coordinate in destinations:
+            return {"valid": False, "reason": "DUPLICATE_DESTINATION_SLOT"}
+        destinations.add(coordinate)
+    if expected <= 0 or len(edges) != expected:
+        return {
+            "valid": False,
+            "reason": "INCOMPLETE_ADVANCEMENT_GRAPH",
+            "observedEdges": len(edges),
+            "expectedEdges": expected,
+        }
+    return {
+        "valid": True,
+        "reason": "COMPLETE_PUBLISHED_ADVANCEMENT_GRAPH",
+        "observedEdges": len(edges),
+        "expectedEdges": expected,
     }
 
 
@@ -102,7 +144,11 @@ def repository_bracket_templates(
         if cached and now - cached[0] < _REPOSITORY_CACHE_SECONDS:
             return cached[1]
     layouts = []
-    for path in glob.glob(os.path.join(data_dir, "event_*.json")):
+    paths = set(glob.glob(os.path.join(data_dir, "event_*.json")))
+    paths.update(glob.glob(
+        os.path.join(data_dir, "season_platform", "raw", "brackets", "event_*.json")
+    ))
+    for path in sorted(paths):
         try:
             with open(path, "r", encoding="utf-8") as source:
                 payload = json.load(source)
@@ -154,6 +200,21 @@ def repository_bracket_templates(
             else:
                 rejected_edges[edge_key] = record
         representative = events[0]
+        full_graph_events = [
+            event for event in events if validate_published_layout(event)["valid"]
+        ]
+        full_graph_signatures = Counter(
+            json.dumps(event["edges"], sort_keys=True)
+            for event in full_graph_events
+        )
+        published_graph = None
+        published_graph_observations = 0
+        if full_graph_signatures:
+            signature, published_graph_observations = full_graph_signatures.most_common(1)[0]
+            published_graph = json.loads(signature)
+            # A complete graph is not a statistical inference: it is the ACL
+            # published layout itself. Prefer it to partial per-edge consensus.
+            consensus_edges = published_graph
         templates[key] = {
             "templateKey": key,
             "teamCount": representative["teamCount"],
@@ -179,9 +240,15 @@ def repository_bracket_templates(
             ) if edge_votes else 0,
             "status": (
                 "VALIDATED_TEMPLATE"
-                if len(events) >= minimum_events and consensus_edges
+                if published_graph
+                or (len(events) >= minimum_events and consensus_edges)
                 else "INSUFFICIENT_REPLICATION"
             ),
+            "publishedGraphObservations": published_graph_observations,
+            "validation": validate_published_layout({
+                **representative,
+                "edges": consensus_edges,
+            }),
         }
     result = {
         "status": "COMPLETE",
@@ -240,11 +307,16 @@ def _matches(details: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
             "winnerTeamId": None,
             "loserTeamId": None,
         })
-        team_id = (
-            str(row.get("bracketteamid"))
-            if row.get("bracketteamid") not in (None, "")
-            else None
-        )
+        raw_team_id = row.get("bracketteamid")
+        team_id = str(raw_team_id) if raw_team_id not in (None, "") else None
+        if team_id is not None:
+            try:
+                if int(team_id) <= 0:
+                    team_id = None
+            except ValueError:
+                # Synthetic/test identifiers and some external tournament
+                # providers use nonnumeric stable IDs.
+                pass
         match["slots"][position] = {"teamId": team_id}
         scores = row.get("scores") or []
         if scores and isinstance(scores[0], dict):
@@ -263,3 +335,16 @@ def _matches(details: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
                     match["winnerTeamId"] = other if home > away else team_id
                     match["loserTeamId"] = team_id if home > away else other
     return matches
+
+
+def _expected_edge_count(team_count: int, bracket_type: str) -> int:
+    if team_count < 2:
+        return 0
+    if str(bracket_type).upper() == "D":
+        # ACL's published double-elimination graph contains the winners path,
+        # loser drops, and elimination-path winners. The champion display row
+        # has no outgoing edge.
+        return 3 * team_count - 4
+    if str(bracket_type).upper() in ("S", "W"):
+        return team_count - 2
+    return 0

@@ -72,6 +72,7 @@ from baseline_predictions import score_matchup
 from scoring_distribution_challenger import (
     score_scoring_distribution_challenger,
 )
+from projected_scoring import load_score_calibration, projected_score
 from match_profile_trajectory import match_profile_trajectories
 from tournament_report_cards import GRADING_MODEL_VERSION, apply_current_grade_labels, build_game_report_card, build_tournament_report_cards
 from data_integrity import (
@@ -120,7 +121,12 @@ def prioritize_interactive_analytics() -> None:
     """Make user-facing analytics yield the SQLite writer lane from workers."""
     path = request.path
     if not any(fragment in path for fragment in (
-        "/bracket-probabilities", "/report-cards", "/tournament-stats",
+        "/bracket-probabilities",
+        "/report-cards",
+        "/tournament-stats",
+        "/matches/",
+        "/live",
+        "/swap-live/",
     )):
         return
     priority_dir = os.path.join(DATA_DIR, "live_priority")
@@ -139,7 +145,10 @@ def release_interactive_analytics_priority(_: BaseException | None) -> None:
     marker_path = getattr(g, "analytics_priority_marker", None)
     if marker_path:
         try:
-            os.remove(marker_path)
+            # Keep a short cooldown after the response. Live clients poll on
+            # an interval; removing the marker immediately let an archival
+            # writer seize SQLite between two polls and block the next score.
+            os.utime(marker_path, None)
         except OSError:
             pass
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -1660,6 +1669,13 @@ def attach_live_win_probability(match: Dict[str, Any], event_date: Optional[str]
                     "profileRatingWeights": prediction_weighting_policy()["profileRatings"],
                     "control": current_prediction,
                     "challenger": challenger_prediction,
+                    "projectedScore": projected_score(
+                        float(primary_prediction.get("sideAProbability") or 0.5),
+                        load_score_calibration(
+                            conn,
+                            cutoff_date=str(cutoff_date)[:10],
+                        ),
+                    ),
                 }
             top_samples = historical_gross_samples(conn, top_ids)
             bottom_samples = historical_gross_samples(conn, bottom_ids)
@@ -3119,8 +3135,58 @@ def api_prediction_operations_monitor():
             event_id=body["eventId"],
             schedule_format=body["format"],
             source_timezone=body.get("timezone"),
+            auto_freeze_prediction=body.get("autoFreezePrediction"),
+            auto_grade_on_complete=body.get("autoGradeOnComplete"),
         )
         return jsonify(prediction_operations_snapshot(conn))
+
+
+@app.route("/api/events/<int:event_id>/analytics-jobs", methods=["GET", "POST"])
+def api_event_analytics_jobs(event_id: int):
+    from event_analytics_jobs import (
+        enqueue_event_analytics_job,
+        event_analytics_job_status,
+    )
+    with season_platform_db() as conn:
+        if request.method == "POST":
+            body = request.get_json(silent=True) or {}
+            try:
+                enqueue_event_analytics_job(
+                    conn, event_id, str(body.get("jobType") or ""),
+                    str(body.get("triggerSource") or "EVENT_PAGE"),
+                    force=bool(body.get("force")),
+                )
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
+        return jsonify({"eventId": event_id, "jobs": event_analytics_job_status(conn, event_id)})
+
+
+@app.route("/api/shared-viewer-profile", methods=["GET", "PUT"])
+def api_shared_viewer_profile():
+    from shared_viewer_profile import (
+        get_shared_viewer_profile,
+        update_shared_viewer_profile,
+    )
+    with season_platform_db() as conn:
+        if request.method == "PUT":
+            body = request.get_json(silent=True) or {}
+            try:
+                default_player_id = (
+                    int(body["defaultPlayerId"])
+                    if body.get("defaultPlayerId") not in (None, "")
+                    else None
+                )
+            except (TypeError, ValueError):
+                return jsonify({"error": "defaultPlayerId must be a positive player ID"}), 400
+            favorites = body.get("favoritePlayers")
+            if not isinstance(favorites, list):
+                return jsonify({"error": "favoritePlayers must be a list"}), 400
+            return jsonify(update_shared_viewer_profile(
+                conn,
+                default_player_id=default_player_id,
+                favorite_players=favorites,
+            ))
+        return jsonify(get_shared_viewer_profile(conn))
 
 
 @app.route("/api/swap-live/<event_id>")

@@ -21,6 +21,26 @@ export type Game = { gameId:number; statusId:number; status?:string; currentRoun
 export type Match = { eventId:string; matchId:string; courtId:string; roundDescription:string; bracketSide:string; statusId:number; status:string; currentRound?:number|string; teams:{top:{id:string;name:string};bottom:{id:string;name:string}}; score:{top:number|null;bottom:number|null}; games:Game[]; activeGame?:Game; championshipDoubleDip?:any }
 export type EventResponse = { event:{id:string; name:string; status?:string; leagueStatus?:string; courts:string[]; lastUpdated:number}; matches:Match[]; notifications?:{type?:string; message?:string; source?:string}[] }
 const API_BASE = import.meta.env.VITE_API_BASE || ''
+export type SharedViewerProfile = {
+  profileKey:string;
+  mode:'SHARED_TEMPORARY';
+  defaultPlayerId:number|null;
+  favoritePlayers:{playerId:number;name?:string;photo?:string}[];
+  updatedAt:string;
+}
+export async function fetchSharedViewerProfile(): Promise<SharedViewerProfile>{
+  const response=await fetch(`${API_BASE}/api/shared-viewer-profile`);
+  if(!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+export async function saveSharedViewerProfile(defaultPlayerId:string, favoritePlayers:{playerId:number;name?:string;photo?:string}[]): Promise<SharedViewerProfile>{
+  const response=await fetch(`${API_BASE}/api/shared-viewer-profile`, {
+    method:'PUT', headers:{'content-type':'application/json'},
+    body:JSON.stringify({defaultPlayerId:defaultPlayerId || null, favoritePlayers}),
+  });
+  if(!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
 export async function fetchEvent(eventId:string, stats=false): Promise<EventResponse>{
   const url = `${API_BASE}/api/events/${eventId}/matches?stats=${stats?'1':'0'}`;
   let response: Response;
@@ -64,8 +84,10 @@ export async function fetchTournamentReportCards(eventId: string): Promise<any> 
 }
 
 export async function generateTournamentReportCards(eventId: string, force=false): Promise<any> {
-  const response = await fetch(`${API_BASE}/api/events/${eventId}/report-cards?refresh=1&refresh_live=1${force ? '&new_version=1&force=1' : ''}`, {
+  const response = await fetch(`${API_BASE}/api/events/${eventId}/analytics-jobs`, {
     method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jobType: 'TOURNAMENT_GRADES', triggerSource: 'REPORT_CARD_PAGE', force }),
   });
   if (!response.ok) throw new Error(await readableApiError(response));
   return response.json();
@@ -414,6 +436,8 @@ export async function monitorPredictionEvent(params: {
   eventId: string;
   format: 'SWISS' | 'SWAP' | 'BRACKET';
   timezone: string;
+  autoFreezePrediction?: boolean;
+  autoGradeOnComplete?: boolean;
 }): Promise<any> {
   const response = await fetch(`${API_BASE}/api/prediction-operations/monitor`, {
     method: 'POST',

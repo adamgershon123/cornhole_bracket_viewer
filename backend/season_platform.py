@@ -43,17 +43,25 @@ from data_integrity import (
     reconcile_normalized_game,
     record_game_integrity,
 )
+from walker_participation import (
+    WALKER_PARTICIPATION,
+    ensure_walker_schema,
+    record_walker_participations,
+    transform_walker_payload,
+)
 
 
 ACL_BASE = "https://api.iplayacl.com/api/v1"
 _DB_SETUP_LOCK = threading.Lock()
 _DB_SCHEMA_READY = False
+_BACKGROUND_DB_LANE = threading.RLock()
 ACL_AUTH_BASE = "https://api.iplayacl.com/api/auth/v1"
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 PLATFORM_DIR = os.path.join(DATA_DIR, "season_platform")
 RAW_DIR = os.path.join(PLATFORM_DIR, "raw")
 DB_PATH = os.path.join(PLATFORM_DIR, "season_platform.db")
 LIVE_PRIORITY_DIR = os.path.join(DATA_DIR, "live_priority")
+LIVE_PRIORITY_TTL_SECONDS = 90
 
 AUTH_RETRY_STATUSES = {401, 403}
 
@@ -136,26 +144,69 @@ def payload_hash(payload: Any) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+class _BackgroundConnection(sqlite3.Connection):
+    """Release the process-wide background database lane after each unit of work."""
+
+    _background_lane_owned = False
+
+    def _release_background_lane(self) -> None:
+        if self._background_lane_owned:
+            self._background_lane_owned = False
+            _BACKGROUND_DB_LANE.release()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self._release_background_lane()
+
+    def close(self) -> None:
+        try:
+            super().close()
+        finally:
+            self._release_background_lane()
+
+
 def db() -> sqlite3.Connection:
     global _DB_SCHEMA_READY
     ensure_dirs()
     # Live forecasts and live-game writes are user-facing and time-sensitive.
     # Background workers yield before opening their next database transaction
     # whenever a web process has reserved the SQLite writer lane.
-    if os.environ.get("PROCESS_ROLE", "web").strip().lower() == "background":
+    background = os.environ.get("PROCESS_ROLE", "web").strip().lower() == "background"
+    if background:
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
             try:
-                active = [
-                    path for path in Path(LIVE_PRIORITY_DIR).glob("*.lock")
-                    if time.time() - path.stat().st_mtime < 300
-                ]
+                now = time.time()
+                active = []
+                for path in Path(LIVE_PRIORITY_DIR).glob("*.lock"):
+                    age = now - path.stat().st_mtime
+                    if age < LIVE_PRIORITY_TTL_SECONDS:
+                        active.append(path)
+                    elif age > LIVE_PRIORITY_TTL_SECONDS * 4:
+                        try:
+                            path.unlink()
+                        except OSError:
+                            pass
             except OSError:
                 active = []
             if not active:
                 break
             time.sleep(0.5)
-    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+        _BACKGROUND_DB_LANE.acquire()
+    try:
+        conn = sqlite3.connect(
+            DB_PATH,
+            timeout=30.0,
+            factory=_BackgroundConnection if background else sqlite3.Connection,
+        )
+        if background:
+            conn._background_lane_owned = True
+    except Exception:
+        if background:
+            _BACKGROUND_DB_LANE.release()
+        raise
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout = 30000")
     conn.execute("PRAGMA foreign_keys = ON")
@@ -435,6 +486,12 @@ def init_db(conn: sqlite3.Connection) -> None:
         ON ingestion_attempts(source_endpoint, entity_key, ingestion_attempt_id)
         """
     )
+    round_columns = {row["name"] for row in conn.execute("PRAGMA table_info(player_rounds)").fetchall()}
+    if "participation_type" not in round_columns:
+        conn.execute("ALTER TABLE player_rounds ADD COLUMN participation_type TEXT NOT NULL DEFAULT 'STANDARD'")
+    if "attributed_from_player_id" not in round_columns:
+        conn.execute("ALTER TABLE player_rounds ADD COLUMN attributed_from_player_id INTEGER")
+    ensure_walker_schema(conn)
     conn.commit()
 
 
@@ -1275,7 +1332,8 @@ def upsert_team(conn: sqlite3.Connection, event_id: int, entry: dict[str, Any]) 
     )
     for player in entry.get("player_info", []) or []:
         pid = player.get("playerid")
-        if not pid:
+        from walker_participation import is_definitive_placeholder
+        if not pid or is_definitive_placeholder(player):
             continue
         upsert_player(
             conn,
@@ -1511,6 +1569,10 @@ def event_context(conn: sqlite3.Connection, event_id: int) -> dict[str, Any]:
 
 
 def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, match_id: str, game_id: int, payload: dict[str, Any]) -> int:
+    source_payload = payload
+    payload, walker_rows = transform_walker_payload(payload)
+    if walker_rows:
+        record_walker_participations(conn, event_id, str(match_id), game_id, walker_rows)
     context = event_context(conn, event_id)
     singles = str(context.get("match_type") or "").upper() == "S"
     court_id = str(payload.get("courtid") or "")
@@ -1546,7 +1608,7 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
             integrity_status=PARTIAL, analytics_ready=False,
             expected_player_rows=int(raw_check["expectedPlayerRows"]), normalized_player_rows=0,
             expected_rounds=int(raw_check["expectedRounds"]), normalized_rounds=0,
-            checks=raw_check, source_payload_hash=payload_hash(payload),
+            checks=raw_check, source_payload_hash=payload_hash(source_payload),
         )
         conn.commit()
         return 0
@@ -1568,7 +1630,7 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
             integrity_status=QUARANTINED, analytics_ready=False,
             expected_player_rows=int(raw_check["expectedPlayerRows"]), normalized_player_rows=0,
             expected_rounds=int(raw_check["expectedRounds"]), normalized_rounds=0,
-            checks=raw_check, source_payload_hash=payload_hash(payload),
+            checks=raw_check, source_payload_hash=payload_hash(source_payload),
         )
         conn.commit()
         return 0
@@ -1646,8 +1708,9 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
                     team_id, opponent_player_id, opponent_team_id, team_side, court_id, gross_points,
                     opponent_points, net_points, scored_points, bags_in, bags_on, bags_off,
                     four_bagger, round_result, event_date, location_id, location_name,
-                    match_type, bracket_type, blind_draw
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    match_type, bracket_type, blind_draw, participation_type,
+                    attributed_from_player_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(event_id, match_id, game_id, round_no, player_id) DO UPDATE SET
                     player_name=excluded.player_name,
                     team_id=excluded.team_id,
@@ -1669,7 +1732,9 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
                     location_name=excluded.location_name,
                     match_type=excluded.match_type,
                     bracket_type=excluded.bracket_type,
-                    blind_draw=excluded.blind_draw
+                    blind_draw=excluded.blind_draw,
+                    participation_type=excluded.participation_type,
+                    attributed_from_player_id=excluded.attributed_from_player_id
                 """,
                 (
                     event_id,
@@ -1700,6 +1765,8 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
                     context.get("match_type"),
                     context.get("bracket_type"),
                     context.get("blind_draw"),
+                    str(row.get("participation_type") or (WALKER_PARTICIPATION if any(int(item["actualPlayerId"]) == int(player_id) for item in walker_rows) else "STANDARD")),
+                    int(row.get("attributed_from_player_id")) if row.get("attributed_from_player_id") else None,
                 ),
             )
             saved += 1
@@ -1732,7 +1799,7 @@ def normalize_match_stats_to_rounds(conn: sqlite3.Connection, event_id: int, mat
             normalized_player_rows=int(normalized_check["normalizedPlayerRows"]),
             expected_rounds=int(raw_check["expectedRounds"]),
             normalized_rounds=int(normalized_check["normalizedRounds"]),
-            checks=combined_check, source_payload_hash=payload_hash(payload),
+            checks=combined_check, source_payload_hash=payload_hash(source_payload),
         )
     conn.commit()
     return saved

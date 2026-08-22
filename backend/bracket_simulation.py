@@ -7,10 +7,21 @@ from datetime import datetime, timezone
 from typing import Any
 
 from baseline_predictions import score_matchup
-from bracket_templates import repository_bracket_templates, select_template
+from bracket_templates import (
+    infer_bracket_layout,
+    repository_bracket_templates,
+    select_template,
+    validate_published_layout,
+)
 from stage_a_features import build_side_features
 from tournament_reforecast import checkpoint_team_form
 from double_dip_analysis import double_dip_baseline
+from projected_scoring import (
+    SCORING_MODEL_VERSION,
+    load_score_calibration,
+    projected_score,
+    sample_score,
+)
 
 
 def simulate_bracket(
@@ -50,6 +61,7 @@ def simulate_bracket(
         }
     simulations = min(max(int(simulations), 100), 50_000)
     cutoff = f"{event_date}T00:00:00+00:00"
+    score_calibration = load_score_calibration(conn, cutoff_date=event_date)
     probability_cache: dict[tuple[str, str], dict[str, Any]] = {}
     team_feature_cache: dict[str, dict[str, Any]] = {
         team["teamId"]: build_side_features(
@@ -156,54 +168,106 @@ def simulate_bracket(
         team["teamId"]: {1: simulations} for team in teams
     }
     champion_counts = {team["teamId"]: 0 for team in teams}
+    simulation_totals = {
+        team["teamId"]: {
+            "games": 0,
+            "wins": 0,
+            "losses": 0,
+            "margin": 0,
+            "victoryMargin": 0,
+            "defeatMargin": 0,
+        }
+        for team in teams
+    }
     rng = random.Random(f"bracket:{event_id}:{event_date}:{simulations}")
+
+    def record_game(
+        team_a: dict[str, Any],
+        team_b: dict[str, Any],
+        winner: dict[str, Any],
+        side_a_probability: float,
+    ) -> None:
+        side_a_score, side_b_score = sample_score(
+            winner_is_side_a=winner["teamId"] == team_a["teamId"],
+            side_a_probability=side_a_probability,
+            calibration=score_calibration,
+            rng=rng,
+        )
+        loser = team_b if winner["teamId"] == team_a["teamId"] else team_a
+        winner_score = max(side_a_score, side_b_score)
+        loser_score = min(side_a_score, side_b_score)
+        margin = winner_score - loser_score
+        for team in (team_a, team_b):
+            simulation_totals[team["teamId"]]["games"] += 1
+        simulation_totals[winner["teamId"]]["wins"] += 1
+        simulation_totals[winner["teamId"]]["margin"] += margin
+        simulation_totals[winner["teamId"]]["victoryMargin"] += margin
+        simulation_totals[loser["teamId"]]["losses"] += 1
+        simulation_totals[loser["teamId"]]["margin"] -= margin
+        simulation_totals[loser["teamId"]]["defeatMargin"] += margin
     template = None
     template_seed_slots = None
-    if data_dir:
+    structure_source = None
+    current_layout = infer_bracket_layout(bracket)
+    current_validation = validate_published_layout(current_layout)
+    if current_validation["valid"]:
+        candidate = {
+            **current_layout,
+            "status": "VALIDATED_PUBLISHED_GRAPH",
+            "eventCount": 1,
+            "edgeCoverageRate": 1.0,
+            "validation": current_validation,
+        }
+        seed_slots = _template_seed_slots(candidate, bracket, teams)
+        if seed_slots:
+            template = candidate
+            template_seed_slots = seed_slots
+            structure_source = "CURRENT_ACL_PUBLISHED_GRAPH"
+    if data_dir and not template:
         repository = repository_bracket_templates(
             data_dir,
             exclude_event_id=event_id,
         )
         candidate = select_template(repository, bracket)
-        template_seed_slots = (
+        candidate_slots = (
             _template_seed_slots(candidate, bracket, teams)
             if candidate else None
         )
-        if template_seed_slots:
+        candidate_validation = validate_published_layout(candidate)
+        if not template and candidate_slots and candidate_validation["valid"]:
             template = candidate
-    if template:
-        semifinal_counts = {team["teamId"]: 0 for team in teams}
-        final_counts = {team["teamId"]: 0 for team in teams}
-        for _ in range(simulations):
-            champion, reached_semifinal, reached_final = _run_template(
-                template, template_seed_slots, probability, rng,
-                championship_context=championship_context,
-            )
-            if champion:
-                champion_counts[champion["teamId"]] += 1
-            for team_id in reached_semifinal:
-                semifinal_counts[team_id] += 1
-            for team_id in reached_final:
-                final_counts[team_id] += 1
-    else:
-        for _ in range(simulations):
-            field = list(teams)
-            stage = 1
-            while len(field) > 1:
-                next_field = []
-                for index in range(0, len(field), 2):
-                    if index + 1 >= len(field):
-                        winner = field[index]
-                    else:
-                        team_a, team_b = field[index], field[index + 1]
-                        winner = team_a if rng.random() < probability(team_a, team_b) else team_b
-                    next_field.append(winner)
-                    stage_counts[winner["teamId"]][stage + 1] = (
-                        stage_counts[winner["teamId"]].get(stage + 1, 0) + 1
-                    )
-                field = next_field
-                stage += 1
-            champion_counts[field[0]["teamId"]] += 1
+            template_seed_slots = candidate_slots
+            structure_source = "MATCHED_ACL_PUBLISHED_GRAPH"
+    if not template:
+        return {
+            "status": "BLOCKED_UNVALIDATED_BRACKET_STRUCTURE",
+            "eventId": event_id,
+            "eventName": event_info.get("eventName") or event_info.get("leagueName"),
+            "teamCount": len(teams),
+            "structure": {
+                "mode": "BLOCKED_UNVALIDATED_BRACKET_STRUCTURE",
+                "currentGraphValidation": current_validation,
+                "exactAclAdvancementLinksAvailable": False,
+            },
+            "message": (
+                "ACL published the roster and match skeleton, but the winner/loser "
+                "advancement graph could not be validated. No substitute bracket was simulated."
+            ),
+        }
+    semifinal_counts = {team["teamId"]: 0 for team in teams}
+    final_counts = {team["teamId"]: 0 for team in teams}
+    for _ in range(simulations):
+        champion, reached_semifinal, reached_final = _run_template(
+            template, template_seed_slots, probability, rng,
+            championship_context=championship_context,
+            on_game=record_game,
+        )
+        if champion:
+            champion_counts[champion["teamId"]] += 1
+        for team_id in reached_semifinal:
+            semifinal_counts[team_id] += 1
+        for team_id in reached_final:
+            final_counts[team_id] += 1
     total_stages = max(
         max(counts, default=1) for counts in stage_counts.values()
     )
@@ -221,20 +285,34 @@ def simulate_bracket(
         results.append({
             **team,
             "reachRoundProbabilities": round_probabilities,
-            "reachSemifinalProbability": (
-                round(semifinal_counts[team["teamId"]] / simulations, 6)
-                if template else _named_probability(
-                    counts, simulations, total_stages, "semifinal"
-                )
+            "reachSemifinalProbability": round(
+                semifinal_counts[team["teamId"]] / simulations, 6
             ),
-            "reachFinalProbability": (
-                round(final_counts[team["teamId"]] / simulations, 6)
-                if template else _named_probability(
-                    counts, simulations, total_stages, "final"
-                )
+            "reachFinalProbability": round(
+                final_counts[team["teamId"]] / simulations, 6
             ),
             "winEventProbability": round(
                 champion_counts[team["teamId"]] / simulations, 6
+            ),
+            "projectedRecord": {
+                "wins": round(simulation_totals[team["teamId"]]["wins"] / simulations, 2),
+                "losses": round(simulation_totals[team["teamId"]]["losses"] / simulations, 2),
+                "games": round(simulation_totals[team["teamId"]]["games"] / simulations, 2),
+            },
+            "averageMarginPerGame": round(
+                simulation_totals[team["teamId"]]["margin"]
+                / max(1, simulation_totals[team["teamId"]]["games"]),
+                2,
+            ),
+            "averageMarginOfVictory": round(
+                simulation_totals[team["teamId"]]["victoryMargin"]
+                / max(1, simulation_totals[team["teamId"]]["wins"]),
+                2,
+            ),
+            "averageMarginOfDefeat": round(
+                simulation_totals[team["teamId"]]["defeatMargin"]
+                / max(1, simulation_totals[team["teamId"]]["losses"]),
+                2,
             ),
         })
     results.sort(key=lambda row: row["winEventProbability"], reverse=True)
@@ -300,6 +378,10 @@ def simulate_bracket(
             "teamBCalculatedPpr": matchup["sideB"]["aggregate"]["predictivePpr"],
             "teamAProbability": prediction.get("sideAProbability"),
             "teamBProbability": prediction.get("sideBProbability"),
+            "projectedScore": projected_score(
+                float(prediction.get("sideAProbability") or 0.5),
+                score_calibration,
+            ),
             "missingPlayers": missing_players,
             "assistedPlayers": assisted_players,
             "evidenceMode": (
@@ -324,11 +406,19 @@ def simulate_bracket(
         ),
         "eventDate": event_date,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "simulationVersion": "bracket-path-ppr-v1",
+        "simulationVersion": "acl-published-double-elimination-score-v3",
         "predictiveStatus": "EXPERIMENTAL_PENDING_RETROSPECTIVE_VALIDATION",
         "simulationCount": simulations,
         "modelVersion": "fitted-ppr-logistic-v1",
         "activeFeature": "calculatedPprDelta",
+        "scoringModel": {
+            "version": SCORING_MODEL_VERSION,
+            "calibrationSampleSize": score_calibration.sample_size,
+            "averageHistoricalWinnerScore": round(score_calibration.average_winner_score, 2),
+            "averageHistoricalLoserScore": round(score_calibration.average_loser_score, 2),
+            "averageHistoricalMargin": round(score_calibration.average_margin, 2),
+            "cutoffDate": event_date,
+        },
         "teamCount": len(teams),
         "teams": results,
         "coverage": {
@@ -359,18 +449,15 @@ def simulate_bracket(
         },
         "championshipContext": championship_context,
         "structure": {
-            "mode": (
-                "VALIDATED_ACL_BRACKET_TEMPLATE"
-                if template else "SEEDED_SINGLE_ELIMINATION_ABSTRACTION"
-            ),
-            "seedSource": "FIRST_RECORDED_BRACKET_APPEARANCE",
+            "mode": "VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH",
+            "source": structure_source,
+            "seedSource": "ACL_PUBLISHED_OPENING_MATCH_SLOTS",
             "supportsByes": True,
-            "exactAclAdvancementLinksAvailable": bool(template),
-            "templateKey": template["templateKey"] if template else None,
-            "templateEventCount": template["eventCount"] if template else 0,
-            "templateEdgeCoverageRate": (
-                template["edgeCoverageRate"] if template else None
-            ),
+            "exactAclAdvancementLinksAvailable": True,
+            "templateKey": template["templateKey"],
+            "templateEventCount": template.get("eventCount", 1),
+            "templateEdgeCoverageRate": template.get("edgeCoverageRate", 1.0),
+            "validation": validate_published_layout(template),
         },
         "ratingWeights": {
             "currentForm": 0.0,
@@ -382,12 +469,10 @@ def simulate_bracket(
         },
         "notes": [
             "Unknown future winners are sampled from validated PPR matchup probabilities.",
+            "Projected scores and margins are sampled from cutoff-safe historical finish-margin calibration conditioned on matchup probability.",
             "Missing matchup history falls back to 50/50 and is counted in coverage.",
-            (
-                "Winner and loser advancement follows a repeated ACL layout inferred from completed events."
-                if template else
-                "No replicated layout matched this field; first-appearance seeding uses a single-elimination fallback."
-            ),
+            "Winner and loser advancement follows a structurally validated ACL-published bracket graph.",
+            "Predictions are blocked rather than substituting a generic bracket when that graph cannot be validated.",
             "Descriptive player ratings have zero simulation weight.",
             (
                 "Current-event PPR is restricted to completed checkpoint matches and shrunk toward each team's pre-event baseline."
@@ -400,6 +485,7 @@ def simulate_bracket(
 
 
 def _extract_teams(details: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    from walker_participation import is_definitive_placeholder
     seen: dict[str, dict[str, Any]] = {}
     order: list[str] = []
     sorted_details = sorted(
@@ -423,6 +509,8 @@ def _extract_teams(details: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         players = []
         for player in row.get("player_info") or []:
+            if is_definitive_placeholder(player):
+                continue
             player_id = player.get("playerid") or player.get("id")
             if player_id in (None, ""):
                 continue
@@ -509,6 +597,7 @@ def _run_template(
     rng: random.Random,
     *,
     championship_context: dict[str, Any] | None = None,
+    on_game=None,
 ) -> tuple[dict[str, Any] | None, set[str], set[str]]:
     slots = dict(seed_slots)
     reached_semifinal: set[str] = set()
@@ -540,20 +629,35 @@ def _run_template(
             )
             # The king-seat team wins the event with a first-game victory. The
             # challenger must win game one to force a reset, then win again.
+            side_a_probability = (
+                king_probability if king_position == "T" else 1.0 - king_probability
+            )
             if rng.random() < king_probability:
                 winner, loser = king, challenger
-            elif rng.random() < king_probability:
-                winner, loser = king, challenger
+                if on_game:
+                    on_game(team_a, team_b, winner, side_a_probability)
             else:
-                winner, loser = challenger, king
+                # Challenger wins game one and forces the reset.
+                if on_game:
+                    on_game(team_a, team_b, challenger, side_a_probability)
+                if rng.random() < king_probability:
+                    winner, loser = king, challenger
+                else:
+                    winner, loser = challenger, king
+                if on_game:
+                    on_game(team_a, team_b, winner, side_a_probability)
         elif not team_b:
             winner, loser = team_a, None
         elif not team_a:
             winner, loser = team_b, None
-        elif rng.random() < probability(team_a, team_b):
-            winner, loser = team_a, team_b
         else:
-            winner, loser = team_b, team_a
+            side_a_probability = probability(team_a, team_b)
+            if rng.random() < side_a_probability:
+                winner, loser = team_a, team_b
+            else:
+                winner, loser = team_b, team_a
+            if on_game:
+                on_game(team_a, team_b, winner, side_a_probability)
         last_winner = winner
         for outcome, team in (("W", winner), ("L", loser)):
             destination = edges.get(f"{match_id}:{outcome}")

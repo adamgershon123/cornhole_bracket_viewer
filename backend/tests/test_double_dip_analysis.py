@@ -46,7 +46,12 @@ class DoubleDipAnalysisTests(unittest.TestCase):
         ]
         records = [analyze_double_elimination_final(payload) for payload in payloads]
         store_double_dip_records(conn, records)
-        result = championship_double_dip_profile(conn, payload=payloads[-1], match_id=12)
+        result = championship_double_dip_profile(
+            conn,
+            payload=payloads[-1],
+            match_id=12,
+            persist_completed=True,
+        )
 
         king = result["kingSeat"]
         challenger = result["challenger"]
@@ -57,6 +62,17 @@ class DoubleDipAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(challenger["combinedHistory"]["loseFirstRate"], 1 / 3)
         self.assertAlmostEqual(challenger["combinedHistory"]["loseSecondRate"], 1 / 3)
         self.assertAlmostEqual(challenger["combinedHistory"]["completeDoubleDipRate"], 1 / 3)
+
+    def test_viewer_profile_does_not_persist_completed_event(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        payload = self._payload(91, [(21, 10)])
+
+        result = championship_double_dip_profile(conn, payload=payload, match_id=12)
+
+        self.assertIsNotNone(result)
+        count = conn.execute("SELECT COUNT(*) FROM double_dip_events").fetchone()[0]
+        self.assertEqual(count, 0)
 
     def test_historical_baseline_excludes_future_championships(self):
         conn = sqlite3.connect(":memory:")

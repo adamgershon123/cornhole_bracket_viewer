@@ -18,9 +18,11 @@ from historical_tournament_replay import start_historical_tournament_replay_work
 from lifecycle_runner import start_prediction_operations_snapshot_worker
 from payload_archive import start_payload_archive_worker
 from predictive_player_profile import start_player_analytics_snapshot_worker
-from season_platform import db as season_platform_db
+from season_platform import db as season_platform_db, normalize_match_stats_to_rounds
 from integrity_backfill import audit_cached_match_stats
 from automated_pattern_discovery import start_automated_discovery_worker
+from walker_repair import start_walker_repair_worker
+from event_analytics_jobs import run_event_analytics_job_cycle
 
 
 running = True
@@ -88,6 +90,13 @@ def start_data_integrity_worker() -> None:
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, stop_worker)
     signal.signal(signal.SIGINT, stop_worker)
+    # Give the public web workers a clean startup window. Previously every
+    # archival subsystem opened SQLite at once as soon as the container was
+    # recreated, which made the newly deployed site appear down.
+    startup_delay = max(0, int(os.getenv("BACKGROUND_STARTUP_DELAY_SECONDS", "60")))
+    deadline = time.monotonic() + startup_delay
+    while running and time.monotonic() < deadline:
+        time.sleep(min(1, max(0, deadline - time.monotonic())))
     start_prediction_lifecycle_worker()
     start_historical_backfill_worker()
     start_payload_archive_worker(season_platform_db)
@@ -98,5 +107,19 @@ if __name__ == "__main__":
     start_data_integrity_worker()
     start_automated_discovery_worker(season_platform_db)
     start_prediction_operations_snapshot_worker(season_platform_db)
+    start_walker_repair_worker(season_platform_db, DATA_DIR, normalize_match_stats_to_rounds)
+    print("Event analytics queue supervisor started", flush=True)
     while running:
-        time.sleep(5)
+        try:
+            result = run_event_analytics_job_cycle(season_platform_db)
+            enrollment = result.pop("defaultPlayerEnrollment", {})
+            if enrollment.get("newlyEnabled"):
+                print(f"Default-player brackets enrolled: {enrollment}", flush=True)
+            if result.get("status") != "IDLE":
+                print(f"Event analytics job: {result}", flush=True)
+        except Exception as exc:
+            print(f"Event analytics queue cycle failed: {exc}", flush=True)
+        for _ in range(10):
+            if not running:
+                break
+            time.sleep(1)

@@ -4,6 +4,8 @@ export type BracketSnapshotTeam = {
   reachSemifinalProbability?: number;
   reachFinalProbability?: number;
   winEventProbability?: number;
+  projectedRecord?: { wins?: number; losses?: number; games?: number };
+  averageMarginPerGame?: number;
 };
 
 export type BracketSnapshotData = {
@@ -511,16 +513,20 @@ export async function createBracketSnapshot(data: BracketSnapshotData, eventId: 
     text(ctx, `${index + 1}`, 98, y + 45, 24, 900, index === 0 ? '#facc15' : '#64748b');
     const names = truncate(teamPlayers(team), 44);
     text(ctx, names, 148, y + 31, 22, 850, '#ffffff');
-    text(ctx, `SEMIS ${percent(team.reachSemifinalProbability)}   •   FINAL ${percent(team.reachFinalProbability)}`, 148, y + 57, 14, 700, '#94a3b8');
+    const record = team.projectedRecord;
+    const recordText = record?.wins == null || record?.losses == null
+      ? ''
+      : `  •  RECORD ${Number(record.wins).toFixed(1)}–${Number(record.losses).toFixed(1)}  •  MARGIN ${Number(team.averageMarginPerGame || 0) >= 0 ? '+' : ''}${Number(team.averageMarginPerGame || 0).toFixed(1)}`;
+    text(ctx, `SEMIS ${percent(team.reachSemifinalProbability)}   •   FINAL ${percent(team.reachFinalProbability)}${recordText}`, 148, y + 57, 14, 700, '#94a3b8');
     text(ctx, percent(team.winEventProbability), WIDTH - 98, y + 46, 27, 900, index === 0 ? '#facc15' : '#7dd3fc', 'right');
     y += 78;
   });
 
   const coverage = percent(data.coverage?.modelCoverageRate);
   const fallback = Number(data.coverage?.equalProbabilityFallbackPairings || 0);
-  const structure = data.structure?.mode === 'VALIDATED_ACL_BRACKET_TEMPLATE'
-    ? `Validated ACL ${data.structure?.templateKey || 'bracket'} path`
-    : 'Approximated single-elimination path';
+  const structure = data.structure?.mode === 'VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH'
+    ? `Validated ACL-published ${data.structure?.templateKey || 'bracket'} path`
+    : 'Bracket structure not validated';
   const footerY = y + 26;
   roundedFill(ctx, 70, footerY, WIDTH - 140, 88, 20, '#0d1118', '#26303d');
   text(ctx, `${coverage} MATCHUP COVERAGE`, 96, footerY + 38, 19, 900, '#ffffff');
@@ -567,8 +573,11 @@ export async function createTaleOfTapeSnapshot(input: TaleOfTapeSnapshotInput) {
   const topProbability = Math.max(0.01, Math.min(0.99, Number(input.topProbability || 0.5)));
   const topFavored = topProbability >= 0.5;
   const favoriteProbability = topFavored ? topProbability : 1 - topProbability;
-  const loserScore = Math.max(0, Math.min(20, Math.round(21 * (1 - favoriteProbability) / favoriteProbability)));
-  const projectedScore = topFavored ? `21–${loserScore}` : `${loserScore}–21`;
+  const topScore = Number(input.evidence?.projectedScore?.sideAScore);
+  const bottomScore = Number(input.evidence?.projectedScore?.sideBScore);
+  const projectedScore = Number.isFinite(topScore) && Number.isFinite(bottomScore)
+    ? `${topScore}–${bottomScore}`
+    : 'Unavailable';
   const winner = topFavored ? input.topTeamName : input.bottomTeamName;
 
   text(ctx, truncate(input.topTeamName, 32), 76, 372, 22, 900, '#60a5fa');

@@ -11,6 +11,7 @@ from bracket_simulation import _extract_teams, simulate_bracket
 
 MAX_NEW_TIMELINE_SNAPSHOTS_PER_REQUEST = 12
 LIVE_REFORECAST_VERSION = "checkpoint-event-form-double-dip-v2"
+BRACKET_STRUCTURE_VERSION = "acl-published-double-elimination-score-v3"
 
 
 def has_valid_pregame_snapshot(conn: sqlite3.Connection, event_id: int) -> bool:
@@ -19,7 +20,7 @@ def has_valid_pregame_snapshot(conn: sqlite3.Connection, event_id: int) -> bool:
     # Frozen means immutable, including when the initial evidence was sparse.
     # Data-quality concerns are surfaced on that artifact; only the explicit
     # reset endpoint is allowed to remove and recreate it.
-    return snapshot is not None
+    return snapshot is not None and not _obsolete_structure_snapshot(snapshot)
 
 
 def delete_prediction_timeline(conn: sqlite3.Connection, event_id: int) -> int:
@@ -102,8 +103,16 @@ def bracket_prediction_timeline(
         ]
     })
     pregame = _load_snapshot(conn, event_id, "PREGAME")
+    if pregame is not None and _obsolete_structure_snapshot(pregame):
+        delete_prediction_timeline(conn, event_id)
+        pregame = None
     if pregame is None:
         result = simulate_bracket(conn, bracket, simulations=simulations, data_dir=data_dir)
+        if result.get("status") != "COMPLETE":
+            # A blocked graph is diagnostic state, not a frozen prediction.
+            # Leave the event retryable when ACL publishes more roster/layout
+            # data or when a compatible published graph becomes available.
+            return result
         pregame = _save_snapshot(
             conn, event_id, "PREGAME", roster_key, 0, None, result
         )
@@ -151,6 +160,8 @@ def bracket_prediction_timeline(
                     eligible_team_ids=set(active_ids),
                     completed_match_ids=[row["matchId"] for row in prefix],
                 )
+            if result.get("status") != "COMPLETE":
+                break
             snapshot = _save_snapshot(
                 conn,
                 event_id,
@@ -563,6 +574,19 @@ def _valid_frozen_roster(snapshot: dict[str, Any]) -> bool:
         if not team.get("playerIds") and not team.get("players"):
             return False
     return True
+
+
+def _obsolete_structure_snapshot(snapshot: dict[str, Any]) -> bool:
+    payload = snapshot.get("payload") or {}
+    structure = payload.get("structure") or {}
+    return (
+        structure.get("mode") == "SEEDED_SINGLE_ELIMINATION_ABSTRACTION"
+        or (
+            str((payload.get("simulationVersion") or ""))
+            != BRACKET_STRUCTURE_VERSION
+            and str(structure.get("mode") or "").startswith("VALIDATED_ACL")
+        )
+    )
 
 
 def _structure_only_snapshot_needs_refresh(

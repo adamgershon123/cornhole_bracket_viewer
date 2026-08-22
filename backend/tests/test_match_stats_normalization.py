@@ -124,6 +124,35 @@ class MatchStatsNormalizationTests(unittest.TestCase):
         self.assertEqual(tuple(rows[0]), (10, "200:10", "200:20"))
         self.assertEqual(tuple(rows[1]), (20, "200:20", "200:10"))
 
+    def test_walker_position_rounds_are_credited_to_the_real_player(self) -> None:
+        self.conn.execute("INSERT INTO events(event_id,match_type) VALUES (255270,'D')")
+        ghost = {**inning(2, 99999, 7, 9), "playerfirstname": "Ghost", "playerlastname": "Player"}
+        payload = {
+            "matchStatus": 5,
+            "event_team_details": [
+                {"teamid": 7, "playerid": 230405, "playerfirstname": "JP", "playerlastname": "Parsons"},
+                {"teamid": 7, "playerid": 99999, "playerfirstname": "Ghost", "playerlastname": "Player"},
+                {"teamid": 8, "playerid": 44, "playerfirstname": "Real", "playerlastname": "Opponent"},
+                {"teamid": 8, "playerid": 45, "playerfirstname": "Other", "playerlastname": "Opponent"},
+            ],
+            "event_match_inning_history": [
+                {**inning(1, 230405, 7, 8), "playerfirstname": "JP", "playerlastname": "Parsons"},
+                inning(1, 44, 8, 7),
+                ghost,
+                inning(2, 45, 8, 6),
+            ],
+        }
+        saved = normalize_match_stats_to_rounds(self.conn, 255270, "4", 1, payload)
+        self.assertEqual(saved, 4)
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM player_rounds WHERE player_id=99999").fetchone()[0], 0)
+        jp = self.conn.execute(
+            "SELECT round_no,participation_type,attributed_from_player_id FROM player_rounds WHERE player_id=230405 ORDER BY round_no"
+        ).fetchall()
+        self.assertEqual(len(jp), 2)
+        self.assertEqual({row["participation_type"] for row in jp}, {"WALKER_SOLO_DOUBLES"})
+        self.assertEqual(jp[1]["attributed_from_player_id"], 99999)
+        self.assertEqual(self.conn.execute("SELECT actual_player_id FROM walker_participations").fetchone()[0], 230405)
+
 
 if __name__ == "__main__":
     unittest.main()

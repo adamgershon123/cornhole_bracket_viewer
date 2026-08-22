@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ChartNoAxesCombined, Check, ChevronDown, Eye, RefreshCw, Star, Trash2, UserRound } from 'lucide-react';
 import './index.css';
-import { fetchEvent, fetchIndividualSeasonStats, fetchMatchGameStats, fetchPlayerSeasonOptions, fetchSeasonProgress, fetchTournamentStats, type Match, type PlayerSeasonOption, type PlayerStat, type RoundRow } from './lib/api';
+import { fetchEvent, fetchIndividualSeasonStats, fetchMatchGameStats, fetchPlayerSeasonOptions, fetchSeasonProgress, fetchSharedViewerProfile, fetchTournamentStats, saveSharedViewerProfile, type Match, type PlayerSeasonOption, type PlayerStat, type RoundRow } from './lib/api';
 import { ScoreHero } from './components/ScoreHero';
 import { MetricPill } from './components/MetricPill';
 import { PlayerBars } from './components/PlayerBars';
@@ -627,6 +627,42 @@ function App() {
   const [gameMobileMode, setGameMobileMode] = useState<'PLAYER' | 'VIEWER' | 'ANALYSIS'>(loadInitialGameMobileMode);
 
   useEffect(() => {
+    let cancelled = false;
+    async function hydrateSharedProfile() {
+      try {
+        const profile = await fetchSharedViewerProfile();
+        if (cancelled) return;
+        const nextFavorites = Array.isArray(profile.favoritePlayers) ? profile.favoritePlayers : [];
+        const nextDefault = profile.defaultPlayerId ? String(profile.defaultPlayerId) : '';
+        setFavorites(nextFavorites);
+        setDefaultPlayerId(nextDefault);
+        saveFavorites(nextFavorites);
+        saveDefaultPlayerId(nextDefault);
+        if (!selectedPlayerId && nextDefault) setSelectedPlayerId(nextDefault);
+      } catch {
+        // Local storage remains a deliberate offline fallback.
+      }
+    }
+    hydrateSharedProfile();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') hydrateSharedProfile();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  function persistSharedProfile(nextDefault: string, nextFavorites: FavoritePlayer[]) {
+    saveDefaultPlayerId(nextDefault);
+    saveFavorites(nextFavorites);
+    saveSharedViewerProfile(nextDefault, nextFavorites).catch(() => {
+      // Do not block player navigation when the server is temporarily offline.
+    });
+  }
+
+  useEffect(() => {
     const missingPhotos = favorites.filter(player => !player.photo);
     if (!missingPhotos.length) return;
     let cancelled = false;
@@ -648,10 +684,11 @@ function App() {
       if (next.some((player, index) => player.photo !== favorites[index]?.photo || player.name !== favorites[index]?.name)) {
         setFavorites(next);
         saveFavorites(next);
+        saveSharedViewerProfile(defaultPlayerId, next).catch(() => undefined);
       }
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [favorites.length]);
 
   function buildSeasonProgressKey(playerId: string, bucketId: string, startDate: string, endDate: string) {
     return [playerId, bucketId, startDate || '', endDate || '', Date.now()].join(':');
@@ -1095,14 +1132,15 @@ async function loadPlayerEvents(
       : [...favorites, { playerId: id, name, photo }];
 
     setFavorites(next);
-    saveFavorites(next);
 
     setPlayerInput('');
     setSelectedPlayerId(String(id));
 
     if (!defaultPlayerId) {
       setDefaultPlayerId(String(id));
-      saveDefaultPlayerId(String(id));
+      persistSharedProfile(String(id), next);
+    } else {
+      persistSharedProfile(defaultPlayerId, next);
     }
 
     await loadPlayerEvents(String(id), 'ACTIVE');
@@ -1111,13 +1149,13 @@ async function loadPlayerEvents(
   function removeFavoritePlayer(playerId: number) {
     const next = favorites.filter(p => p.playerId !== playerId);
     setFavorites(next);
-    saveFavorites(next);
 
+    let nextDefault = defaultPlayerId;
     if (defaultPlayerId === String(playerId)) {
-      const nextDefault = next[0]?.playerId ? String(next[0].playerId) : '';
+      nextDefault = next[0]?.playerId ? String(next[0].playerId) : '';
       setDefaultPlayerId(nextDefault);
-      saveDefaultPlayerId(nextDefault);
     }
+    persistSharedProfile(nextDefault, next);
 
     if (selectedPlayerId === String(playerId)) {
       const nextSelected = next[0]?.playerId ? String(next[0].playerId) : '';
@@ -1139,7 +1177,7 @@ async function loadPlayerEvents(
 
   function makeDefaultPlayer(playerId: number) {
     setDefaultPlayerId(String(playerId));
-    saveDefaultPlayerId(String(playerId));
+    persistSharedProfile(String(playerId), favorites);
     setSelectedPlayerId(String(playerId));
     loadPlayerEvents(String(playerId), 'ACTIVE');
     if (view === 'STANDINGS') {

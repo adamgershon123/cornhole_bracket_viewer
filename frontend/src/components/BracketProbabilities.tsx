@@ -145,7 +145,10 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
     );
   }
   if (data.status !== 'COMPLETE') {
-    return <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-5 text-base text-amber-100">Bracket predictions unavailable: {String(data.status).replaceAll('_', ' ')}</div>;
+    return <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-5 text-base text-amber-100">
+      <div className="font-black">Bracket predictions unavailable: {String(data.status).replaceAll('_', ' ')}</div>
+      {data.message && <div className="mt-2 text-sm leading-6 text-amber-100/75">{data.message}</div>}
+    </div>;
   }
 
   const possiblePairings = Number(data.coverage?.possiblePairingsEvaluated || 0);
@@ -160,7 +163,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
   const rankedTeams = [...(data.teams || [])].sort((a: any, b: any) => Number(b.winEventProbability || 0) - Number(a.winEventProbability || 0));
   const leadingTeam = rankedTeams[0];
   const leadingPlayers = (leadingTeam?.players || []).map((player: any) => player.playerName).join(' / ');
-  const validatedStructure = data.structure?.mode === 'VALIDATED_ACL_BRACKET_TEMPLATE';
+  const validatedStructure = data.structure?.mode === 'VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH';
 
   return <section className="mb-4 overflow-hidden rounded-[26px] border border-white/10 bg-zinc-950">
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
@@ -282,7 +285,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
               <div className="text-base font-black text-white">{pairing.teamBName}</div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <div className="rounded-lg bg-black/30 p-3"><div className="text-xs font-bold text-zinc-500">PPR</div><div className="mt-1 font-black text-white">{number(pairing.teamACalculatedPpr)} / {number(pairing.teamBCalculatedPpr)}</div></div>
-                <div className="rounded-lg bg-black/30 p-3"><div className="text-xs font-bold text-zinc-500">Probability</div><div className="mt-1 font-black text-white">{predicted ? `${pct(pairing.teamAProbability)} / ${pct(pairing.teamBProbability)}` : '50% / 50%'}</div></div>
+                <div className="rounded-lg bg-black/30 p-3"><div className="text-xs font-bold text-zinc-500">Probability / projected score</div><div className="mt-1 font-black text-white">{predicted ? `${pct(pairing.teamAProbability)} / ${pct(pairing.teamBProbability)}` : '50% / 50%'}</div><div className="mt-1 text-sky-300">{pairing.projectedScore ? `${pairing.projectedScore.sideAScore}–${pairing.projectedScore.sideBScore}` : '—'}</div></div>
               </div>
               <div className={`mt-3 inline-flex rounded-lg border px-3 py-2 text-sm font-black ${aclAssisted
                 ? 'border-sky-300/25 bg-sky-300/10 text-sky-300'
@@ -322,6 +325,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
                 <td className="p-4 leading-6 text-zinc-300">
                   <div>{number(pairing.teamACalculatedPpr)} / {number(pairing.teamBCalculatedPpr)}</div>
                   {predicted && <div className="text-zinc-500">{pct(pairing.teamAProbability)} / {pct(pairing.teamBProbability)}</div>}
+                  {pairing.projectedScore && <div className="font-bold text-sky-300">Projected {pairing.projectedScore.sideAScore}–{pairing.projectedScore.sideBScore}</div>}
                 </td>
                 <td className="p-4">
                   <span className={`inline-flex rounded-lg border px-3 py-2 font-black ${aclAssisted
@@ -363,13 +367,18 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
             <ProbabilityStat label="Final" value={pct(team.reachFinalProbability)} tone="sky" />
             <ProbabilityStat label="Champion" value={pct(team.winEventProbability)} tone="amber" />
           </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <ProbabilityStat label="Projected record" value={record(team)} />
+            <ProbabilityStat label="Avg margin" value={signed(team.averageMarginPerGame)} tone="sky" />
+            <ProbabilityStat label="Win / loss margin" value={`${number(team.averageMarginOfVictory)} / ${number(team.averageMarginOfDefeat)}`} />
+          </div>
         </div>;
       })}
     </div>
     <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-[700px] text-base">
         <thead className="bg-white/[.04] text-left text-xs font-black uppercase tracking-wider text-zinc-400">
-          <tr><th className="p-4">Rank</th><th className="p-4">Players</th><th>Reach semifinals</th><th>Reach final</th><th>Win event</th></tr>
+          <tr><th className="p-4">Rank</th><th className="p-4">Players</th><th>Projected record</th><th>Avg margin</th><th>Reach semifinals</th><th>Reach final</th><th>Win event</th></tr>
         </thead>
         <tbody>{rankedTeams.map((team: any, index: number) => {
           const playerNames = (team.players || []).map((player: any) => player.playerName).join(' / ');
@@ -379,6 +388,8 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
               <div className="text-lg font-black text-white">{playerNames || team.teamName}</div>
               <div className="mt-1 text-sm font-semibold text-zinc-500">{team.teamName || `Team ${team.teamId}`}</div>
             </td>
+            <td className="font-black text-zinc-200">{record(team)}</td>
+            <td className="font-black text-sky-300">{signed(team.averageMarginPerGame)}</td>
             <td className="text-lg font-black text-zinc-200">{pct(team.reachSemifinalProbability)}</td>
             <td className="text-lg font-black text-sky-300">{pct(team.reachFinalProbability)}</td>
             <td className="text-xl font-black text-amber-300">{pct(team.winEventProbability)}</td>
@@ -387,9 +398,9 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
       </table>
     </div>
     <div className="border-t border-white/10 p-4 text-sm leading-6 text-zinc-400">
-      PPR-only model. Descriptive player ratings have zero weight. Structure: {data.structure?.mode === 'VALIDATED_ACL_BRACKET_TEMPLATE'
-        ? `validated ACL ${data.structure.templateKey} layout inferred from ${data.structure.templateEventCount} completed events (${pct(data.structure.templateEdgeCoverageRate)} repeated-path coverage).`
-        : 'seeded single-elimination fallback because no replicated ACL layout matched this field.'}
+      Match win probabilities use the active PPR control; projected scores, records and margins use {data.scoringModel?.version || 'the score-distribution model'}. Descriptive player ratings have zero weight. Structure: {validatedStructure
+        ? `validated ACL-published ${data.structure.templateKey} winners/losers graph (${pct(data.structure.templateEdgeCoverageRate)} link coverage).`
+        : 'unvalidated; simulation is blocked rather than substituting another bracket.'}
     </div>
   </section>;
 }
@@ -656,6 +667,18 @@ function ProbabilityStat({ label, value, tone = 'white' }: { label: string; valu
 
 function number(value: any) {
   return value == null ? 'Unavailable' : Number(value).toFixed(2);
+}
+
+function record(team: any) {
+  const wins = team?.projectedRecord?.wins;
+  const losses = team?.projectedRecord?.losses;
+  return wins == null || losses == null ? '—' : `${Number(wins).toFixed(1)}–${Number(losses).toFixed(1)}`;
+}
+
+function signed(value: any) {
+  if (value == null) return '—';
+  const numeric = Number(value);
+  return `${numeric > 0 ? '+' : ''}${numeric.toFixed(2)}`;
 }
 
 function pct(value: any) {

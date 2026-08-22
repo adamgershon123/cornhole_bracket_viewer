@@ -47,7 +47,11 @@ export function TaleOfTheTape({
   const bottom = aggregate(bottomPlayers, pregame);
   const topFavored = pregameTopProbability >= 0.5;
   const favoriteProbability = topFavored ? pregameTopProbability : 1 - pregameTopProbability;
-  const projectedLoserScore = Math.max(0, Math.min(20, Math.round(21 * (1 - favoriteProbability) / favoriteProbability)));
+  const projectedTopScore = Number(pregameEvidence?.projectedScore?.sideAScore);
+  const projectedBottomScore = Number(pregameEvidence?.projectedScore?.sideBScore);
+  const projectedScore = Number.isFinite(projectedTopScore) && Number.isFinite(projectedBottomScore)
+    ? `${projectedTopScore}–${projectedBottomScore}`
+    : 'Unavailable';
   const reasoning = buildProjectionReasoning(pregameEvidence, topTeamName, bottomTeamName, pregameTopProbability);
   const metrics: Metric[] = [
     { label: 'PPR', top: top.ppr, bottom: bottom.ppr, digits: 2 },
@@ -102,7 +106,7 @@ export function TaleOfTheTape({
       {pregame && <div className="grid gap-3 border-b border-white/10 bg-amber-300/[.06] p-4 text-center sm:grid-cols-3">
         <SummaryCard label="Projected winner" value={topFavored ? topTeamName : bottomTeamName} />
         <SummaryCard label="Win probability" value={`${(favoriteProbability * 100).toFixed(1)}%`} />
-        <SummaryCard label="Projected score" value={topFavored ? `21–${projectedLoserScore}` : `${projectedLoserScore}–21`} />
+        <SummaryCard label="Projected score" value={projectedScore} />
       </div>}
 
       {pregame && (

@@ -197,15 +197,20 @@ def championship_double_dip_profile(
     *,
     payload: dict[str, Any],
     match_id: str | int,
+    persist_completed: bool = False,
 ) -> dict[str, Any] | None:
-    """Return role-specific championship history for the two current finalists."""
+    """Return role-specific championship history for the two current finalists.
+
+    Viewer requests remain read-only. The dedicated history worker persists
+    completed championship records; write-side callers may explicitly opt in.
+    """
     _init_schema(conn)
     context = championship_match_context(payload, match_id=match_id)
     if not context:
         return None
 
     completed = analyze_double_elimination_final(payload)
-    if completed:
+    if completed and persist_completed:
         store_double_dip_records(conn, [completed])
 
     overall_rows = conn.execute(

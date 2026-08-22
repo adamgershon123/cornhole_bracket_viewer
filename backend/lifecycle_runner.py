@@ -46,6 +46,8 @@ def initialize_lifecycle_schema(conn: sqlite3.Connection) -> None:
             poll_start_at TEXT,
             priority INTEGER NOT NULL DEFAULT 100,
             priority_label TEXT,
+            auto_freeze_prediction INTEGER NOT NULL DEFAULT 0,
+            auto_grade_on_complete INTEGER NOT NULL DEFAULT 0,
             CHECK(schedule_format IN ('SWISS', 'SWAP', 'BRACKET'))
         );
 
@@ -74,6 +76,10 @@ def initialize_lifecycle_schema(conn: sqlite3.Connection) -> None:
         )
     if "priority_label" not in columns:
         conn.execute("ALTER TABLE monitored_events ADD COLUMN priority_label TEXT")
+    if "auto_freeze_prediction" not in columns:
+        conn.execute("ALTER TABLE monitored_events ADD COLUMN auto_freeze_prediction INTEGER NOT NULL DEFAULT 0")
+    if "auto_grade_on_complete" not in columns:
+        conn.execute("ALTER TABLE monitored_events ADD COLUMN auto_grade_on_complete INTEGER NOT NULL DEFAULT 0")
     conn.commit()
 
 
@@ -123,6 +129,8 @@ def monitor_event(
     event_id: str | int,
     schedule_format: str,
     source_timezone: str | None,
+    auto_freeze_prediction: bool | None = None,
+    auto_grade_on_complete: bool | None = None,
 ) -> None:
     initialize_lifecycle_schema(conn)
     normalized = schedule_format.strip().upper()
@@ -131,14 +139,21 @@ def monitor_event(
     conn.execute(
         """
         INSERT INTO monitored_events(
-            event_id, schedule_format, source_timezone, enabled, added_at
-        ) VALUES (?, ?, ?, 1, ?)
+            event_id, schedule_format, source_timezone, enabled, added_at,
+            auto_freeze_prediction, auto_grade_on_complete
+        ) VALUES (?, ?, ?, 1, ?, ?, ?)
         ON CONFLICT(event_id) DO UPDATE SET
             schedule_format=excluded.schedule_format,
             source_timezone=excluded.source_timezone,
-            enabled=1
+            enabled=1,
+            auto_freeze_prediction=COALESCE(?, monitored_events.auto_freeze_prediction),
+            auto_grade_on_complete=COALESCE(?, monitored_events.auto_grade_on_complete)
         """,
-        (str(event_id), normalized, source_timezone, utc_now()),
+        (str(event_id), normalized, source_timezone, utc_now(),
+         int(bool(auto_freeze_prediction)) if auto_freeze_prediction is not None else 0,
+         int(bool(auto_grade_on_complete)) if auto_grade_on_complete is not None else 0,
+         int(bool(auto_freeze_prediction)) if auto_freeze_prediction is not None else None,
+         int(bool(auto_grade_on_complete)) if auto_grade_on_complete is not None else None),
     )
     known = conn.execute(
         """
@@ -476,6 +491,9 @@ def start_prediction_operations_snapshot_worker(db_factory: Any) -> None:
 
 def _build_prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
     initialize_lifecycle_schema(conn)
+    from event_analytics_jobs import ensure_event_analytics_job_schema
+    from walker_repair import walker_repair_status
+    ensure_event_analytics_job_schema(conn)
     discovered = conn.execute(
         """
         SELECT format_candidate, COUNT(*) AS count
@@ -488,6 +506,8 @@ def _build_prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str,
         """
         SELECT m.*, d.event_name, d.event_date, d.advertised_time,
                d.location_city, d.location_state, d.location_country,
+               (SELECT j.status FROM event_analytics_jobs j WHERE j.event_id=CAST(m.event_id AS INTEGER) AND j.job_type='FROZEN_PREDICTION') AS frozen_prediction_job_status,
+               (SELECT j.status FROM event_analytics_jobs j WHERE j.event_id=CAST(m.event_id AS INTEGER) AND j.job_type='TOURNAMENT_GRADES') AS tournament_grades_job_status,
                CASE
                  WHEN m.last_poll_status='NO_ACTIVITY' THEN 'NO_ACTIVITY'
                  WHEN m.enabled=1 THEN 'ACTIVE'
@@ -678,6 +698,7 @@ def _build_prediction_operations_snapshot(conn: sqlite3.Connection) -> dict[str,
         "historicalReference": _historical_reference(
             performance.get("historicalBacktest") or {}
         ),
+        "walkerHistoryRepair": walker_repair_status(conn),
     }
 
 
@@ -796,6 +817,7 @@ def run_lifecycle_cycle(
         "rapidPredictionPasses": [],
         "shadowCreation": None,
         "errors": [],
+        "defaultPlayerBracketEnrollment": None,
     }
     try:
         if search_params:
@@ -1073,6 +1095,12 @@ def run_lifecycle_cycle(
                     (utc_now(), str(exc), event["event_id"]),
                 )
                 conn.commit()
+        # Use the rosters indexed by this very discovery/polling cycle. This is
+        # a local database check, not a separate player-events API request.
+        from shared_viewer_profile import enroll_default_player_brackets_from_collected_rosters
+        summary["defaultPlayerBracketEnrollment"] = (
+            enroll_default_player_brackets_from_collected_rosters(conn)
+        )
         summary["shadowCreation"] = create_due_shadow_predictions(
             conn,
             lookahead_minutes=lookahead_minutes,

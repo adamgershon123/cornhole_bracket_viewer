@@ -2,7 +2,7 @@ services:
   web:
     build: .
     restart: unless-stopped
-    command: ["gunicorn", "--bind", "0.0.0.0:5173", "--workers", "1", "--threads", "8", "--timeout", "120", "--access-logfile", "-", "--access-logformat", "%(h)s %(r)s %(s)s %(b)s %(L)ssec", "app:app"]
+    command: ["gunicorn", "--bind", "0.0.0.0:5173", "--workers", "2", "--threads", "4", "--timeout", "120", "--access-logfile", "-", "--access-logformat", "%(h)s %(r)s %(s)s %(b)s %(L)ssec", "app:app"]
     environment:
       DATA_DIR: /data
       PORT: 5173

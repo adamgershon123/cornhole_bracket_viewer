@@ -73,6 +73,8 @@ export default function PredictionOperationsView() {
   const [eventId, setEventId] = useState('');
   const [eventFormat, setEventFormat] = useState<'SWISS' | 'SWAP' | 'BRACKET'>('SWAP');
   const [eventTimezone, setEventTimezone] = useState('America/New_York');
+  const [autoFreezePrediction, setAutoFreezePrediction] = useState(true);
+  const [autoGradeOnComplete, setAutoGradeOnComplete] = useState(true);
   const [backfill, setBackfill] = useState<any>(null);
   const [backfillChanging, setBackfillChanging] = useState(false);
   const [venueExporting, setVenueExporting] = useState(false);
@@ -146,10 +148,37 @@ export default function PredictionOperationsView() {
         eventId: eventId.trim(),
         format: eventFormat,
         timezone: eventTimezone.trim(),
+        autoFreezePrediction,
+        autoGradeOnComplete,
       }));
       setEventId('');
     } catch (err: any) {
       setError(err?.message || 'Event monitoring could not be configured.');
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  async function updateEventAutomation(event: any, field: 'auto_freeze_prediction'|'auto_grade_on_complete') {
+    setRunning(true);
+    setError('');
+    const nextValue = !Boolean(event[field]);
+    try {
+      await monitorPredictionEvent({
+        eventId: String(event.event_id),
+        format: event.schedule_format,
+        timezone: event.source_timezone || 'America/New_York',
+        autoFreezePrediction: field === 'auto_freeze_prediction' ? nextValue : Boolean(event.auto_freeze_prediction),
+        autoGradeOnComplete: field === 'auto_grade_on_complete' ? nextValue : Boolean(event.auto_grade_on_complete),
+      });
+      setData((current: any) => ({
+        ...current,
+        monitoredEvents: (current?.monitoredEvents || []).map((row: any) => (
+          String(row.event_id) === String(event.event_id) ? { ...row, [field]: nextValue ? 1 : 0 } : row
+        )),
+      }));
+    } catch (err: any) {
+      setError(err?.message || 'Event automation could not be updated.');
     } finally {
       setRunning(false);
     }
@@ -202,6 +231,7 @@ export default function PredictionOperationsView() {
       || (eventActivityFilter === 'NO_ACTIVITY' ? noActivity : !noActivity);
     return groupMatches && activityMatches;
   });
+  const walkerRepair = data?.walkerHistoryRepair || {};
 
   return (
     <section className="mt-4 space-y-4">
@@ -1085,6 +1115,16 @@ export default function PredictionOperationsView() {
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
         <div className="rounded-[26px] border border-white/10 bg-zinc-950 p-5">
+          <div className="mb-4 rounded-2xl border border-violet-300/20 bg-violet-300/[.05] p-4">
+            <div className="text-xs font-black uppercase tracking-[.18em] text-violet-300">Walker / Ghost history repair</div>
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-300">
+              <span><b className="text-white">{Number(walkerRepair.complete || 0).toLocaleString()}</b> repaired</span>
+              <span><b className="text-white">{Number(walkerRepair.pending || 0).toLocaleString()}</b> queued</span>
+              <span><b className="text-white">{Number(walkerRepair.undiscoveredCandidates || 0).toLocaleString()}</b> awaiting gradual review</span>
+              <span><b className={walkerRepair.failed ? 'text-red-300' : 'text-emerald-300'}>{Number(walkerRepair.failed || 0).toLocaleString()}</b> failed</span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">Runs independently at a deliberately slow pace. Only definitive ACL synthetic seats are reassigned; real players named Walker are never inferred.</p>
+          </div>
           <div className="flex items-center gap-2">
             <Activity size={18} className="text-emerald-300" />
             <div>
@@ -1119,14 +1159,14 @@ export default function PredictionOperationsView() {
               </div>
             )}
             {monitoredEvents.map((event: any) => (
-              <a href={`/?event_id=${event.event_id}`} key={event.event_id} className="grid gap-2 rounded-2xl border border-white/10 bg-white/[.03] p-4 transition hover:border-amber-300/30 hover:bg-white/[.06] md:grid-cols-[1fr_auto]">
+              <div key={event.event_id} className="grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-4 md:grid-cols-[1fr_auto]">
                 <div>
-                  <div className="font-black text-white">{event.event_name || `Event ${event.event_id}`}</div>
+                  <a href={`/?event_id=${event.event_id}`} className="font-black text-white hover:text-amber-200">{event.event_name || `Event ${event.event_id}`}</a>
                   <div className="mt-1 text-xs text-zinc-500">
                     {event.event_date || 'Date unknown'} · {event.advertised_time || 'Time unknown'} · {event.location_city || 'Location unknown'}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
                   {event.priority_label === 'ACL_WORLDS' && (
                     <span className="rounded-full bg-amber-300/15 px-2.5 py-1 text-amber-200">ACL WORLDS</span>
                   )}
@@ -1150,7 +1190,15 @@ export default function PredictionOperationsView() {
                         : (event.tracking_status || event.last_poll_status || 'ARCHIVED')}
                   </span>
                 </div>
-              </a>
+                <div className="flex flex-wrap gap-2 md:col-span-2">
+                  <button type="button" onClick={() => updateEventAutomation(event, 'auto_freeze_prediction')} className={`rounded-xl border px-3 py-2 text-xs font-black transition active:scale-[.98] ${event.auto_freeze_prediction ? 'border-sky-300 bg-sky-300/20 text-sky-100' : 'border-white/15 bg-black/30 text-zinc-400'}`}>
+                    {event.auto_freeze_prediction ? '✓ ' : ''}Freeze prediction when ready{event.frozen_prediction_job_status ? ` · ${event.frozen_prediction_job_status}` : ''}
+                  </button>
+                  <button type="button" onClick={() => updateEventAutomation(event, 'auto_grade_on_complete')} className={`rounded-xl border px-3 py-2 text-xs font-black transition active:scale-[.98] ${event.auto_grade_on_complete ? 'border-violet-300 bg-violet-300/20 text-violet-100' : 'border-white/15 bg-black/30 text-zinc-400'}`}>
+                    {event.auto_grade_on_complete ? '✓ ' : ''}Grade after conclusion{event.tournament_grades_job_status ? ` · ${event.tournament_grades_job_status}` : ''}
+                  </button>
+                </div>
+              </div>
             ))}
             <div className="mt-4 grid gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 md:grid-cols-[1fr_130px_1fr_auto]">
               <input
@@ -1183,6 +1231,10 @@ export default function PredictionOperationsView() {
               >
                 Monitor
               </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-4 text-xs font-bold text-zinc-300">
+              <label className="flex items-center gap-2"><input type="checkbox" checked={autoFreezePrediction} onChange={event => setAutoFreezePrediction(event.target.checked)} /> Freeze prediction when roster is ready</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={autoGradeOnComplete} onChange={event => setAutoGradeOnComplete(event.target.checked)} /> Grade after tournament conclusion</label>
             </div>
             <p className="text-[11px] leading-5 text-zinc-500">
               Timezone must be a verified IANA value such as America/New_York. The system does not infer it from an address.

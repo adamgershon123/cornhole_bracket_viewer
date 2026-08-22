@@ -5,7 +5,9 @@ from bracket_simulation import (
     _extract_teams,
     _king_seat_position,
     _stage_label,
+    _run_template,
 )
+import random
 
 
 class BracketSimulationTests(unittest.TestCase):
@@ -121,6 +123,31 @@ class BracketSimulationTests(unittest.TestCase):
         ]
         teams = _extract_teams(details)
         self.assertEqual([team["teamId"] for team in teams], ["10"])
+
+    def test_double_dip_records_one_or_two_actual_games(self):
+        king = {"teamId": "K"}
+        challenger = {"teamId": "C"}
+        template = {
+            "matches": {
+                "1": {"roundDescription": "Final", "bracketSide": "F"},
+                "2": {"bracketSide": "W"},
+                "3": {"bracketSide": "L"},
+            },
+            "edges": {
+                "2:W": {"matchId": 1, "position": "T"},
+                "3:W": {"matchId": 1, "position": "B"},
+            },
+        }
+        games = []
+        _run_template(
+            template,
+            {(1, "T"): king, (1, "B"): challenger},
+            lambda _a, _b: 0.5,
+            random.Random(1),
+            championship_context={"blendedKingSeatChampionshipRate": 0.75},
+            on_game=lambda a, b, winner, probability: games.append(winner["teamId"]),
+        )
+        self.assertIn(len(games), (1, 2))
 
 
 if __name__ == "__main__":

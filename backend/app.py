@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
 
 import requests
-from filelock import FileLock
+from filelock import FileLock, Timeout
 from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 
@@ -269,8 +269,12 @@ def start_bracket_prediction_build(
         last_error: Exception | None = None
         priority_dir = os.path.join(DATA_DIR, "live_priority")
         priority_path = os.path.join(priority_dir, f"bracket-{event_id}-{build_id}.lock")
+        coordination_dir = os.path.join(DATA_DIR, "prediction_build_locks")
+        coordination_path = os.path.join(coordination_dir, f"bracket-{event_id}.lock")
+        coordination_lock = FileLock(coordination_path)
         try:
             os.makedirs(priority_dir, exist_ok=True)
+            os.makedirs(coordination_dir, exist_ok=True)
             with open(priority_path, "w", encoding="utf-8") as marker:
                 marker.write(now)
             update_status(
@@ -280,6 +284,44 @@ def start_bracket_prediction_build(
             # Allow already-running short background transactions to finish;
             # subsequent background cycles see the marker and yield.
             time.sleep(2)
+            # Gunicorn workers do not share the in-memory build registry. A
+            # filesystem lock in the shared data volume prevents two workers
+            # from simulating and trying to freeze the same event at once.
+            # Waiting workers refresh their status instead of mislabeling this
+            # coordination time as simulation time.
+            update_status(
+                "WAITING_FOR_BUILD_SLOT",
+                "Checking whether another web worker is already building this event.",
+            )
+            coordination_deadline = time.monotonic() + 600
+            while True:
+                try:
+                    coordination_lock.acquire(timeout=0)
+                    break
+                except Timeout:
+                    with season_platform_db() as conn:
+                        if has_valid_pregame_snapshot(conn, event_id):
+                            update_status(
+                                "COMPLETE",
+                                "Frozen prediction was completed by another web worker.",
+                            )
+                            last_error = None
+                            return
+                    if time.monotonic() >= coordination_deadline:
+                        raise Timeout(coordination_path)
+                    update_status(
+                        "WAITING_FOR_BUILD_SLOT",
+                        "Another web worker is building this event; waiting for its saved result.",
+                    )
+                    time.sleep(2)
+
+            # The other worker may have completed between our last database
+            # check and acquiring the event lock. Frozen artifacts are
+            # immutable, so never calculate them twice.
+            with season_platform_db() as conn:
+                if has_valid_pregame_snapshot(conn, event_id):
+                    last_error = None
+                    return
             # Live forecasts are time-sensitive. Background archive/backfill
             # writers share this SQLite database and can temporarily hold its
             # single write lock. Keep this build alive through contention
@@ -292,10 +334,9 @@ def start_bracket_prediction_build(
                         attempt=attempt,
                     )
                     with season_platform_db() as conn:
-                        # Reserve SQLite's single writer lane once. Snapshot
-                        # creation then remains atomic instead of releasing the
-                        # lock between checkpoints and losing it to refreshes.
-                        conn.execute("BEGIN IMMEDIATE")
+                        # Simulation is read-heavy and can take minutes. Do not
+                        # reserve SQLite's single writer lane during that work;
+                        # commit only after the completed snapshot is ready.
                         bracket_prediction_timeline(
                             conn,
                             bracket,
@@ -345,6 +386,8 @@ def start_bracket_prediction_build(
                         "failedAt": datetime.now(timezone.utc).isoformat(),
                     })
         finally:
+            if coordination_lock.is_locked:
+                coordination_lock.release()
             try:
                 os.remove(priority_path)
             except FileNotFoundError:

@@ -79,6 +79,7 @@ export function BracketProbabilities({ eventId, event }: { eventId: string; even
     const stageLabels: Record<string, string> = {
       QUEUED: 'Queued',
       PREPARING_PLAYER_HISTORY: 'Preparing player history',
+      WAITING_FOR_BUILD_SLOT: 'Waiting for the active event build',
       RUNNING_SIMULATIONS: 'Running bracket simulations',
       WAITING_FOR_DATABASE: 'Waiting for the analytics database',
       FAILED: 'Build failed',

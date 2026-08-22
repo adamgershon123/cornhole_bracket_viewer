@@ -189,7 +189,11 @@ def bracket_prediction_timeline(
         "completedMatchesApplied": applied_matches,
         "completedMatchesAvailable": len(completed),
         "timelineBuildStatus": "COMPLETE" if timeline_complete else "BUILDING",
-        "pregameSnapshot": snapshot_summary(pregame, label="Pregame"),
+        # Keep the complete audit trail once. Timeline pages only need the
+        # compact counts and team probabilities, not every pairing decision.
+        "pregameSnapshot": snapshot_summary(
+            pregame, label="Pregame", include_pairing_details=True
+        ),
         "timeline": timeline,
         "roundProgress": bracket_round_progress(bracket),
         "finalStandings": bracket_final_standings(bracket, completed),
@@ -403,8 +407,12 @@ def snapshot_summary(
     *,
     label: str,
     trigger_match: dict[str, Any] | None = None,
+    include_pairing_details: bool = False,
 ) -> dict[str, Any]:
     payload = snapshot["payload"]
+    coverage = dict(payload.get("coverage") or {})
+    if not include_pairing_details:
+        coverage.pop("pairingDetails", None)
     return {
         "label": label,
         "snapshotType": snapshot["snapshotType"],
@@ -412,7 +420,7 @@ def snapshot_summary(
         "completedMatches": snapshot["completedMatches"],
         "triggerMatch": trigger_match or snapshot.get("triggerMatch"),
         "simulationCount": payload.get("simulationCount"),
-        "coverage": payload.get("coverage"),
+        "coverage": coverage,
         "teams": [
             {
                 "teamId": team["teamId"],

@@ -458,6 +458,12 @@ def simulate_bracket(
             "templateEventCount": template.get("eventCount", 1),
             "templateEdgeCoverageRate": template.get("edgeCoverageRate", 1.0),
             "validation": validate_published_layout(template),
+            # Persist the small navigation graph with the frozen artifact so
+            # later reads never need to rescan the archive to reconstruct it.
+            "advancementGraph": {
+                "edges": template.get("edges") or {},
+                "matches": template.get("matches") or {},
+            },
         },
         "ratingWeights": {
             "currentForm": 0.0,

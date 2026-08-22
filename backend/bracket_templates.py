@@ -12,6 +12,7 @@ from typing import Any
 _REPOSITORY_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
 _REPOSITORY_CACHE_LOCK = threading.Lock()
 _REPOSITORY_CACHE_SECONDS = 300
+_SOURCE_LAYOUT_CACHE: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 
 
 def infer_bracket_layout(payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -143,26 +144,15 @@ def repository_bracket_templates(
         cached = _REPOSITORY_CACHE.get(cache_key)
         if cached and now - cached[0] < _REPOSITORY_CACHE_SECONDS:
             return cached[1]
-    layouts = []
-    paths = set(glob.glob(os.path.join(data_dir, "event_*.json")))
-    paths.update(glob.glob(
-        os.path.join(data_dir, "season_platform", "raw", "brackets", "event_*.json")
-    ))
-    for path in sorted(paths):
-        try:
-            with open(path, "r", encoding="utf-8") as source:
-                payload = json.load(source)
-        except (OSError, ValueError, TypeError):
-            continue
-        layout = infer_bracket_layout(payload)
-        if not layout or (
-            exclude_event_id is not None
-            and int(layout["eventId"]) == int(exclude_event_id)
-        ):
-            continue
-        if not layout["edges"]:
-            continue
-        layouts.append(layout)
+    # Parsing tens of thousands of archived JSON files is the expensive part.
+    # Cache the normalized source layouts independently of the event-specific
+    # exclusion so each new event only performs the inexpensive in-memory
+    # grouping below.  The short TTL still admits newly collected brackets.
+    layouts = [
+        layout for layout in _source_layouts(data_dir)
+        if exclude_event_id is None
+        or int(layout["eventId"]) != int(exclude_event_id)
+    ]
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for layout in layouts:
         grouped[layout["templateKey"]].append(layout)
@@ -265,6 +255,34 @@ def repository_bracket_templates(
     with _REPOSITORY_CACHE_LOCK:
         _REPOSITORY_CACHE[cache_key] = (time.monotonic(), result)
     return result
+
+
+def _source_layouts(data_dir: str) -> list[dict[str, Any]]:
+    cache_key = os.path.abspath(data_dir)
+    now = time.monotonic()
+    with _REPOSITORY_CACHE_LOCK:
+        cached = _SOURCE_LAYOUT_CACHE.get(cache_key)
+        if cached and now - cached[0] < _REPOSITORY_CACHE_SECONDS:
+            return cached[1]
+
+    layouts: list[dict[str, Any]] = []
+    paths = set(glob.glob(os.path.join(data_dir, "event_*.json")))
+    paths.update(glob.glob(
+        os.path.join(data_dir, "season_platform", "raw", "brackets", "event_*.json")
+    ))
+    for path in sorted(paths):
+        try:
+            with open(path, "r", encoding="utf-8") as source:
+                payload = json.load(source)
+        except (OSError, ValueError, TypeError):
+            continue
+        layout = infer_bracket_layout(payload)
+        if layout and layout["edges"]:
+            layouts.append(layout)
+
+    with _REPOSITORY_CACHE_LOCK:
+        _SOURCE_LAYOUT_CACHE[cache_key] = (time.monotonic(), layouts)
+    return layouts
 
 
 def select_template(

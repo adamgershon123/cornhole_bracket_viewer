@@ -11,6 +11,7 @@ from bracket_prediction_snapshots import (
     completed_bracket_matches,
     delete_prediction_timeline,
     has_valid_pregame_snapshot,
+    snapshot_summary,
 )
 
 
@@ -34,6 +35,32 @@ def entry(match_id, position, team_id, round_desc, status=5, score=(21, 10), nam
 
 
 class BracketPredictionSnapshotTests(unittest.TestCase):
+    def test_timeline_summary_omits_repeated_pairing_details(self) -> None:
+        snapshot = {
+            "snapshotType": "PREGAME",
+            "createdAt": "now",
+            "completedMatches": 0,
+            "payload": {
+                "simulationCount": 200,
+                "coverage": {
+                    "modelCoverageRate": 0.75,
+                    "pairingDetails": [{"teamAId": "1", "teamBId": "2"}],
+                },
+                "teams": [{
+                    "teamId": "1", "teamName": "One", "players": [],
+                    "winEventProbability": 0.6,
+                }],
+            },
+        }
+
+        compact = snapshot_summary(snapshot, label="Pregame")
+        audited = snapshot_summary(
+            snapshot, label="Pregame", include_pairing_details=True
+        )
+
+        self.assertNotIn("pairingDetails", compact["coverage"])
+        self.assertEqual(len(audited["coverage"]["pairingDetails"]), 1)
+
     def test_structure_only_pregame_remains_frozen_until_explicit_reset(self) -> None:
         conn = sqlite3.connect(":memory:")
         conn.row_factory = sqlite3.Row

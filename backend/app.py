@@ -66,7 +66,12 @@ from bracket_prediction_snapshots import (
     delete_prediction_timeline,
     has_valid_pregame_snapshot,
 )
-from bracket_templates import repository_bracket_templates, select_template
+from bracket_templates import (
+    infer_bracket_layout,
+    repository_bracket_templates,
+    select_template,
+    validate_published_layout,
+)
 from stage_a_features import build_matchup_features
 from baseline_predictions import score_matchup
 from scoring_distribution_challenger import (
@@ -1892,11 +1897,30 @@ def api_bracket_probabilities(event_id: str):
             data_dir=DATA_DIR,
             max_new_snapshots=0,
         )
-    repository = repository_bracket_templates(
-        DATA_DIR,
-        exclude_event_id=numeric_event_id,
-    )
-    navigation_template = select_template(repository, data)
+    saved_structure = result.get("structure") or {}
+    saved_graph = saved_structure.get("advancementGraph") or {}
+    navigation_template = None
+    if saved_graph.get("edges"):
+        navigation_template = {
+            "templateKey": saved_structure.get("templateKey"),
+            "eventCount": saved_structure.get("templateEventCount", 1),
+            "edgeCoverageRate": saved_structure.get("templateEdgeCoverageRate", 1.0),
+            "edges": saved_graph.get("edges") or {},
+            "matches": saved_graph.get("matches") or {},
+        }
+    else:
+        # Compatibility for snapshots saved before the navigation graph was
+        # embedded. Completed/current ACL graphs can be recovered directly in
+        # milliseconds without walking the historical archive.
+        current_layout = infer_bracket_layout(data)
+        if validate_published_layout(current_layout).get("valid"):
+            navigation_template = current_layout
+        else:
+            repository = repository_bracket_templates(
+                DATA_DIR,
+                exclude_event_id=numeric_event_id,
+            )
+            navigation_template = select_template(repository, data)
     result["liveBracketStructure"] = {
         "status": (
             "VALIDATED_TEMPLATE"

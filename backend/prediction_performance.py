@@ -52,6 +52,11 @@ def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, 
     historical_backtest = historical_backtest_report(conn)
     replay_status = historical_tournament_replay_status(conn)
     tournament_rows = _tournament_evaluations(conn)
+    corrected_tournament_rows = [
+        row for row in tournament_rows
+        if row.get("structureClass") == "CORRECTED_PUBLISHED_GRAPH"
+    ]
+    structural_comparison = _structural_version_comparison(tournament_rows)
     return {
         "historicalBacktest": historical_backtest,
         "historicalTournamentReplay": replay_status,
@@ -71,12 +76,13 @@ def _build_prediction_performance_report(conn: sqlite3.Connection) -> dict[str, 
         },
         "historicalMatchPerformance": _historical_match_summary(historical_backtest),
         "tournamentPerformance": {
-            "overall": _tournament_summary(tournament_rows),
+            "overall": _tournament_summary(corrected_tournament_rows),
             "byBracketSize": _grouped_tournament_summary(
-                tournament_rows, lambda row: _field_size_bucket(row["teamCount"])
+                corrected_tournament_rows, lambda row: _field_size_bucket(row["teamCount"])
             ),
-            "calibration": _calibration(tournament_rows),
-            "modelComparison": _model_comparison(tournament_rows),
+            "calibration": _calibration(corrected_tournament_rows),
+            "modelComparison": _model_comparison(corrected_tournament_rows),
+            "structureCorrection": structural_comparison,
             "events": sorted(
                 [
                     {
@@ -143,6 +149,27 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tournament_prediction_evaluation_cache_v2(
+          event_id INTEGER NOT NULL,
+          snapshot_created_at TEXT NOT NULL,
+          evaluation_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(event_id, snapshot_created_at)
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO tournament_prediction_evaluation_cache_v2(
+          event_id, snapshot_created_at, evaluation_json, cached_at
+        ) SELECT event_id, snapshot_created_at, evaluation_json, cached_at
+          FROM tournament_prediction_evaluation_cache
+        """
+    )
+    conn.commit()
+
     # Iterate the cursor instead of fetchall(). Historical replay can create
     # thousands of snapshots whose JSON payloads are large; retaining all raw
     # JSON strings at once can exhaust the web worker before scoring begins.
@@ -156,7 +183,9 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                  THEN NULL
                  ELSE s.payload_json
                END AS payload_json,
-               s.created_at,
+               s.created_at, s.snapshot_type,
+               json_extract(s.payload_json, '$.structure.mode') AS structure_mode,
+               json_extract(s.payload_json, '$.simulationVersion') AS simulation_version,
                o.champion_player_ids_json AS replay_champion_player_ids_json,
                c.snapshot_created_at AS cached_snapshot_created_at,
                c.evaluation_json AS cached_evaluation_json,
@@ -164,8 +193,8 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         FROM bracket_prediction_snapshots s
         LEFT JOIN events e ON e.event_id=s.event_id
         LEFT JOIN historical_tournament_replay_outcomes o ON o.event_id=s.event_id
-        LEFT JOIN tournament_prediction_evaluation_cache c ON c.event_id=s.event_id
-        WHERE s.snapshot_type='PREGAME'
+        LEFT JOIN tournament_prediction_evaluation_cache_v2 c ON c.event_id=s.event_id AND c.snapshot_created_at=s.created_at
+        WHERE s.snapshot_type IN ('PREGAME','PREGAME_V2')
         ORDER BY s.created_at
         """
     )
@@ -182,6 +211,10 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         ):
             cached_row = _json(snapshot["cached_evaluation_json"])
             if cached_row:
+                cached_row["snapshotType"] = snapshot["snapshot_type"]
+                cached_row["structureClass"] = _structure_class_from_markers(
+                    snapshot["structure_mode"], snapshot["simulation_version"]
+                )
                 rows.append(cached_row)
                 continue
         payload = _json(snapshot["payload_json"])
@@ -248,6 +281,8 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
             ),
             "modelVersion": payload.get("modelVersion") or "unknown",
             "snapshotOrigin": payload.get("snapshotOrigin") or "LIVE_FROZEN",
+            "snapshotType": snapshot["snapshot_type"],
+            "structureClass": _structure_class(payload),
             # Calibration needs only probability/outcome pairs. Compact tuples
             # avoid retaining team dictionaries for every historical forecast.
             "calibrationForecasts": [
@@ -269,10 +304,10 @@ def _tournament_evaluations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         try:
             conn.executemany(
                 """
-                INSERT INTO tournament_prediction_evaluation_cache(
+                INSERT INTO tournament_prediction_evaluation_cache_v2(
                   event_id, snapshot_created_at, evaluation_json, cached_at
                 ) VALUES(?,?,?,CURRENT_TIMESTAMP)
-                ON CONFLICT(event_id) DO UPDATE SET
+                ON CONFLICT(event_id, snapshot_created_at) DO UPDATE SET
                   snapshot_created_at=excluded.snapshot_created_at,
                   evaluation_json=excluded.evaluation_json,
                   cached_at=CURRENT_TIMESTAMP
@@ -445,6 +480,89 @@ def _match_champion_team(
     if len(scored) > 1 and scored[0][:2] == scored[1][:2]:
         return None
     return scored[0][2]
+
+
+def _structure_class(payload: dict[str, Any]) -> str:
+    structure = payload.get("structure") or {}
+    return _structure_class_from_markers(
+        structure.get("mode"), payload.get("simulationVersion")
+    )
+
+
+
+
+
+def _structure_class_from_markers(mode: Any, simulation_version: Any) -> str:
+    marker = str(mode or "").upper()
+    version = str(simulation_version or "").lower()
+    if marker == "VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH" or "published" in version:
+        return "CORRECTED_PUBLISHED_GRAPH"
+    if marker == "SEEDED_SINGLE_ELIMINATION_ABSTRACTION":
+        return "LEGACY_SINGLE_ELIMINATION_INVALID"
+    if marker.startswith("VALIDATED_ACL"):
+        return "LEGACY_INFERRED_TEMPLATE"
+    return "LEGACY_UNKNOWN_STRUCTURE"
+
+
+def _structural_version_comparison(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    legacy = [
+        row for row in rows
+        if row.get("structureClass") == "LEGACY_SINGLE_ELIMINATION_INVALID"
+    ]
+    corrected = [
+        row for row in rows
+        if row.get("structureClass") == "CORRECTED_PUBLISHED_GRAPH"
+    ]
+    legacy_by_event = {int(row["eventId"]): row for row in legacy}
+    corrected_by_event = {int(row["eventId"]): row for row in corrected}
+    common_ids = sorted(set(legacy_by_event) & set(corrected_by_event))
+    paired_legacy = [legacy_by_event[event_id] for event_id in common_ids]
+    paired_corrected = [corrected_by_event[event_id] for event_id in common_ids]
+    old_summary = _tournament_summary(paired_legacy)
+    new_summary = _tournament_summary(paired_corrected)
+    changed_favorites = sum(
+        legacy_by_event[event_id]["favoriteTeamId"]
+        != corrected_by_event[event_id]["favoriteTeamId"]
+        for event_id in common_ids
+    )
+    net_correct = sum(
+        int(corrected_by_event[event_id]["favoriteWon"])
+        - int(legacy_by_event[event_id]["favoriteWon"])
+        for event_id in common_ids
+    )
+
+    def delta(metric: str) -> float | None:
+        old, new = old_summary.get(metric), new_summary.get(metric)
+        return round(float(new) - float(old), 6) if old is not None and new is not None else None
+
+    return {
+        "status": "PAIRED_RESULTS_AVAILABLE" if common_ids else "REBUILDING_PAIRED_COHORT",
+        "legacySingleEliminationForecasts": len(legacy),
+        "correctedPublishedGraphForecasts": len(corrected),
+        "pairedTournaments": len(common_ids),
+        "remainingLegacyWithoutCorrectedReplay": len(set(legacy_by_event) - set(corrected_by_event)),
+        "legacyExcludedFromHeadlineMetrics": True,
+        "legacy": old_summary,
+        "corrected": new_summary,
+        "difference": {
+            "favoriteAccuracy": delta("favoriteAccuracy"),
+            "topThreeHitRate": delta("topThreeHitRate"),
+            "averageChampionRank": delta("averageChampionRank"),
+            "multiclassBrierScore": delta("multiclassBrierScore"),
+            "championLogLoss": delta("championLogLoss"),
+            "changedFavorites": changed_favorites,
+            "netCorrectFavorites": net_correct,
+        },
+        "byBracketSize": [
+            {
+                "group": bucket,
+                "legacy": _tournament_summary([row for row in paired_legacy if row["bracketSizeBucket"] == bucket]),
+                "corrected": _tournament_summary([row for row in paired_corrected if row["bracketSizeBucket"] == bucket]),
+            }
+            for _, _, bucket in FIELD_SIZE_BUCKETS
+            if any(row["bracketSizeBucket"] == bucket for row in paired_corrected)
+        ],
+    }
 
 
 def _tournament_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:

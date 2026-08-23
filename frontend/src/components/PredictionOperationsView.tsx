@@ -245,6 +245,7 @@ export default function PredictionOperationsView() {
   const matchPerformance = performance?.matchPerformance || {};
   const tournamentPerformance = performance?.tournamentPerformance || {};
   const tournamentOverall = tournamentPerformance?.overall || {};
+  const structureCorrection = tournamentPerformance?.structureCorrection || {};
   const tournamentReplay = performance?.historicalTournamentReplay || {};
   const commonSample = shadow?.commonSample || {};
   const baselineModel = commonSample?.baseline || {};
@@ -783,6 +784,25 @@ export default function PredictionOperationsView() {
             <MiniMetric label="Replay engine" value={tournamentReplay?.status || 'NOT STARTED'} />
           </div>
           <p className="mt-3 text-xs leading-5 text-zinc-500">Historical forecasts use the original roster and only player evidence dated before that event. Results are joined only after the forecast has been saved.</p>
+        </div>
+        <div className="mt-3 rounded-2xl border border-violet-300/25 bg-violet-300/[.055] p-4">
+          <div className="text-xs font-black uppercase tracking-[.18em] text-violet-200">Bracket-structure correction bake-off</div>
+          <p className="mt-1 text-sm text-zinc-300">Same tournaments: legacy single-elimination abstraction versus the ACL-published graph.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            <MiniMetric label="Legacy invalid" value={Number(structureCorrection.legacySingleEliminationForecasts || 0).toLocaleString()} />
+            <MiniMetric label="Corrected v2" value={Number(structureCorrection.correctedPublishedGraphForecasts || 0).toLocaleString()} />
+            <MiniMetric label="Paired cohort" value={Number(structureCorrection.pairedTournaments || 0).toLocaleString()} />
+            <MiniMetric label="Still rebuilding" value={Number(structureCorrection.remainingLegacyWithoutCorrectedReplay || 0).toLocaleString()} />
+          </div>
+          {Number(structureCorrection.pairedTournaments || 0) > 0 ? <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <MiniMetric label="Favorite accuracy: old → v2" value={`${pct(structureCorrection.legacy?.favoriteAccuracy)} → ${pct(structureCorrection.corrected?.favoriteAccuracy)}`} />
+            <MiniMetric label="Top 3: old → v2" value={`${pct(structureCorrection.legacy?.topThreeHitRate)} → ${pct(structureCorrection.corrected?.topThreeHitRate)}`} />
+            <MiniMetric label="Champion rank: old → v2" value={`${structureCorrection.legacy?.averageChampionRank ?? '—'} → ${structureCorrection.corrected?.averageChampionRank ?? '—'}`} />
+            <MiniMetric label="Brier: old → v2" value={`${structureCorrection.legacy?.multiclassBrierScore ?? '—'} → ${structureCorrection.corrected?.multiclassBrierScore ?? '—'}`} />
+            <MiniMetric label="Log loss: old → v2" value={`${structureCorrection.legacy?.championLogLoss ?? '—'} → ${structureCorrection.corrected?.championLogLoss ?? '—'}`} />
+            <MiniMetric label="Changed / net correct" value={`${structureCorrection.difference?.changedFavorites || 0} / ${Number(structureCorrection.difference?.netCorrectFavorites || 0) >= 0 ? '+' : ''}${structureCorrection.difference?.netCorrectFavorites || 0}`} />
+          </div> : <p className="mt-3 text-xs text-amber-100">Corrected replays are building; differences appear once both versions exist for the same event.</p>}
+          <p className="mt-3 text-xs text-zinc-500">Legacy results remain auditable but are excluded from current headline tournament metrics.</p>
         </div>
         <div className={`mt-3 rounded-2xl border p-3 text-sm ${
           tournamentOverall?.sampleStatus === 'ESTABLISHED'

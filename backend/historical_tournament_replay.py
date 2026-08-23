@@ -13,7 +13,9 @@ from bracket_prediction_snapshots import _save_snapshot
 from bracket_simulation import _extract_teams, simulate_bracket
 
 
-REPLAY_VERSION = "historical-tournament-replay-v1"
+REPLAY_VERSION = "historical-tournament-replay-v2-published-graph"
+REPLAY_SNAPSHOT_TYPE = "PREGAME_V2"
+REPLAY_STATE_KEY = "PREGAME::STRUCTURE_V2"
 DEFAULT_SIMULATIONS = 2_000
 _WORKER_STARTED = False
 _WORKER_LOCK = threading.Lock()
@@ -89,8 +91,8 @@ def replay_historical_tournament(
     if not event_id or not event_date or len(teams) < 2:
         return {"status": "SKIPPED_INVALID_ROSTER", "eventId": event_id}
     existing = conn.execute(
-        "SELECT 1 FROM bracket_prediction_snapshots WHERE event_id=? AND snapshot_type='PREGAME'",
-        (event_id,),
+        "SELECT 1 FROM bracket_prediction_snapshots WHERE event_id=? AND state_key=?",
+        (event_id, REPLAY_STATE_KEY),
     ).fetchone()
     if existing:
         return {"status": "ALREADY_EXISTS", "eventId": event_id}
@@ -123,7 +125,9 @@ def replay_historical_tournament(
         "dataCutoffAt": f"{event_date}T00:00:00+00:00",
         "cutoffPolicy": "STRICTLY_BEFORE_EVENT_DATE",
     }
-    _save_snapshot(conn, event_id, "PREGAME", "PREGAME", 0, None, payload)
+    _save_snapshot(
+        conn, event_id, REPLAY_SNAPSHOT_TYPE, REPLAY_STATE_KEY, 0, None, payload
+    )
     conn.execute(
         """
         INSERT OR REPLACE INTO historical_tournament_replay_outcomes(
@@ -144,10 +148,11 @@ def historical_tournament_replay_status(conn: sqlite3.Connection) -> dict[str, A
     origins = conn.execute(
         """
         SELECT
-          SUM(CASE WHEN json_extract(payload_json, '$.snapshotOrigin')='HISTORICAL_REPLAY' THEN 1 ELSE 0 END) AS replayed,
-          SUM(CASE WHEN COALESCE(json_extract(payload_json, '$.snapshotOrigin'),'LIVE_FROZEN')!='HISTORICAL_REPLAY' THEN 1 ELSE 0 END) AS live_frozen
-        FROM bracket_prediction_snapshots WHERE snapshot_type='PREGAME'
-        """
+          SUM(CASE WHEN snapshot_type=? THEN 1 ELSE 0 END) AS replayed,
+          SUM(CASE WHEN snapshot_type='PREGAME' THEN 1 ELSE 0 END) AS live_frozen
+        FROM bracket_prediction_snapshots WHERE snapshot_type IN ('PREGAME', ?)
+        """,
+        (REPLAY_SNAPSHOT_TYPE, REPLAY_SNAPSHOT_TYPE),
     ).fetchone()
     return {
         "status": row["status"] if row else "NOT_STARTED",
@@ -169,10 +174,19 @@ def _candidate_brackets(db_factory, *, data_dir: str | Path) -> list[tuple[int, 
     paths.extend((root / "season_platform" / "raw" / "brackets").glob("event_*.json"))
     with db_factory() as conn:
         init_snapshot_schema(conn)
-        existing = {
+        corrected = {
             int(row[0])
             for row in conn.execute(
-                "SELECT event_id FROM bracket_prediction_snapshots WHERE snapshot_type='PREGAME'"
+                "SELECT event_id FROM bracket_prediction_snapshots WHERE state_key=?",
+                (REPLAY_STATE_KEY,),
+            )
+        }
+        legacy = {
+            int(row[0])
+            for row in conn.execute(
+                """SELECT event_id FROM bracket_prediction_snapshots
+                   WHERE snapshot_type='PREGAME'
+                     AND json_extract(payload_json, '$.structure.mode')='SEEDED_SINGLE_ELIMINATION_ABSTRACTION'"""
             )
         }
     # Retain only the small path/date index. Keeping every decoded bracket in
@@ -190,7 +204,7 @@ def _candidate_brackets(db_factory, *, data_dir: str | Path) -> list[tuple[int, 
                 or ""
             )[:10]
             details = [row for row in payload.get("bracketDetails") or [] if isinstance(row, dict)]
-            if not event_id or event_id in existing or len(_extract_teams(details)) < 2:
+            if not event_id or event_id not in legacy or event_id in corrected or len(_extract_teams(details)) < 2:
                 continue
             if not _champion_player_ids({**payload, "bracketDetails": details}):
                 continue

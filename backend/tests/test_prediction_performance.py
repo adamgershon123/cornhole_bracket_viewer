@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from bracket_prediction_snapshots import _init_schema
-from prediction_performance import prediction_performance_report
+from prediction_performance import _structural_version_comparison, prediction_performance_report
 from season_platform import init_db
 
 
@@ -47,7 +47,7 @@ class PredictionPerformanceTests(unittest.TestCase):
               payload_json, created_at
             ) VALUES (500, 'PREGAME', 'PREGAME', 0, ?, '2026-07-30T10:00:00+00:00')
             """,
-            (json.dumps({"teams": teams, "coverage": {"modelCoverageRate": 1.0}}),),
+            (json.dumps({"teams": teams, "coverage": {"modelCoverageRate": 1.0}, "structure": {"mode": "VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH"}}),),
         )
         self.conn.execute(
             """
@@ -100,7 +100,8 @@ class PredictionPerformanceTests(unittest.TestCase):
                     "players": [{"playerId": 2999, "playerName": "Bye User 121"}],
                     "winEventProbability": 0.1,
                 },
-            ]
+            ],
+            "structure": {"mode": "VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH"},
         }
         self.conn.execute(
             """
@@ -147,7 +148,7 @@ class PredictionPerformanceTests(unittest.TestCase):
               payload_json, created_at
             ) VALUES (502, 'PREGAME', 'PREGAME', 0, ?, '2026-07-30T12:00:00+00:00')
             """,
-            (json.dumps({"teams": teams}),),
+            (json.dumps({"teams": teams, "structure": {"mode": "VALIDATED_ACL_PUBLISHED_BRACKET_GRAPH"}}),),
         )
         for team_id, player_id in (("1", 3001), ("2", 3003)):
             self.conn.execute(
@@ -186,6 +187,34 @@ class PredictionPerformanceTests(unittest.TestCase):
         self.assertEqual(events[0]["championTeamId"], "1")
         self.assertEqual(events[0]["championResolutionSource"], "COMPLETED_BRACKET_FINAL")
 
+    def test_structure_correction_uses_only_paired_events(self) -> None:
+        base = {
+            "eventId": 700, "teamCount": 8, "bracketSizeBucket": "2–8 teams",
+            "topThreeHit": True, "championPredictedRank": 2,
+            "championProbability": 0.2, "multiclassBrierScore": 0.9,
+            "championLogLoss": 1.6,
+        }
+        legacy = {
+            **base, "structureClass": "LEGACY_SINGLE_ELIMINATION_INVALID",
+            "favoriteTeamId": "1", "favoriteWon": False,
+        }
+        corrected = {
+            **base, "structureClass": "CORRECTED_PUBLISHED_GRAPH",
+            "favoriteTeamId": "2", "favoriteWon": True,
+            "championPredictedRank": 1, "championProbability": 0.4,
+            "multiclassBrierScore": 0.7, "championLogLoss": 0.9,
+        }
+        unpaired = {
+            **corrected, "eventId": 701, "favoriteTeamId": "3",
+        }
+
+        comparison = _structural_version_comparison([legacy, corrected, unpaired])
+
+        self.assertEqual(comparison["pairedTournaments"], 1)
+        self.assertEqual(comparison["difference"]["changedFavorites"], 1)
+        self.assertEqual(comparison["difference"]["netCorrectFavorites"], 1)
+        self.assertEqual(comparison["legacy"]["favoriteAccuracy"], 0.0)
+        self.assertEqual(comparison["corrected"]["favoriteAccuracy"], 1.0)
 
 if __name__ == "__main__":
     unittest.main()

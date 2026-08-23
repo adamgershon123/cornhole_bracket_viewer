@@ -210,6 +210,13 @@ def db() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout = 30000")
     conn.execute("PRAGMA foreign_keys = ON")
+    skip_schema_init = background and os.environ.get(
+        "SKIP_DB_SCHEMA_INIT", "0"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    if skip_schema_init:
+        # The web health gate completes production schema initialization.
+        # Repeating WAL/DDL setup in every worker causes SQLite lock storms.
+        _DB_SCHEMA_READY = True
     if not _DB_SCHEMA_READY:
         with _DB_SETUP_LOCK:
             if not _DB_SCHEMA_READY:

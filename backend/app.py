@@ -96,6 +96,7 @@ from historical_backfill import (
     set_paused as set_historical_backfill_paused,
     start_worker as start_historical_backfill_worker,
     status_snapshot as historical_backfill_status,
+    retry_failed_items,
     venue_export_rows,
 )
 from payload_archive import (
@@ -3040,6 +3041,18 @@ def api_historical_backfill_control():
 
 
 @app.route("/api/historical-backfill/venues.csv")
+@app.route("/api/historical-backfill/retry-failures", methods=["POST"])
+def api_historical_backfill_retry_failures():
+    body = request.get_json(silent=True) or {}
+    category = str(body.get("category") or "ALL_SAFE").strip().upper()
+    with season_platform_db() as conn:
+        try:
+            return jsonify(retry_failed_items(conn, category=category))
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+
+
 def api_historical_backfill_venue_export():
     with season_platform_db() as conn:
         rows = venue_export_rows(conn)

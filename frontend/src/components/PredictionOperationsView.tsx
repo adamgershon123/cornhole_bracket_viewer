@@ -7,6 +7,7 @@ import {
   fetchPredictionOperations,
   monitorPredictionEvent,
   runPredictionLifecycle,
+  retryHistoricalBackfillFailures,
 } from '../lib/api';
 
 function pct(value?: number | null) {
@@ -78,6 +79,7 @@ export default function PredictionOperationsView() {
   const [backfill, setBackfill] = useState<any>(null);
   const [backfillChanging, setBackfillChanging] = useState(false);
   const [venueExporting, setVenueExporting] = useState(false);
+  const [failureRetrying, setFailureRetrying] = useState('');
   const [predictionFilter, setPredictionFilter] = useState<'PREDICTED' | 'ALL' | 'ABSTAINED'>('PREDICTED');
   const [eventGroupFilter, setEventGroupFilter] = useState<'ALL'|'SIT_AND_GO'|'STANDARD'>('ALL');
   const [eventActivityFilter, setEventActivityFilter] = useState<'RECORDED'|'NO_ACTIVITY'|'ALL'>('RECORDED');
@@ -90,6 +92,29 @@ export default function PredictionOperationsView() {
       .filter((row: any) => row.status === 'PENDING')
       .map((row: any) => [row.item_type, Number(row.count || 0)]),
   );
+
+  const failureHealth = backfill?.failureHealth || {};
+  async function retryFailures(category = 'ALL_SAFE') {
+    setFailureRetrying(category);
+    try {
+      setError('');
+      const result = await retryHistoricalBackfillFailures(category);
+      setBackfill((current: any) => ({
+        ...current,
+        failureHealth: result.failureHealth,
+        queue: {
+          ...current?.queue,
+          failed: result.failureHealth?.terminal || 0,
+          pending: Number(current?.queue?.pending || 0) + Number(result.requeued || 0),
+        },
+      }));
+    } catch (err: any) {
+      setError(err?.message || 'Failed tasks could not be requeued.');
+    } finally {
+      setFailureRetrying('');
+    }
+  }
+
 
   async function refresh() {
     if (refreshInFlight.current) return;
@@ -437,6 +462,64 @@ export default function PredictionOperationsView() {
             Profile calculations and prediction-model evaluation are separate downstream operations and are not included in this count.
           </div>
 
+          <section className="mt-4 overflow-hidden rounded-2xl border border-red-300/20 bg-black/25">
+            <div className="flex flex-col gap-3 border-b border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.2em] text-red-300">
+                  <AlertTriangle size={15}/> Failure health
+                </div>
+                <div className="mt-2 text-xl font-black text-white">
+                  {Number(failureHealth.terminal || 0).toLocaleString()} terminal records
+                </div>
+                <div className="mt-1 text-xs text-zinc-500">
+                  {Number(failureHealth.retryable || 0).toLocaleString()} safe to retry · {Number(failureHealth.reviewRequired || 0).toLocaleString()} retained for review
+                  {failureHealth.recoveryRate != null && ` · ${(Number(failureHealth.recoveryRate) * 100).toFixed(1)}% historical recovery`}
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={!failureHealth.retryable || Boolean(failureRetrying)}
+                onClick={() => retryFailures()}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-4 font-black text-amber-200 transition active:scale-[.98] disabled:opacity-40"
+              >
+                <RefreshCw size={16} className={failureRetrying ? 'animate-spin' : ''}/>
+                {failureRetrying ? 'Requeuing…' : 'Retry safe failures'}
+              </button>
+            </div>
+            <div className="divide-y divide-white/10">
+              {(failureHealth.groups || []).map((group: any) => (
+                <details key={group.category} className="group p-4">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                    <div>
+                      <div className="font-black text-white">{group.label}</div>
+                      <div className="mt-1 text-xs text-zinc-500">
+                        {Object.entries(group.affectedByType || {}).map(([type, count]) => `${Number(count).toLocaleString()} ${String(type).toLowerCase()}`).join(' · ') || 'No affected records'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-xl font-black ${group.retryable ? 'text-amber-300' : 'text-red-300'}`}>{Number(group.count || 0).toLocaleString()}</div>
+                      <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">{group.retryable ? 'Retryable' : 'Review'}</div>
+                    </div>
+                  </summary>
+                  <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-zinc-400">
+                    <div>Oldest: {group.oldestFailureAt ? new Date(group.oldestFailureAt).toLocaleString() : 'Unknown'}</div>
+                    <div className="mt-2 space-y-1 text-zinc-500">
+                      {(group.sampleErrors || []).map((sample: string, index: number) => <div key={index}>{sample}</div>)}
+                    </div>
+                    {group.retryable && (
+                      <button
+                        type="button"
+                        disabled={Boolean(failureRetrying)}
+                        onClick={() => retryFailures(group.category)}
+                        className="mt-3 min-h-10 rounded-lg border border-amber-300/30 px-3 font-black text-amber-200 active:scale-[.98] disabled:opacity-40"
+                      >Retry this category</button>
+                    )}
+                  </div>
+                </details>
+              ))}
+              {!failureHealth.groups?.length && <div className="p-4 text-sm text-emerald-300">No terminal collection failures.</div>}
+            </div>
+          </section>
           <div className="mt-3 rounded-2xl border border-emerald-300/20 bg-emerald-300/[.06] p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

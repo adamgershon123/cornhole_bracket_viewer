@@ -243,6 +243,19 @@ export async function controlHistoricalBackfill(
   return response.json();
 }
 
+export async function retryHistoricalBackfillFailures(
+  category = 'ALL_SAFE',
+): Promise<any> {
+  const response = await fetch(`${API_BASE}/api/historical-backfill/retry-failures`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ category }),
+  });
+  if (!response.ok) throw new Error(await readableApiError(response));
+  return response.json();
+}
+
+
 export async function downloadHistoricalVenueCsv(): Promise<void> {
   const response = await fetch(
     `${API_BASE}/api/historical-backfill/venues.csv`,

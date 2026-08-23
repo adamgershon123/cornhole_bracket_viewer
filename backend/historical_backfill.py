@@ -161,6 +161,8 @@ def initialize_schema(conn: sqlite3.Connection) -> None:
             ON historical_backfill_queue(status, not_before, priority DESC, queue_id);
         CREATE INDEX IF NOT EXISTS idx_historical_backfill_activity_time
             ON historical_backfill_activity(occurred_at, collection_lane);
+        CREATE INDEX IF NOT EXISTS idx_historical_backfill_activity_queue
+            ON historical_backfill_activity(queue_id, outcome, occurred_at);
         """
     )
     now = utc_now()
@@ -364,6 +366,7 @@ def status_snapshot(
         )
     }
 
+    failure_health = _failure_health(conn)
     return {
         "enabled": True,
         "paused": bool(state["paused"]),
@@ -394,6 +397,7 @@ def status_snapshot(
         "stateRetainedAtStartup": True,
         "payloadArchive": payload_archive_health(conn, initialize=initialize),
         "throughput": throughput,
+        "failureHealth": failure_health,
         "lanes": {
             lane: {
                 "lane": lane,
@@ -477,6 +481,163 @@ def status_snapshot(
         },
     }
 
+
+def _failure_category(error: str | None) -> tuple[str, str, bool]:
+    message = (error or "").lower()
+    if "database is locked" in message or "database table is locked" in message:
+        return "DATABASE_BUSY", "Temporary database contention", True
+    if any(token in message for token in (
+        "timed out", "timeout", "connection reset", "connection aborted",
+        "temporarily unavailable", "name resolution", "max retries exceeded",
+    )):
+        return "TRANSIENT_NETWORK", "Temporary network failure", True
+    if any(token in message for token in (
+        "500 server error", "502 server error", "503 server error",
+        "504 server error", "status code 500", "status code 502",
+        "status code 503", "status code 504",
+    )):
+        return "SERVER_ERROR", "Temporary ACL server failure", True
+    if any(token in message for token in (
+        "401 client error", "403 client error", "unauthorized", "forbidden",
+    )):
+        return "ACCESS_RESTRICTED", "ACL access restricted", False
+    if any(token in message for token in (
+        "404 client error", "409 client error", "410 client error", "not found", "no data",
+        "empty response", "never published",
+    )):
+        return "UNAVAILABLE_SOURCE", "ACL record unavailable or empty", False
+    if any(token in message for token in (
+        "quarantin", "integrity", "incomplete completed", "inconsistent",
+        "malformed", "validation failed", "foreign key constraint failed",
+    )):
+        return "DATA_INTEGRITY", "Data requires integrity review", False
+    if any(token in message for token in (
+        "traceback", "attributeerror", "keyerror", "typeerror", "valueerror",
+        "indexerror", "jsondecodeerror", "parser",
+    )):
+        return "CODE_FAILURE", "Application or parsing failure", False
+    return "REVIEW_REQUIRED", "Unclassified failure", False
+
+
+def _failure_health(conn: sqlite3.Connection) -> dict[str, Any]:
+    failed_rows = conn.execute(
+        """
+        SELECT queue_id, item_type, item_key, attempts, last_error,
+               created_at, updated_at, collection_lane
+        FROM historical_backfill_queue
+        WHERE status='FAILED'
+        ORDER BY updated_at ASC
+        """
+    ).fetchall()
+    groups: dict[str, dict[str, Any]] = {}
+    for row in failed_rows:
+        category, label, retryable = _failure_category(row["last_error"])
+        group = groups.setdefault(category, {
+            "category": category,
+            "label": label,
+            "retryable": retryable,
+            "count": 0,
+            "oldestFailureAt": None,
+            "latestFailureAt": None,
+            "affectedByType": {},
+            "sampleErrors": [],
+        })
+        group["count"] += 1
+        item_type = str(row["item_type"])
+        group["affectedByType"][item_type] = (
+            group["affectedByType"].get(item_type, 0) + 1
+        )
+        occurred_at = row["updated_at"]
+        if not group["oldestFailureAt"]:
+            group["oldestFailureAt"] = occurred_at
+        group["latestFailureAt"] = occurred_at
+        error = str(row["last_error"] or "Unknown error")[:240]
+        if error not in group["sampleErrors"] and len(group["sampleErrors"]) < 3:
+            group["sampleErrors"].append(error)
+
+    recovery = conn.execute(
+        """
+        SELECT COUNT(*) AS ever_failed,
+               SUM(CASE WHEN last_complete_at > last_failed_at
+                        THEN 1 ELSE 0 END) AS recovered
+        FROM (
+            SELECT queue_id,
+                   MAX(CASE WHEN outcome='FAILED_ATTEMPT'
+                            THEN occurred_at END) AS last_failed_at,
+                   MAX(CASE WHEN outcome='COMPLETE'
+                            THEN occurred_at END) AS last_complete_at
+            FROM historical_backfill_activity
+            WHERE queue_id IS NOT NULL
+              AND outcome IN ('FAILED_ATTEMPT', 'COMPLETE')
+            GROUP BY queue_id
+            HAVING MAX(CASE WHEN outcome='FAILED_ATTEMPT' THEN 1 ELSE 0 END)=1
+        )
+        """
+    ).fetchone()
+    ever_failed = int(recovery["ever_failed"] or 0)
+    recovered = int(recovery["recovered"] or 0)
+    retryable = sum(
+        int(group["count"]) for group in groups.values() if group["retryable"]
+    )
+    review_required = sum(
+        int(group["count"])
+        for category, group in groups.items()
+        if category in {"DATA_INTEGRITY", "CODE_FAILURE", "REVIEW_REQUIRED"}
+    )
+    return {
+        "terminal": len(failed_rows),
+        "retryable": retryable,
+        "reviewRequired": review_required,
+        "everFailed": ever_failed,
+        "recovered": recovered,
+        "recoveryRate": (recovered / ever_failed) if ever_failed else None,
+        "groups": sorted(
+            groups.values(),
+            key=lambda group: (-int(group["count"]), group["category"]),
+        ),
+    }
+
+
+def retry_failed_items(
+    conn: sqlite3.Connection,
+    *,
+    category: str | None = None,
+) -> dict[str, Any]:
+    initialize_schema(conn)
+    requested = (category or "ALL_SAFE").strip().upper()
+    allowed = {"DATABASE_BUSY", "TRANSIENT_NETWORK", "SERVER_ERROR"}
+    if requested != "ALL_SAFE" and requested not in allowed:
+        raise ValueError("Only safe retry categories may be requeued")
+    rows = conn.execute(
+        """
+        SELECT queue_id, last_error
+        FROM historical_backfill_queue
+        WHERE status='FAILED'
+        """
+    ).fetchall()
+    queue_ids = []
+    for row in rows:
+        row_category, _, retryable = _failure_category(row["last_error"])
+        if retryable and (requested == "ALL_SAFE" or requested == row_category):
+            queue_ids.append(int(row["queue_id"]))
+    now = utc_now()
+    if queue_ids:
+        placeholders = ",".join("?" for _ in queue_ids)
+        conn.execute(
+            f"""
+            UPDATE historical_backfill_queue
+            SET status='PENDING', attempts=0, not_before=NULL, updated_at=?
+            WHERE queue_id IN ({placeholders})
+            """,
+            (now, *queue_ids),
+        )
+        conn.commit()
+    return {
+        "status": "REQUEUED",
+        "category": requested,
+        "requeued": len(queue_ids),
+        "failureHealth": _failure_health(conn),
+    }
 
 def refresh_status_snapshot(conn: sqlite3.Connection) -> dict[str, Any]:
     """Prepare the expensive collection dashboard once for all web readers."""

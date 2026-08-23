@@ -8,6 +8,7 @@ from historical_backfill import (
     cached_status_snapshot,
     initialize_schema,
     refresh_status_snapshot,
+    retry_failed_items,
     run_one,
     seed_contact_backfill,
     seed_known_players,
@@ -230,6 +231,34 @@ class HistoricalBackfillTests(unittest.TestCase):
         throughput = status_snapshot(self.conn)["throughput"]["lastHour"]
         self.assertEqual(throughput["failed_attempts"], 1)
         self.assertEqual(throughput["terminal_failures"], 1)
+
+    def test_failure_health_classifies_and_only_retries_safe_failures(self):
+        now = "2026-01-01T00:00:00+00:00"
+        self.conn.executemany(
+            """
+            INSERT INTO historical_backfill_queue(
+                item_type, item_key, status, attempts, last_error,
+                created_at, updated_at
+            ) VALUES ('GAME', ?, 'FAILED', 2, ?, ?, ?)
+            """,
+            [
+                ("locked", "database is locked", now, now),
+                ("missing", "404 Client Error: Not Found", now, now),
+            ],
+        )
+        self.conn.commit()
+
+        health = status_snapshot(self.conn)["failureHealth"]
+        self.assertEqual(health["terminal"], 2)
+        self.assertEqual(health["retryable"], 1)
+
+        result = retry_failed_items(self.conn)
+        self.assertEqual(result["requeued"], 1)
+        statuses = dict(self.conn.execute(
+            "SELECT item_key,status FROM historical_backfill_queue"
+        ).fetchall())
+        self.assertEqual(statuses["locked"], "PENDING")
+        self.assertEqual(statuses["missing"], "FAILED")
 
     @patch("historical_backfill._process_item")
     def test_throughput_distinguishes_productive_completion(self, process_item):

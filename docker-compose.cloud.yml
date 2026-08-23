@@ -23,26 +23,63 @@ services:
         limits:
           memory: 2300M
 
-  workers:
+  collection-worker:
     build: .
     restart: unless-stopped
-    command: ["nice", "-n", "10", "python", "cloud_worker.py"]
-    cpu_shares: 128
-    # Compose's deploy limit was not applied to the ordinary (non-Swarm)
-    # container. This runtime limit keeps archival research from saturating
-    # every core needed by predictions and grading.
-    cpus: "0.75"
-    mem_limit: 1300M
+    command: ["nice", "-n", "8", "python", "collection_worker.py"]
+    cpu_shares: 384
+    cpus: "0.60"
+    mem_limit: 600M
     healthcheck:
       disable: true
     environment:
       DATA_DIR: /data
       PROCESS_ROLE: background
+      COLLECTION_STARTUP_DELAY_SECONDS: 20
     volumes:
       - ./cloud-data:/data
     depends_on:
       web:
         condition: service_healthy
+
+  operations-worker:
+    build: .
+    restart: unless-stopped
+    command: ["nice", "-n", "5", "python", "operations_worker.py"]
+    cpu_shares: 512
+    cpus: "0.65"
+    mem_limit: 700M
+    healthcheck:
+      disable: true
+    environment:
+      DATA_DIR: /data
+      PROCESS_ROLE: background
+      OPERATIONS_STARTUP_DELAY_SECONDS: 20
+    volumes:
+      - ./cloud-data:/data
+    depends_on:
+      web:
+        condition: service_healthy
+
+  analytics-worker:
+    build: .
+    restart: unless-stopped
+    command: ["nice", "-n", "15", "python", "analytics_worker.py"]
+    cpu_shares: 64
+    cpus: "0.35"
+    mem_limit: 750M
+    healthcheck:
+      disable: true
+    environment:
+      DATA_DIR: /data
+      PROCESS_ROLE: background
+      ANALYTICS_STARTUP_DELAY_SECONDS: 60
+    volumes:
+      - ./cloud-data:/data
+    depends_on:
+      web:
+        condition: service_healthy
+
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped

@@ -309,6 +309,28 @@ export default function PredictivePlayerProfileView({ playerId }: { playerId:str
             <ProfileMetric label="Rounds" value={data.sample.rounds ?? 0} />
           </div>
           <div className="mt-3 text-xs text-zinc-500">Last event: {data.sample.lastEventDate || 'Unknown'} · Coverage {percent(data.coverage?.coverageRatio)}</div>
+          {data.dataScope && (
+            <div className="mt-4 rounded-xl border border-sky-300/15 bg-sky-300/5 p-3 text-xs leading-5 text-zinc-400">
+              <div className="font-black uppercase tracking-wide text-sky-300">Data scope & integrity</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <ProfileMetric label="Collected rounds" value={data.dataScope.collectedRounds ?? 0} />
+                <ProfileMetric label="Used in profile" value={data.dataScope.includedRounds ?? 0} />
+                <ProfileMetric label="Excluded safely" value={data.dataScope.excludedRounds ?? 0} />
+              </div>
+              <div className="mt-2">
+                Predictive metrics use completed, normalized games in the trailing {data.dataScope.windowDays}-day window.
+                Stored history spans {data.dataScope.firstEventDate || 'unknown'} through {data.dataScope.lastEventDate || 'unknown'}.
+              </div>
+              {data.dataScope.excludedRounds > 0 && (
+                <div className="mt-2 text-zinc-500">
+                  Excluded: {data.dataScope.exclusions?.missingEventDate ?? 0} missing dates ·{' '}
+                  {data.dataScope.exclusions?.outsideWindow ?? 0} outside the window ·{' '}
+                  {data.dataScope.exclusions?.missingNormalizedGame ?? 0} without a normalized game ·{' '}
+                  {data.dataScope.exclusions?.incompleteGame ?? 0} incomplete games.
+                </div>
+              )}
+            </div>
+          )}
         </Panel>
         <Panel icon={<Target />} title="Prediction history">
           {(data.recentPredictions || []).length === 0 && <div className="text-sm text-zinc-500">No locked predictions involving this player.</div>}

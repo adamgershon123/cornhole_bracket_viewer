@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from stage_a_features import build_player_features
@@ -21,6 +21,74 @@ from swing_performance import swing_performance_ratings
 PROFILE_SNAPSHOT_VERSION = "predictive-profile-leaderboard-v2-consistency-shrinkage"
 _PROFILE_WORKER_LOCK = threading.Lock()
 _PROFILE_WORKER_STARTED = False
+
+def _profile_data_scope(
+    conn: sqlite3.Connection,
+    player_id: int,
+    *,
+    cutoff_at: str,
+    window_days: int,
+) -> dict[str, Any]:
+    """Explain which collected rows are eligible for predictive profile metrics."""
+    cutoff = datetime.fromisoformat(cutoff_at.replace("Z", "+00:00"))
+    window_start = (cutoff - timedelta(days=window_days)).isoformat()
+    row = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS collected_rounds,
+            COUNT(DISTINCT pr.event_id) AS collected_events,
+            MIN(pr.event_date) AS first_event_date,
+            MAX(pr.event_date) AS last_event_date,
+            SUM(CASE WHEN pr.event_date IS NOT NULL
+                AND pr.event_date >= ? AND pr.event_date < ?
+                AND g.completed=1 THEN 1 ELSE 0 END) AS included_rounds,
+            SUM(CASE WHEN pr.event_date IS NULL THEN 1 ELSE 0 END) AS missing_event_date,
+            SUM(CASE WHEN pr.event_date IS NOT NULL
+                AND (pr.event_date < ? OR pr.event_date >= ?)
+                THEN 1 ELSE 0 END) AS outside_window,
+            SUM(CASE WHEN pr.event_date IS NOT NULL
+                AND pr.event_date >= ? AND pr.event_date < ?
+                AND g.event_id IS NULL THEN 1 ELSE 0 END) AS missing_normalized_game,
+            SUM(CASE WHEN pr.event_date IS NOT NULL
+                AND pr.event_date >= ? AND pr.event_date < ?
+                AND g.event_id IS NOT NULL AND COALESCE(g.completed, 0) != 1
+                THEN 1 ELSE 0 END) AS incomplete_game
+        FROM player_rounds pr
+        LEFT JOIN games g
+          ON g.event_id=pr.event_id
+         AND g.match_id=pr.match_id
+         AND g.game_id=pr.game_id
+        WHERE pr.player_id=?
+        """,
+        (
+            window_start, cutoff_at,
+            window_start, cutoff_at,
+            window_start, cutoff_at,
+            window_start, cutoff_at,
+            int(player_id),
+        ),
+    ).fetchone()
+    values = dict(row) if row else {}
+    collected = int(values.get("collected_rounds") or 0)
+    included = int(values.get("included_rounds") or 0)
+    return {
+        "policy": "COMPLETED_NORMALIZED_GAMES_WITHIN_365_DAYS",
+        "windowDays": int(window_days),
+        "windowStart": window_start,
+        "cutoffAt": cutoff_at,
+        "collectedRounds": collected,
+        "includedRounds": included,
+        "excludedRounds": max(0, collected - included),
+        "collectedEvents": int(values.get("collected_events") or 0),
+        "firstEventDate": values.get("first_event_date"),
+        "lastEventDate": values.get("last_event_date"),
+        "exclusions": {
+            "missingEventDate": int(values.get("missing_event_date") or 0),
+            "outsideWindow": int(values.get("outside_window") or 0),
+            "missingNormalizedGame": int(values.get("missing_normalized_game") or 0),
+            "incompleteGame": int(values.get("incomplete_game") or 0),
+        },
+    }
 
 
 def predictive_player_profile(conn: sqlite3.Connection, player_id: int) -> dict[str, Any]:
@@ -80,16 +148,6 @@ def predictive_player_profile(conn: sqlite3.Connection, player_id: int) -> dict[
         """,
         (int(player_id),),
     ).fetchone()
-    if saved_row is None:
-        refresh_base_player_analytics_snapshots(conn)
-        saved_row = conn.execute(
-            """
-            SELECT snapshot_json, snapshot_stage, generated_at
-            FROM player_analytics_snapshots
-            WHERE player_id=?
-            """,
-            (int(player_id),),
-        ).fetchone()
     saved = json.loads(saved_row["snapshot_json"]) if saved_row else {}
     clutch = saved.get("clutchProfile")
     ratings = saved.get("profileRatings") or {}
@@ -99,6 +157,12 @@ def predictive_player_profile(conn: sqlite3.Connection, player_id: int) -> dict[
     opponent_adjusted = saved.get("opponentAdjustedPerformance")
     swing = saved.get("swingPerformance")
     weighting = prediction_weighting_policy()
+    data_scope = _profile_data_scope(
+        conn,
+        int(player_id),
+        cutoff_at=cutoff,
+        window_days=365,
+    )
     rating_catalog = _rating_catalog(
         ratings or {}, clutch, carry, competition, opponent_adjusted, swing, weighting
     )
@@ -129,6 +193,7 @@ def predictive_player_profile(conn: sqlite3.Connection, player_id: int) -> dict[
             for key in ("events", "games", "rounds", "lastEventDate", "recencyDays")
         },
         "coverage": features.get("coverage"),
+        "dataScope": data_scope,
         "missing": features.get("missing"),
         "formatRoundCounts": features.get("formatRoundCounts"),
         "recentPredictions": prediction_rows,
@@ -444,6 +509,45 @@ def _store_player_analytics_snapshots(
     ledger_rounds = int(
         conn.execute("SELECT COUNT(*) FROM player_rounds").fetchone()[0]
     )
+    existing_full: dict[int, tuple[dict[str, Any], str]] = {}
+    if stage == "BASE_READY":
+        for existing in conn.execute(
+            """
+            SELECT player_id, snapshot_json, generated_at
+            FROM player_analytics_snapshots
+            WHERE snapshot_stage='FULL_READY'
+            """
+        ).fetchall():
+            existing_full[int(existing["player_id"])] = (
+                json.loads(existing["snapshot_json"]),
+                existing["generated_at"],
+            )
+
+    prepared_rows = []
+    for row in rows:
+        player_id = int(row["playerId"])
+        row_stage = stage
+        payload = dict(row)
+        if stage == "BASE_READY" and player_id in existing_full:
+            previous, advanced_generated_at = existing_full[player_id]
+            payload = {**previous, **payload}
+            payload["profileStage"] = "FULL_READY"
+            payload["baseMetricsGeneratedAt"] = generated_at
+            payload["advancedMetricsGeneratedAt"] = (
+                previous.get("advancedMetricsGeneratedAt") or advanced_generated_at
+            )
+            row_stage = "FULL_READY"
+        elif stage == "FULL_READY":
+            payload["baseMetricsGeneratedAt"] = generated_at
+            payload["advancedMetricsGeneratedAt"] = generated_at
+        prepared_rows.append((
+            player_id,
+            json.dumps(payload, sort_keys=True, default=str),
+            PROFILE_SNAPSHOT_VERSION,
+            row_stage,
+            ledger_rounds,
+            generated_at,
+        ))
     conn.executemany(
         """
         INSERT INTO player_analytics_snapshots(
@@ -457,17 +561,7 @@ def _store_player_analytics_snapshots(
             ledger_rounds=excluded.ledger_rounds,
             generated_at=excluded.generated_at
         """,
-        [
-            (
-                int(row["playerId"]),
-                json.dumps(row, sort_keys=True, default=str),
-                PROFILE_SNAPSHOT_VERSION,
-                stage,
-                ledger_rounds,
-                generated_at,
-            )
-            for row in rows
-        ],
+        prepared_rows,
     )
     conn.execute(
         """
@@ -580,7 +674,9 @@ def start_player_analytics_snapshot_worker(db_factory: Any) -> None:
                     ):
                         refresh_full_player_analytics_snapshots(conn)
                     elif ledger_rounds - snapshot_rounds >= 5000:
-                        refresh_base_player_analytics_snapshots(conn)
+                        # Never erase valid advanced ratings with a base-only
+                        # refresh while a full rebuild is still calculating.
+                        refresh_full_player_analytics_snapshots(conn)
             except Exception as exc:
                 try:
                     with db_factory() as conn:
